@@ -1,49 +1,110 @@
+@{
+    var extraBodyClass = ViewData["BodyClass"] as string;
+    var isAdminUser = User.IsInRole("Admin");
+    var bodyClass = string.IsNullOrWhiteSpace(extraBodyClass)
+        ? "app-shell"
+        : $"app-shell {extraBodyClass}";
+    if (isAdminUser)
+    {
+        bodyClass += " admin-layout";
+    }
+    var isChatLayout = extraBodyClass?.Contains("chat-layout") == true;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduChatbot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (isChatLayout)
+    {
+        <script>
+            (function () {
+                try {
+                    if (localStorage.getItem('eduChatbot.sidebarCollapsed') === 'true') {
+                        document.documentElement.classList.add('chat-sidebar-collapsed-persisted');
+                    }
+                } catch {
+                }
+            })();
+        </script>
+        <link rel="stylesheet" href="~/css/chat.css" asp-append-version="true" />
+    }
     <link rel="stylesheet" href="~/EduChatbot.MVC.styles.css" asp-append-version="true" />
 </head>
-<body class="app-shell">
+<body class="@bodyClass">
 @if (User.IsInRole("Admin"))
 {
     <div class="admin-shell">
         <aside class="admin-sidebar">
             <div class="admin-brand">
-                <span class="admin-brand-mark">EC</span>
+                <span class="admin-brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3.5 8.7 12 4.4l8.5 4.3-8.5 4.2-8.5-4.2Z" />
+                        <path d="M6.5 10.4v4.4c1.7 1.3 3.5 1.9 5.5 1.9s3.8-.6 5.5-1.9v-4.4" />
+                        <path d="M20.5 8.7v5.8" />
+                    </svg>
+                </span>
                 <div>
                     <strong>EduChatbot</strong>
-                    <small>Admin Panel</small>
+                    <small>ADMIN</small>
                 </div>
             </div>
             <nav class="admin-menu">
-                <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
-                <a asp-controller="Admin" asp-action="Students">Student Accounts</a>
-                <a asp-controller="Admin" asp-action="Lecturers">Lecturer Accounts</a>
-                <a asp-controller="Admin" asp-action="Roles">Role Management</a>
-                <a asp-controller="Admin" asp-action="System">System Management</a>
-                <a asp-controller="Admin" asp-action="Statistics">Statistics</a>
+                <a asp-controller="Admin" asp-action="Dashboard" class="admin-link @(currentAction == "Dashboard" ? "active" : "")">
+                    <span class="admin-menu-icon">▦</span>
+                    <span>Dashboard</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Students" class="admin-link @(currentAction == "Students" ? "active" : "")">
+                    <span class="admin-menu-icon">♙</span>
+                    <span>Student Accounts</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Lecturers" class="admin-link @(currentAction == "Lecturers" ? "active" : "")">
+                    <span class="admin-menu-icon">♧</span>
+                    <span>Lecturer Accounts</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Roles" class="admin-link @(currentAction == "Roles" ? "active" : "")">
+                    <span class="admin-menu-icon">◇</span>
+                    <span>Role Management</span>
+                </a>
+                <a asp-controller="Admin" asp-action="System" class="admin-link @(currentAction == "System" ? "active" : "")">
+                    <span class="admin-menu-icon">▭</span>
+                    <span>System Management</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Statistics" class="admin-link @(currentAction == "Statistics" ? "active" : "")">
+                    <span class="admin-menu-icon">▥</span>
+                    <span>Statistics</span>
+                </a>
             </nav>
             <form asp-controller="Account" asp-action="Logout" method="post" class="admin-logout">
                 @Html.AntiForgeryToken()
-                <button type="submit">Logout</button>
+                <button type="submit">
+                    <span class="admin-menu-icon">↳</span>
+                    <span>Logout</span>
+                </button>
             </form>
         </aside>
         <div class="admin-content">
             <header class="admin-topbar">
-                <div>
-                    <span>Academic Chatbot System</span>
+                <div class="admin-breadcrumb">
+                    <span>EDUCHATBOT · ADMIN</span>
+                    <i aria-hidden="true">/</i>
                     <strong>@ViewData["Title"]</strong>
                 </div>
-                <div class="admin-user">@User.Identity?.Name</div>
+                <div class="admin-user-wrap">
+                    <div class="admin-user">
+                        <span aria-hidden="true"></span>
+                        @User.Identity?.Name
+                    </div>
+                    <div class="admin-avatar">A</div>
+                </div>
             </header>
             <main role="main" class="admin-main">
                 @RenderBody()

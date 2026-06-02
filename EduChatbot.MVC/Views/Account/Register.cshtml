@@ -5,11 +5,16 @@
     Layout = "_AuthLayout";
 }
 
-<div class="auth-container">
-    <!-- LEFT — Branding Panel -->
-    <aside class="auth-branding">
+<div class="auth-container auth-mode-register">
+    <aside class="auth-branding" aria-label="EduChatbot overview">
         <div class="auth-logo">
-            <div class="auth-logo-icon">🎓</div>
+            <div class="auth-logo-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M3.5 8.7 12 4.4l8.5 4.3-8.5 4.2-8.5-4.2Z" />
+                    <path d="M6.5 10.4v4.4c1.7 1.3 3.5 1.9 5.5 1.9s3.8-.6 5.5-1.9v-4.4" />
+                    <path d="M20.5 8.7v5.8" />
+                </svg>
+            </div>
             <div>
                 <div class="auth-logo-text">EduChatbot</div>
                 <div class="auth-logo-sub">Academic assistant</div>
@@ -18,28 +23,46 @@
 
         <div class="auth-branding-content">
             <div class="auth-badge">
-                ✦ <span>Join the platform</span>
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M12 3l1.4 5.2L18.5 10l-5.1 1.8L12 17l-1.4-5.2L5.5 10l5.1-1.8L12 3Z" />
+                    <path d="M19 15l.6 2.1L22 18l-2.4.9L19 21l-.6-2.1L16 18l2.4-.9L19 15Z" />
+                </svg>
+                <span>Join the platform</span>
             </div>
             <h1 class="auth-headline">
-                Học tập <em>thông minh</em><br />
+                Học tập <span class="auth-serif">thông minh</span><br />
                 cùng tài liệu của bạn.
             </h1>
             <p class="auth-tagline">
-                Hỏi đáp tức thì về tài liệu giảng viên đã upload — kèm trích dẫn nguồn rõ ràng theo từng đoạn.
+                Sinh viên đặt câu hỏi theo tài liệu, giảng viên quản lý học liệu, hệ thống lưu lại nguồn tham chiếu rõ ràng.
             </p>
 
-            <div class="auth-features">
+            <div class="auth-features" aria-label="Key capabilities">
                 <div class="auth-feature-card">
-                    <div class="auth-feature-icon">📖</div>
-                    <div class="auth-feature-label">Tài liệu</div>
+                    <div class="auth-feature-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                            <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+                        </svg>
+                    </div>
+                    <div class="auth-feature-label">Student chat</div>
                 </div>
                 <div class="auth-feature-card">
-                    <div class="auth-feature-icon">💬</div>
-                    <div class="auth-feature-label">Hỏi đáp</div>
+                    <div class="auth-feature-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M5 5.5h14v13H5z" />
+                            <path d="M9 5.5v13" />
+                        </svg>
+                    </div>
+                    <div class="auth-feature-label">Lecturer docs</div>
                 </div>
                 <div class="auth-feature-card">
-                    <div class="auth-feature-icon">✦</div>
-                    <div class="auth-feature-label">Trích nguồn</div>
+                    <div class="auth-feature-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M12 3l1.4 5.2L18.5 10l-5.1 1.8L12 17l-1.4-5.2L5.5 10l5.1-1.8L12 3Z" />
+                        </svg>
+                    </div>
+                    <div class="auth-feature-label">AI assistant</div>
                 </div>
             </div>
         </div>
@@ -47,57 +70,72 @@
         <div class="auth-copyright">© 2026 EduChatbot · Academic platform</div>
     </aside>
 
-    <!-- RIGHT — Form Panel -->
     <section class="auth-form-panel">
         <div class="auth-form-wrapper">
-            <!-- Mobile logo -->
             <div class="auth-mobile-logo">
-                <div class="auth-logo-icon">🎓</div>
+                <div class="auth-logo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3.5 8.7 12 4.4l8.5 4.3-8.5 4.2-8.5-4.2Z" />
+                        <path d="M6.5 10.4v4.4c1.7 1.3 3.5 1.9 5.5 1.9s3.8-.6 5.5-1.9v-4.4" />
+                    </svg>
+                </div>
                 <div class="auth-logo-text">EduChatbot</div>
             </div>
 
-            <!-- Tab switcher -->
-            <div class="auth-tabs">
-                <a asp-controller="Account" asp-action="Login" class="auth-tab">Login</a>
+            <div class="auth-tabs mode-register" aria-label="Authentication mode">
+                <a asp-controller="Account" asp-action="Login" class="auth-tab" data-auth-switch data-auth-mode="login">Login</a>
                 <span class="auth-tab active">Register</span>
             </div>
 
-            <h2 class="auth-form-title">Tạo tài khoản <em>mới</em></h2>
-            <p class="auth-form-subtitle">Create a Student or Lecturer account.</p>
+            <div class="auth-copy auth-copy-enter">
+                <h2 class="auth-form-title">Tạo tài khoản <span class="auth-serif">mới</span></h2>
+                <p class="auth-form-subtitle">Create a Student or Lecturer account.</p>
+            </div>
 
-            <form asp-controller="Account" asp-action="Register" method="post">
+            <form asp-controller="Account" asp-action="Register" method="post" class="auth-form">
                 @Html.AntiForgeryToken()
 
                 <div asp-validation-summary="All" class="auth-errors"></div>
 
-                <!-- Full Name -->
                 <div class="auth-field">
                     <label asp-for="FullName" class="auth-field-label">Full Name</label>
                     <div class="auth-field-input-wrapper">
-                        <span class="auth-field-icon">👤</span>
-                        <input asp-for="FullName" placeholder="Nguyễn Văn A" />
+                        <span class="auth-field-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                                <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+                            </svg>
+                        </span>
+                        <input asp-for="FullName" placeholder="Nguyễn Văn A" autocomplete="name" />
                     </div>
                 </div>
 
-                <!-- Email -->
                 <div class="auth-field">
                     <label asp-for="Email" class="auth-field-label">Email</label>
                     <div class="auth-field-input-wrapper">
-                        <span class="auth-field-icon">✉</span>
-                        <input asp-for="Email" placeholder="student@university.edu.vn" />
+                        <span class="auth-field-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M4 6.5h16v11H4z" />
+                                <path d="m4 7 8 6 8-6" />
+                            </svg>
+                        </span>
+                        <input asp-for="Email" placeholder="student@university.edu.vn" autocomplete="email" />
                     </div>
                 </div>
 
-                <!-- Password -->
                 <div class="auth-field">
                     <label asp-for="Password" class="auth-field-label">Password</label>
                     <div class="auth-field-input-wrapper">
-                        <span class="auth-field-icon">🔒</span>
-                        <input asp-for="Password" placeholder="••••••••" />
+                        <span class="auth-field-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M7 10V8a5 5 0 0 1 10 0v2" />
+                                <path d="M6 10h12v10H6z" />
+                            </svg>
+                        </span>
+                        <input asp-for="Password" placeholder="••••••••" autocomplete="new-password" />
                     </div>
                 </div>
 
-                <!-- Role -->
                 <div class="auth-field">
                     <label asp-for="Role" class="auth-field-label">Role</label>
                     <div class="auth-field-input-wrapper">
@@ -105,26 +143,20 @@
                             <option value="Student">Student</option>
                             <option value="Lecturer">Lecturer</option>
                         </select>
-                        <span class="auth-select-arrow">▾</span>
+                        <span class="auth-select-arrow" aria-hidden="true">⌄</span>
                     </div>
                 </div>
 
-                <!-- Submit -->
                 <button type="submit" class="auth-submit-btn">
                     <span>Create account</span>
-                    <span class="arrow">→</span>
+                    <span class="arrow" aria-hidden="true">→</span>
                 </button>
 
-                <!-- Divider -->
-                <div class="auth-divider">
-                    <div class="auth-divider-line"></div>
-                    <span class="auth-divider-text">or</span>
-                </div>
+                <div class="auth-divider"><span>or</span></div>
 
-                <!-- Switch -->
                 <div class="auth-switch">
                     Đã có tài khoản?
-                    <a asp-controller="Account" asp-action="Login">Sign in</a>
+                    <a asp-controller="Account" asp-action="Login" data-auth-switch data-auth-mode="login">Sign in</a>
                 </div>
             </form>
         </div>

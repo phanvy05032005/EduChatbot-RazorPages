@@ -1,11 +1,17 @@
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center py-5">
-    <div class="surface p-5 d-inline-block mx-auto" style="max-width: 600px;">
-        <h1 class="display-4 fw-bold mb-3" style="color: #0f172a;">Welcome to EduChatbot</h1>
-        <p class="lead text-muted mb-4">Your intelligent academic document management system. Upload, process, and chat with your documents seamlessly.</p>
-        <a asp-controller="Documents" asp-action="Dashboard" class="btn btn-primary btn-lg">Get Started</a>
+<section class="public-home">
+    <div class="public-home-panel">
+        <div class="public-kicker">EduChatbot</div>
+        <h1>Academic document assistant</h1>
+        <p>
+            Upload learning materials, index them with embeddings, and let students ask questions with clear source references.
+        </p>
+        <div class="public-actions">
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary">Sign in</a>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-outline-primary">Create account</a>
+        </div>
     </div>
-</div>
+</section>

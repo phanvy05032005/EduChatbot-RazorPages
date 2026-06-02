@@ -6,95 +6,105 @@
     var createAction = isLecturer ? "CreateLecturer" : "CreateStudent";
 }
 
-<div class="admin-page-header">
-    <div>
-        <h1>@Model.Title</h1>
-        <p>View, search, and manage @Model.AccountType.ToLowerInvariant() accounts.</p>
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <div class="admin-kicker">Accounts · @Model.AccountType</div>
+            <h1>Quản lý <span class="admin-serif">@Model.AccountType</span></h1>
+            <p>View, search, lock, unlock, and manage @Model.AccountType.ToLowerInvariant() accounts.</p>
+        </div>
+        <a asp-controller="Admin"
+           asp-action="@createAction"
+           class="admin-primary-btn">Create account</a>
     </div>
-    <a asp-controller="Admin"
-       asp-action="@createAction"
-       class="admin-primary-btn">Create @Model.AccountType Account</a>
-</div>
 
-@if (TempData["AdminMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["AdminMessage"]</div>
-}
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="admin-alert success">@TempData["AdminMessage"]</div>
+    }
 
-@if (TempData["AdminError"] != null)
-{
-    <div class="alert alert-danger">@TempData["AdminError"]</div>
-}
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="admin-alert danger">@TempData["AdminError"]</div>
+    }
 
-<form method="get" class="admin-card admin-search">
-    <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by ID, full name, or email" />
-    <button type="submit">Search</button>
-</form>
+    <form method="get" class="admin-search">
+        <div class="admin-search-input">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by ID, full name, or email" />
+        </div>
+        <button type="submit">Search</button>
+    </form>
 
-<section class="admin-card p-0">
-    <div class="admin-card-header">
-        <h2>@Model.AccountType List</h2>
-        <span>@Model.Accounts.Count account(s)</span>
-    </div>
-    <div class="table-responsive">
-        <table class="table admin-table mb-0">
-            <thead>
-                <tr>
-                    <th>@Model.AccountType ID</th>
-                    <th>Full Name</th>
-                    <th>Email</th>
-                    @if (isLecturer)
-                    {
-                        <th>Department</th>
-                    }
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var account in Model.Accounts)
-                {
+    <section class="admin-card admin-table-card">
+        <div class="admin-card-header">
+            <h2>@Model.AccountType List</h2>
+            <span>@Model.Accounts.Count account(s)</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
                     <tr>
-                        <td><code>@account.Id</code></td>
-                        <td>@account.FullName</td>
-                        <td>@account.Email</td>
+                        <th>@Model.AccountType ID</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
                         @if (isLecturer)
                         {
-                            <td>@account.Department</td>
+                            <th>Department</th>
                         }
-                        <td>
-                            <span class="admin-status @(account.Status == "Active" ? "is-active" : "is-locked")">@account.Status</span>
-                        </td>
-                        <td class="admin-actions">
-                            <a asp-controller="Admin" asp-action="EditAccount" asp-route-id="@account.Id">Edit</a>
-                            @if (account.Status == "Active")
-                            {
-                                <form asp-controller="Admin" asp-action="LockAccount" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@account.Id" />
-                                    <input type="hidden" name="accountType" value="@Model.AccountType" />
-                                    <button type="submit">Lock</button>
-                                </form>
-                            }
-                            else
-                            {
-                                <form asp-controller="Admin" asp-action="UnlockAccount" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@account.Id" />
-                                    <input type="hidden" name="accountType" value="@Model.AccountType" />
-                                    <button type="submit">Unlock</button>
-                                </form>
-                            }
-                            <form asp-controller="Admin" asp-action="DeleteAccount" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@account.Id" />
-                                <input type="hidden" name="accountType" value="@Model.AccountType" />
-                                <button type="submit" class="danger" onclick="return confirm('Delete this account?');">Delete</button>
-                            </form>
-                        </td>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-</section>
+                </thead>
+                <tbody>
+                    @foreach (var account in Model.Accounts)
+                    {
+                        <tr>
+                            <td><code>@account.Id</code></td>
+                            <td>@account.FullName</td>
+                            <td>@account.Email</td>
+                            @if (isLecturer)
+                            {
+                                <td>@account.Department</td>
+                            }
+                            <td>
+                                <span class="admin-status @(account.Status == "Active" ? "is-active" : "is-locked")">@account.Status</span>
+                            </td>
+                            <td class="admin-actions">
+                                <a asp-controller="Admin" asp-action="EditAccount" asp-route-id="@account.Id" title="Edit">Edit</a>
+                                @if (account.Status == "Active")
+                                {
+                                    <form asp-controller="Admin" asp-action="LockAccount" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@account.Id" />
+                                        <input type="hidden" name="accountType" value="@Model.AccountType" />
+                                        <button type="submit">Lock</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-controller="Admin" asp-action="UnlockAccount" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@account.Id" />
+                                        <input type="hidden" name="accountType" value="@Model.AccountType" />
+                                        <button type="submit">Unlock</button>
+                                    </form>
+                                }
+                                <form asp-controller="Admin" asp-action="DeleteAccount" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@account.Id" />
+                                    <input type="hidden" name="accountType" value="@Model.AccountType" />
+                                    <button type="submit" class="danger" onclick="return confirm('Delete this account?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Accounts.Count == 0)
+        {
+            <div class="admin-empty-state">No matching accounts found.</div>
+        }
+    </section>
+</div>
