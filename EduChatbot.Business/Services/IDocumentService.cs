@@ -10,6 +10,14 @@ public interface IDocumentService
 
     Task<Document?> GetDocumentDetailsAsync(int id, string? currentUserId = null, bool isAdmin = false);
 
+    Task<DocumentUploadResult> UpdateDocumentAsync(
+        int id,
+        string fileName,
+        string uploadedBy,
+        string status,
+        string? currentUserId = null,
+        bool isAdmin = false);
+
     Task<bool> DeleteDocumentAsync(int id, string webRootPath, string? currentUserId = null, bool isAdmin = false);
 
     Task<DocumentUploadResult> UploadDocumentAsync(

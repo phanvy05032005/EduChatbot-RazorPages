@@ -1,4 +1,5 @@
 using EduChatbot.Business.Services;
+using EduChatbot.MVC.Models;
 using EduChatbot.Models.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -83,6 +84,60 @@ public class DocumentsController : Controller
         }
 
         return View(document);
+    }
+
+    [Authorize(Roles = ApplicationRoles.DocumentManagers)]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var document = await _documentService.GetDocumentDetailsAsync(
+            id,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            User.IsInRole(ApplicationRoles.Admin));
+        if (document == null)
+        {
+            return NotFound();
+        }
+
+        return View(new DocumentEditViewModel
+        {
+            Id = document.Id,
+            FileName = document.FileName,
+            UploadedBy = document.UploadedBy,
+            Status = document.Status,
+            StoredFileName = document.StoredFileName,
+            FilePath = document.FilePath
+        });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = ApplicationRoles.DocumentManagers)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(DocumentEditViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var result = await _documentService.UpdateDocumentAsync(
+            model.Id,
+            model.FileName,
+            model.UploadedBy,
+            model.Status,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            User.IsInRole(ApplicationRoles.Admin));
+
+        if (!result.IsSuccess)
+        {
+            ModelState.AddModelError(string.Empty, result.Message);
+            return View(model);
+        }
+
+        TempData["UploadMessage"] = result.Message;
+        TempData["ChunkCount"] = result.ChunkCount;
+        TempData["IndexStatus"] = result.Status;
+
+        return RedirectToAction(nameof(Details), new { id = model.Id });
     }
 
     [Authorize(Roles = ApplicationRoles.DocumentManagers)]

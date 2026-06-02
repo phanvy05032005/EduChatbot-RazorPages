@@ -14,22 +14,23 @@ namespace EduChatbot.Business.Services;
 
 public class DocumentService : IDocumentService
 {
-    private const long MaxFileSize = 10 * 1024 * 1024;
     private const string StatusProcessing = "Processing";
     private const string StatusCompleted = "Completed";
     private const string StatusFailed = "Failed";
-    private static readonly string[] AllowedExtensions = [".pdf", ".docx"];
 
     private readonly IDocumentRepository _documentRepository;
+    private readonly IDocumentUploadRules _documentUploadRules;
     private readonly IEmbeddingService _embeddingService;
     private readonly ILogger<DocumentService> _logger;
 
     public DocumentService(
         IDocumentRepository documentRepository,
+        IDocumentUploadRules documentUploadRules,
         IEmbeddingService embeddingService,
         ILogger<DocumentService> logger)
     {
         _documentRepository = documentRepository;
+        _documentUploadRules = documentUploadRules;
         _embeddingService = embeddingService;
         _logger = logger;
     }
@@ -56,6 +57,52 @@ public class DocumentService : IDocumentService
     {
         var ownerFilter = isAdmin ? null : currentUserId;
         return await _documentRepository.GetByIdAsync(id, ownerFilter);
+    }
+
+    public async Task<DocumentUploadResult> UpdateDocumentAsync(
+        int id,
+        string fileName,
+        string uploadedBy,
+        string status,
+        string? currentUserId = null,
+        bool isAdmin = false)
+    {
+        var validationMessage = ValidateDocumentMetadata(fileName, uploadedBy, status);
+        if (!string.IsNullOrWhiteSpace(validationMessage))
+        {
+            return new DocumentUploadResult
+            {
+                IsSuccess = false,
+                Message = validationMessage
+            };
+        }
+
+        var ownerFilter = isAdmin ? null : currentUserId;
+        var document = await _documentRepository.GetByIdAsync(id, ownerFilter);
+        if (document == null)
+        {
+            return new DocumentUploadResult
+            {
+                IsSuccess = false,
+                Message = "Document not found.",
+                Status = StatusFailed
+            };
+        }
+
+        document.FileName = fileName.Trim();
+        document.UploadedBy = NormalizeUploadedBy(uploadedBy);
+        document.Status = status.Trim();
+
+        await _documentRepository.UpdateAsync(document);
+
+        return new DocumentUploadResult
+        {
+            IsSuccess = true,
+            Message = "Document updated successfully.",
+            DocumentId = document.Id,
+            ChunkCount = document.ChunkCount,
+            Status = document.Status
+        };
     }
 
     public async Task<DocumentUploadResult> UploadDocumentAsync(
@@ -194,7 +241,7 @@ public class DocumentService : IDocumentService
         return true;
     }
 
-    private static string ValidateFile(string fileName, long fileSize)
+    private string ValidateFile(string fileName, long fileSize)
     {
         if (string.IsNullOrWhiteSpace(fileName))
         {
@@ -206,15 +253,45 @@ public class DocumentService : IDocumentService
             return "File upload không hợp lệ.";
         }
 
-        if (fileSize > MaxFileSize)
+        if (fileSize > _documentUploadRules.MaxFileSizeBytes)
         {
             return "File không được vượt quá 10 MB.";
         }
 
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        if (!AllowedExtensions.Contains(extension))
+        if (!_documentUploadRules.IsAllowedExtension(extension))
         {
             return "Chỉ hỗ trợ file PDF hoặc DOCX.";
+        }
+
+        return string.Empty;
+    }
+
+    private string ValidateDocumentMetadata(string fileName, string uploadedBy, string status)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return "File name is required.";
+        }
+
+        if (fileName.Trim().Length > 255)
+        {
+            return "File name cannot exceed 255 characters.";
+        }
+
+        if (string.IsNullOrWhiteSpace(uploadedBy))
+        {
+            return "Lecturer name is required.";
+        }
+
+        if (uploadedBy.Trim().Length > 100)
+        {
+            return "Lecturer name cannot exceed 100 characters.";
+        }
+
+        if (!_documentUploadRules.IsAllowedStatus(status))
+        {
+            return "Invalid document status.";
         }
 
         return string.Empty;

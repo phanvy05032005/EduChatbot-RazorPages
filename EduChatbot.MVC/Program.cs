@@ -28,7 +28,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Documents}/{action=Dashboard}/{id?}")
+    pattern: "{controller=Admin}/{action=Dashboard}/{id?}")
     .WithStaticAssets();
 
 await app.Services.SeedEduChatbotIdentityAsync();

@@ -68,6 +68,12 @@ public class DocumentRepository : IDocumentRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateAsync(Document document)
+    {
+        _context.Entry(document).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+    }
+
     public async Task DeleteAsync(Document document)
     {
         _context.Documents.Remove(document);

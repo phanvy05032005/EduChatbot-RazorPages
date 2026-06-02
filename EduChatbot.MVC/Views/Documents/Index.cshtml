@@ -73,6 +73,7 @@ else
                         <td class="text-nowrap">
                             <a href="@document.FilePath" target="_blank" class="btn btn-sm btn-outline-primary">Open</a>
                             <a asp-controller="Documents" asp-action="Details" asp-route-id="@document.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                            <a asp-controller="Documents" asp-action="Edit" asp-route-id="@document.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                             <form asp-controller="Documents" asp-action="Delete" asp-route-id="@document.Id" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document and its chunks?');">Delete</button>

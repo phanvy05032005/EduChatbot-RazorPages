@@ -1,0 +1,58 @@
+@model EduChatbot.MVC.Models.DocumentEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Document";
+    var statuses = new[] { "Completed", "Processing", "Failed" };
+}
+
+<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Edit document</h1>
+        <p class="text-muted mb-0">Update document metadata without changing the uploaded file or embeddings.</p>
+    </div>
+    <div>
+        <a asp-controller="Documents" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Back</a>
+        <a href="@Model.FilePath" target="_blank" class="btn btn-primary">Open file</a>
+    </div>
+</div>
+
+<form asp-controller="Documents" asp-action="Edit" method="post" class="surface p-3">
+    @Html.AntiForgeryToken()
+    <input asp-for="Id" type="hidden" />
+    <input asp-for="StoredFileName" type="hidden" />
+    <input asp-for="FilePath" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label asp-for="FileName" class="form-label">File name</label>
+        <input asp-for="FileName" class="form-control" maxlength="255" />
+        <span asp-validation-for="FileName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="UploadedBy" class="form-label">Lecturer</label>
+        <input asp-for="UploadedBy" class="form-control" maxlength="100" />
+        <span asp-validation-for="UploadedBy" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Status" class="form-label">Status</label>
+        <select asp-for="Status" class="form-select">
+            @foreach (var status in statuses)
+            {
+                <option value="@status">@status</option>
+            }
+        </select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save changes</button>
+        <a asp-controller="Documents" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

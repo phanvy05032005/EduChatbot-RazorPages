@@ -1,0 +1,38 @@
+@model EduChatbot.MVC.Models.AdminStatisticsViewModel
+
+@{
+    ViewData["Title"] = "Statistics";
+    var items = new[]
+    {
+        new { Label = "Total Students", Value = Model.TotalStudents },
+        new { Label = "Total Lecturers", Value = Model.TotalLecturers },
+        new { Label = "Total Documents", Value = Model.TotalDocuments },
+        new { Label = "Total Questions Asked", Value = Model.TotalQuestionsAsked }
+    };
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1>Statistics</h1>
+        <p>Administrative totals for users, documents, and submitted questions.</p>
+    </div>
+</div>
+
+<section class="admin-card">
+    <div class="admin-card-header">
+        <h2>System Totals</h2>
+    </div>
+    <div class="simple-chart">
+        @foreach (var item in items)
+        {
+            var width = Math.Max(8, item.Value * 100 / Model.MaxValue);
+            <div class="chart-row">
+                <label>@item.Label</label>
+                <div class="chart-track">
+                    <div class="chart-bar" style="width: @(width)%"></div>
+                </div>
+                <strong>@item.Value</strong>
+            </div>
+        }
+    </div>
+</section>

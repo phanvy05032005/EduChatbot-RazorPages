@@ -1,0 +1,46 @@
+@model EduChatbot.MVC.Models.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Overall administration summary for the academic chatbot system.</p>
+    </div>
+</div>
+
+<div class="admin-metric-grid">
+    <div class="admin-card metric-card">
+        <span>Total Students</span>
+        <strong>@Model.TotalStudents</strong>
+    </div>
+    <div class="admin-card metric-card">
+        <span>Total Lecturers</span>
+        <strong>@Model.TotalLecturers</strong>
+    </div>
+    <div class="admin-card metric-card">
+        <span>Total Documents in System</span>
+        <strong>@Model.TotalDocuments</strong>
+    </div>
+    <div class="admin-card metric-card">
+        <span>Total Chat Questions</span>
+        <strong>@Model.TotalChatQuestions</strong>
+    </div>
+</div>
+
+<section class="admin-card mt-3">
+    <div class="admin-card-header">
+        <h2>Recent Activities</h2>
+    </div>
+    <ul class="activity-list">
+        @foreach (var activity in Model.RecentActivities)
+        {
+            <li>
+                <span></span>
+                @activity
+            </li>
+        }
+    </ul>
+</section>

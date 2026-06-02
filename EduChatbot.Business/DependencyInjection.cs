@@ -40,7 +40,9 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddSingleton<IDocumentUploadRules, DocumentUploadRules>();
         services.AddScoped<IDocumentService, DocumentService>();
+        services.AddScoped<IAdminService, AdminService>();
 
         services.AddScoped<IChatRepository, ChatRepository>();
         services.AddScoped<IChatService, ChatService>();

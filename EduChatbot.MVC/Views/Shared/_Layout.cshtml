@@ -13,6 +13,83 @@
     <link rel="stylesheet" href="~/EduChatbot.MVC.styles.css" asp-append-version="true" />
 </head>
 <body class="app-shell">
+@if (User.IsInRole("Admin"))
+{
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="admin-brand">
+                <span class="admin-brand-mark">EC</span>
+                <div>
+                    <strong>EduChatbot</strong>
+                    <small>Admin Panel</small>
+                </div>
+            </div>
+            <nav class="admin-menu">
+                <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                <a asp-controller="Admin" asp-action="Students">Student Accounts</a>
+                <a asp-controller="Admin" asp-action="Lecturers">Lecturer Accounts</a>
+                <a asp-controller="Admin" asp-action="Roles">Role Management</a>
+                <a asp-controller="Admin" asp-action="System">System Management</a>
+                <a asp-controller="Admin" asp-action="Statistics">Statistics</a>
+            </nav>
+            <form asp-controller="Account" asp-action="Logout" method="post" class="admin-logout">
+                @Html.AntiForgeryToken()
+                <button type="submit">Logout</button>
+            </form>
+        </aside>
+        <div class="admin-content">
+            <header class="admin-topbar">
+                <div>
+                    <span>Academic Chatbot System</span>
+                    <strong>@ViewData["Title"]</strong>
+                </div>
+                <div class="admin-user">@User.Identity?.Name</div>
+            </header>
+            <main role="main" class="admin-main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+}
+else
+{
+    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Lecturer"))
+    {
+        <div class="role-shell">
+            <aside class="role-sidebar">
+                <div class="role-brand">
+                    <span class="role-brand-mark">LE</span>
+                    <div>
+                        <strong>EduChatbot</strong>
+                        <small>Lecturer Portal</small>
+                    </div>
+                </div>
+                <nav class="role-menu">
+                    <a asp-controller="Documents" asp-action="Dashboard">Dashboard</a>
+                    <a asp-controller="Documents" asp-action="Index">Learning Materials</a>
+                    <a asp-controller="Documents" asp-action="Upload">Upload Document</a>
+                </nav>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="role-logout">
+                    @Html.AntiForgeryToken()
+                    <button type="submit">Logout</button>
+                </form>
+            </aside>
+            <div class="role-content">
+                <header class="role-topbar">
+                    <div>
+                        <span>Academic Chatbot System</span>
+                        <strong>@ViewData["Title"]</strong>
+                    </div>
+                    <div class="role-user">@User.Identity?.Name</div>
+                </header>
+                <main role="main" class="role-main">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+    else
+    {
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom mb-4">
             <div class="container">
@@ -29,7 +106,7 @@
                                 <a class="nav-link" asp-area="" asp-controller="Chat" asp-action="Index">Chat</a>
                             </li>
                         }
-                        @if (User.IsInRole("Lecturer") || User.IsInRole("Admin"))
+                        @if (User.IsInRole("Lecturer"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Documents" asp-action="Dashboard">Dashboard</a>
@@ -39,12 +116,6 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Documents" asp-action="Upload">Upload</a>
-                            </li>
-                        }
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
                             </li>
                         }
                     </ul>
@@ -80,6 +151,8 @@
             @RenderBody()
         </main>
     </div>
+    }
+}
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

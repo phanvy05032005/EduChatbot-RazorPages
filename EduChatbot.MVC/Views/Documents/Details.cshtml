@@ -11,9 +11,22 @@
     </div>
     <div>
         <a asp-controller="Documents" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+        <a asp-controller="Documents" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit</a>
         <a href="@Model.FilePath" target="_blank" class="btn btn-primary">Open file</a>
     </div>
 </div>
+
+@if (TempData["UploadMessage"] != null)
+{
+    <div class="alert alert-success">
+        <strong>@TempData["UploadMessage"]</strong>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
 
 <div class="surface p-3 mb-3">
     <div class="row g-3 info-grid">

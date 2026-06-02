@@ -1,0 +1,29 @@
+@model List<EduChatbot.MVC.Models.AdminRolePermissionViewModel>
+
+@{
+    ViewData["Title"] = "Role Management";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1>Role Management</h1>
+        <p>Clean overview of roles and permissions in the academic chatbot system.</p>
+    </div>
+</div>
+
+<div class="role-grid">
+    @foreach (var role in Model)
+    {
+        <section class="admin-card role-card">
+            <div class="admin-card-header">
+                <h2>@role.RoleName</h2>
+            </div>
+            <ul class="permission-list">
+                @foreach (var permission in role.Permissions)
+                {
+                    <li>@permission</li>
+                }
+            </ul>
+        </section>
+    }
+</div>

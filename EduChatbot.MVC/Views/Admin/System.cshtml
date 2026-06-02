@@ -1,0 +1,35 @@
+@model EduChatbot.MVC.Models.AdminSystemStatusViewModel
+
+@{
+    ViewData["Title"] = "System Management";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1>System Management</h1>
+        <p>Basic system status and maintenance controls.</p>
+    </div>
+    <div class="admin-header-actions">
+        <a asp-controller="Admin" asp-action="System" class="admin-secondary-btn">Refresh Status</a>
+        <button type="button" class="admin-primary-btn">Backup System</button>
+    </div>
+</div>
+
+<div class="system-grid">
+    <div class="admin-card system-card">
+        <span>Database Status</span>
+        <strong>@Model.DatabaseStatus</strong>
+    </div>
+    <div class="admin-card system-card">
+        <span>Application Status</span>
+        <strong>@Model.ApplicationStatus</strong>
+    </div>
+    <div class="admin-card system-card">
+        <span>Storage Usage</span>
+        <strong>@Model.StorageUsage</strong>
+    </div>
+    <div class="admin-card system-card">
+        <span>System Version</span>
+        <strong>@Model.SystemVersion</strong>
+    </div>
+</div>
