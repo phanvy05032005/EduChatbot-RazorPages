@@ -4,74 +4,85 @@
     ViewData["Title"] = "Document Details";
 }
 
-<div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-    <div>
-        <h1 class="h4 mb-1">@Model.FileName</h1>
-        <p class="text-muted mb-0">Chunk and real embedding preview.</p>
-    </div>
-    <div>
-        <a asp-controller="Documents" asp-action="Index" class="btn btn-outline-secondary">Back</a>
-        <a asp-controller="Documents" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit</a>
-        <a href="@Model.FilePath" target="_blank" class="btn btn-primary">Open file</a>
-    </div>
-</div>
-
-@if (TempData["UploadMessage"] != null)
-{
-    <div class="alert alert-success">
-        <strong>@TempData["UploadMessage"]</strong>
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-}
-
-<div class="surface p-3 mb-3">
-    <div class="row g-3 info-grid">
-        <div class="col-md-3"><span>Status</span><strong>@Model.Status</strong></div>
-        <div class="col-md-3"><span>Chunks</span><strong>@Model.ChunkCount</strong></div>
-        <div class="col-md-3"><span>Lecturer</span><strong>@Model.UploadedBy</strong></div>
-        <div class="col-md-3"><span>Uploaded</span><strong>@Model.UploadedAt.ToString("dd/MM/yyyy HH:mm")</strong></div>
-    </div>
-</div>
-
-@if (!Model.Chunks.Any())
-{
-    <div class="alert alert-warning">Document này chưa có chunk data.</div>
-}
-else
-{
-    <div class="surface p-0">
-        <div class="table-toolbar px-3 py-2 border-bottom">Chunks and embeddings</div>
-        <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 90px;">Index</th>
-                    <th>Content</th>
-                    <th style="width: 260px;">Embedding preview</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var chunk in Model.Chunks)
-                {
-                    <tr>
-                        <td>@chunk.ChunkIndex</td>
-                        <td>@chunk.Content</td>
-                        <td>
-                            @{
-                                var embeddingPreview = chunk.Embedding == null
-                                    ? "No embedding"
-                                    : string.Join(", ", chunk.Embedding.ToArray().Take(8).Select(value => value.ToString("0.0000"))) + " ...";
-                            }
-                            <code>@embeddingPreview</code>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker">Document</div>
+            <h1>@Model.FileName</h1>
+            <p>Chunk details and real embedding preview.</p>
         </div>
+        <div class="role-header-actions">
+            <a asp-controller="Documents" asp-action="Index" class="role-secondary-btn">Back</a>
+            <a asp-controller="Documents" asp-action="Edit" asp-route-id="@Model.Id" class="role-secondary-btn">Edit</a>
+            <a href="@Model.FilePath" target="_blank" class="role-primary-btn">Open file</a>
+        </div>
+    </header>
+
+    @if (TempData["UploadMessage"] != null)
+    {
+        <div class="role-alert success"><strong>@TempData["UploadMessage"]</strong></div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="role-alert danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="role-info-grid">
+        <article>
+            <span>Status</span>
+            <strong>@Model.Status</strong>
+        </article>
+        <article>
+            <span>Chunks</span>
+            <strong>@Model.ChunkCount</strong>
+        </article>
+        <article>
+            <span>Lecturer</span>
+            <strong>@Model.UploadedBy</strong>
+        </article>
+        <article>
+            <span>Uploaded</span>
+            <strong>@Model.UploadedAt.ToString("dd/MM/yyyy HH:mm")</strong>
+        </article>
     </div>
-}
+
+    @if (!Model.Chunks.Any())
+    {
+        <div class="role-alert warning">Document này chưa có chunk data.</div>
+    }
+    else
+    {
+        <div class="role-table-card">
+            <div class="role-table-toolbar">Chunks and embeddings</div>
+            <div class="table-responsive">
+                <table class="table role-table role-chunk-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Content</th>
+                            <th>Embedding preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var chunk in Model.Chunks)
+                        {
+                            <tr>
+                                <td><span class="role-chunk-index">@chunk.ChunkIndex</span></td>
+                                <td>@chunk.Content</td>
+                                <td>
+                                    @{
+                                        var embeddingPreview = chunk.Embedding == null
+                                            ? "No embedding"
+                                            : string.Join(", ", chunk.Embedding.ToArray().Take(8).Select(value => value.ToString("0.0000"))) + " ...";
+                                    }
+                                    <code>@embeddingPreview</code>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

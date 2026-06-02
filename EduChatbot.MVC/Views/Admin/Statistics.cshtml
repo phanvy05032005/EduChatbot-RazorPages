@@ -4,35 +4,66 @@
     ViewData["Title"] = "Statistics";
     var items = new[]
     {
-        new { Label = "Total Students", Value = Model.TotalStudents },
-        new { Label = "Total Lecturers", Value = Model.TotalLecturers },
-        new { Label = "Total Documents", Value = Model.TotalDocuments },
-        new { Label = "Total Questions Asked", Value = Model.TotalQuestionsAsked }
+        new { Label = "Total Students", Value = Model.TotalStudents, Tone = "success" },
+        new { Label = "Total Lecturers", Value = Model.TotalLecturers, Tone = "accent" },
+        new { Label = "Total Documents", Value = Model.TotalDocuments, Tone = "light" },
+        new { Label = "Total Questions Asked", Value = Model.TotalQuestionsAsked, Tone = "warning" }
+    };
+    var topics = new[]
+    {
+        new { Name = "ASP.NET", Value = Math.Max(Model.TotalQuestionsAsked, 1) },
+        new { Name = "EF Core", Value = Math.Max(Model.TotalDocuments, 1) },
+        new { Name = "MVC", Value = Math.Max(Model.TotalLecturers, 1) },
+        new { Name = "SQL", Value = Math.Max(Model.TotalStudents, 1) }
     };
 }
 
-<div class="admin-page-header">
-    <div>
-        <h1>Statistics</h1>
-        <p>Administrative totals for users, documents, and submitted questions.</p>
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <div class="admin-kicker">Analytics</div>
+            <h1>Thống kê <span class="admin-serif">hệ thống</span></h1>
+            <p>Hoạt động sử dụng và xu hướng dữ liệu tổng quan.</p>
+        </div>
     </div>
-</div>
 
-<section class="admin-card">
-    <div class="admin-card-header">
-        <h2>System Totals</h2>
-    </div>
-    <div class="simple-chart">
-        @foreach (var item in items)
-        {
-            var width = Math.Max(8, item.Value * 100 / Model.MaxValue);
-            <div class="chart-row">
-                <label>@item.Label</label>
-                <div class="chart-track">
-                    <div class="chart-bar" style="width: @(width)%"></div>
+    <section class="admin-card admin-stat-chart">
+        <div class="admin-card-header">
+            <h2>System Totals</h2>
+            <span>Current snapshot</span>
+        </div>
+        <div class="simple-chart">
+            @foreach (var item in items)
+            {
+                var width = Math.Max(8, item.Value * 100 / Model.MaxValue);
+                <div class="chart-row @item.Tone">
+                    <label>@item.Label</label>
+                    <div class="chart-track">
+                        <div class="chart-bar" style="width: @(width)%"></div>
+                    </div>
+                    <strong>@item.Value.ToString("N0")</strong>
                 </div>
-                <strong>@item.Value</strong>
-            </div>
-        }
-    </div>
-</section>
+            }
+        </div>
+    </section>
+
+    <section class="admin-card admin-stat-chart mt-3">
+        <div class="admin-card-header">
+            <h2>Top topics</h2>
+            <span>Relative activity</span>
+        </div>
+        <div class="topic-bars">
+            @foreach (var topic in topics)
+            {
+                var width = Math.Max(8, topic.Value * 100 / topics.Max(t => t.Value));
+                <div class="topic-row">
+                    <span>@topic.Name</span>
+                    <div class="chart-track">
+                        <div class="chart-bar" style="width: @(width)%"></div>
+                    </div>
+                    <strong>@topic.Value</strong>
+                </div>
+            }
+        </div>
+    </section>
+</div>

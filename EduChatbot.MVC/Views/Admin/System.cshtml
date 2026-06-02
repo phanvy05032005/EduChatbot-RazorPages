@@ -2,34 +2,68 @@
 
 @{
     ViewData["Title"] = "System Management";
+    var items = new[]
+    {
+        new { Label = "Database Status", Value = Model.DatabaseStatus, Detail = "PostgreSQL connection", Tone = Model.DatabaseStatus == "Connected" ? "success" : "danger", Icon = "▣" },
+        new { Label = "Application Status", Value = Model.ApplicationStatus, Detail = "ASP.NET Core MVC", Tone = "success", Icon = "▭" },
+        new { Label = "Storage Usage", Value = Model.StorageUsage, Detail = "Uploaded documents", Tone = "accent", Icon = "▤" },
+        new { Label = "System Version", Value = Model.SystemVersion, Detail = "Current assembly", Tone = "light", Icon = "◇" }
+    };
 }
 
-<div class="admin-page-header">
-    <div>
-        <h1>System Management</h1>
-        <p>Basic system status and maintenance controls.</p>
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <div class="admin-kicker">System · Health</div>
+            <h1>Quản lý <span class="admin-serif">hệ thống</span></h1>
+            <p>Trạng thái các dịch vụ và cấu hình hệ thống.</p>
+        </div>
+        <div class="admin-header-actions">
+            <a asp-controller="Admin" asp-action="System" class="admin-secondary-btn">Refresh Status</a>
+            <button type="button" class="admin-primary-btn">Backup System</button>
+        </div>
     </div>
-    <div class="admin-header-actions">
-        <a asp-controller="Admin" asp-action="System" class="admin-secondary-btn">Refresh Status</a>
-        <button type="button" class="admin-primary-btn">Backup System</button>
-    </div>
-</div>
 
-<div class="system-grid">
-    <div class="admin-card system-card">
-        <span>Database Status</span>
-        <strong>@Model.DatabaseStatus</strong>
+    <div class="system-grid">
+        @foreach (var item in items)
+        {
+            <article class="admin-card system-card @item.Tone">
+                <div class="system-card-top">
+                    <span class="system-icon" aria-hidden="true">@item.Icon</span>
+                    <i aria-hidden="true"></i>
+                </div>
+                <span>@item.Label</span>
+                <strong>@item.Value</strong>
+                <small>@item.Detail</small>
+            </article>
+        }
     </div>
-    <div class="admin-card system-card">
-        <span>Application Status</span>
-        <strong>@Model.ApplicationStatus</strong>
-    </div>
-    <div class="admin-card system-card">
-        <span>Storage Usage</span>
-        <strong>@Model.StorageUsage</strong>
-    </div>
-    <div class="admin-card system-card">
-        <span>System Version</span>
-        <strong>@Model.SystemVersion</strong>
+
+    <div class="admin-config-grid">
+        <section class="admin-card admin-config-card">
+            <div class="admin-card-header">
+                <h2>AI Configuration</h2>
+                <span>Runtime</span>
+            </div>
+            <dl>
+                <div><dt>Model</dt><dd>OpenRouter configured</dd></div>
+                <div><dt>Temperature</dt><dd>0.3</dd></div>
+                <div><dt>Max tokens</dt><dd>2048</dd></div>
+                <div><dt>Embedding</dt><dd>Vector search enabled</dd></div>
+            </dl>
+        </section>
+
+        <section class="admin-card admin-config-card">
+            <div class="admin-card-header">
+                <h2>Document Pipeline</h2>
+                <span>Storage</span>
+            </div>
+            <dl>
+                <div><dt>Chunk size</dt><dd>512 tokens</dd></div>
+                <div><dt>Overlap</dt><dd>64 tokens</dd></div>
+                <div><dt>Formats</dt><dd>PDF, DOCX</dd></div>
+                <div><dt>Database</dt><dd>@Model.DatabaseStatus</dd></div>
+            </dl>
+        </section>
     </div>
 </div>

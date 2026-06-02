@@ -29,6 +29,7 @@ public class ChatController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var conversation = await _chatService.GetOrCreateConversationAsync(id, userId);
+        ViewBag.Conversations = await _chatService.GetConversationsAsync(userId);
         return View(conversation);
     }
 
