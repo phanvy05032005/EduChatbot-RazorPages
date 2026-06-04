@@ -81,7 +81,7 @@ public class AdminService : IAdminService
         };
     }
 
-    public async Task<AdminOperationResult> CreateAccountAsync(string fullName, string email, string password, string role, bool sendEmail = false)
+    public async Task<AdminOperationResult> CreateAccountAsync(string fullName, string email, string password, string role, bool sendEmail = false, List<int>? courseIds = null)
     {
         if (!IsManageableRole(role))
         {
@@ -109,18 +109,47 @@ public class AdminService : IAdminService
             return Failure(string.Join(" ", roleResult.Errors.Select(error => error.Description)));
         }
 
+        // Phân công giảng viên dạy danh sách môn học đã chọn
+        var assignedCourseNames = new List<string>();
+        if (role == ApplicationRoles.Lecturer && courseIds != null && courseIds.Count > 0)
+        {
+            foreach (var courseId in courseIds)
+            {
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course != null)
+                {
+                    assignedCourseNames.Add($"{course.Code} - {course.Name}");
+                    var existing = await _context.LecturerCourses
+                        .AnyAsync(lc => lc.LecturerId == user.Id && lc.CourseId == courseId);
+                    if (!existing)
+                    {
+                        _context.LecturerCourses.Add(new LecturerCourse
+                        {
+                            LecturerId = user.Id,
+                            CourseId = courseId
+                        });
+                    }
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
+
         if (sendEmail)
         {
             try
             {
                 var subject = "[EduChatbot] Thông tin tài khoản mới";
+                var courseInfo = assignedCourseNames.Count > 0
+                    ? $"\n- Môn học phụ trách: {string.Join(", ", assignedCourseNames)}"
+                    : "";
+
                 var body = $@"Xin chào {fullName.Trim()},
 
 Tài khoản {role.ToLower()} của bạn đã được tạo trên hệ thống EduChatbot bởi Quản trị viên.
 
 Thông tin đăng nhập của bạn:
 - Email đăng nhập: {email.Trim()}
-- Mật khẩu: {password}
+- Mật khẩu: {password}{courseInfo}
 
 Trân trọng,
 Hệ thống EduChatbot";

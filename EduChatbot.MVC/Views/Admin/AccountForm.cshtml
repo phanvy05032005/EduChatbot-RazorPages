@@ -44,6 +44,31 @@
                 <span asp-validation-for="Password" class="admin-validation"></span>
             </div>
 
+            @if (Model.AccountType == EduChatbot.Models.Identity.ApplicationRoles.Lecturer)
+            {
+                <div class="admin-field">
+                    <label>Môn học phụ trách</label>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; background: rgba(228, 240, 246, 0.03); border: 1px solid var(--admin-border); padding: 0.8rem; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                        @if (Model.AvailableCourses.Count == 0)
+                        {
+                            <em style="color: rgba(228, 240, 246, 0.5);">Chưa có môn học nào được tạo. Hãy tạo môn học trước.</em>
+                        }
+                        else
+                        {
+                            @foreach (var course in Model.AvailableCourses)
+                            {
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" name="SelectedCourseIds" value="@course.Id" id="course_@course.Id" style="width: auto; min-height: auto; cursor: pointer;" />
+                                    <label for="course_@course.Id" style="margin-bottom: 0; cursor: pointer; text-transform: none; letter-spacing: normal; font-weight: normal; color: var(--admin-text);">
+                                        <strong>@course.Code</strong> - @course.Name
+                                    </label>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
             <div class="admin-field" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
                 <input asp-for="SendEmail" type="checkbox" id="SendEmail" style="width: auto; min-height: auto; cursor: pointer;" />
                 <label for="SendEmail" style="margin-bottom: 0; cursor: pointer; text-transform: none; letter-spacing: normal; font-weight: 500;">Gửi email thông báo tài khoản</label>

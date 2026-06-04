@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using EduChatbot.Models;
 
 namespace EduChatbot.MVC.Models;
 
@@ -22,5 +23,12 @@ public class AdminAccountFormViewModel
 
     public bool SendEmail { get; set; } = false;
 
+
+
+    public List<int> SelectedCourseIds { get; set; } = [];
+
+    public List<Course> AvailableCourses { get; set; } = [];
+
     public bool IsEdit => !string.IsNullOrWhiteSpace(Id);
 }
+
