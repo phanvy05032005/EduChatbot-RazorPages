@@ -56,48 +56,6 @@ public class AccountController : Controller
         return View(model);
     }
 
-    [HttpGet]
-    public IActionResult Register()
-    {
-        return View(new RegisterViewModel());
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(RegisterViewModel model)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        var role = model.Role == ApplicationRoles.Lecturer
-            ? ApplicationRoles.Lecturer
-            : ApplicationRoles.Student;
-
-        var user = new ApplicationUser
-        {
-            UserName = model.Email,
-            Email = model.Email,
-            FullName = model.FullName,
-            EmailConfirmed = true
-        };
-
-        var result = await _userManager.CreateAsync(user, model.Password);
-        if (result.Succeeded)
-        {
-            await _userManager.AddToRoleAsync(user, role);
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return await RedirectByRoleAsync(user);
-        }
-
-        foreach (var error in result.Errors)
-        {
-            ModelState.AddModelError(string.Empty, error.Description);
-        }
-
-        return View(model);
-    }
 
     [Authorize]
     [HttpPost]

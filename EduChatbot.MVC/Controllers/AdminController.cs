@@ -80,11 +80,13 @@ public class AdminController : Controller
         });
     }
 
-    public IActionResult CreateLecturer()
+    public async Task<IActionResult> CreateLecturer()
     {
+        var courses = await _adminService.GetCoursesAsync();
         return View("AccountForm", new AdminAccountFormViewModel
         {
-            AccountType = ApplicationRoles.Lecturer
+            AccountType = ApplicationRoles.Lecturer,
+            AvailableCourses = courses
         });
     }
 
@@ -99,6 +101,10 @@ public class AdminController : Controller
 
         if (!ModelState.IsValid)
         {
+            if (model.AccountType == ApplicationRoles.Lecturer)
+            {
+                model.AvailableCourses = await _adminService.GetCoursesAsync();
+            }
             return View("AccountForm", model);
         }
 
@@ -107,11 +113,16 @@ public class AdminController : Controller
             model.Email,
             model.Password!,
             model.AccountType,
-            model.SendEmail);
+            model.SendEmail,
+            model.SelectedCourseIds);
 
         if (!result.IsSuccess)
         {
             ModelState.AddModelError(string.Empty, result.Message);
+            if (model.AccountType == ApplicationRoles.Lecturer)
+            {
+                model.AvailableCourses = await _adminService.GetCoursesAsync();
+            }
             return View("AccountForm", model);
         }
 

@@ -495,3 +495,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Email logs generated during development
+EduChatbot.MVC/email-logs/
+

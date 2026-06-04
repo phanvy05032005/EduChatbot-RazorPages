@@ -11,7 +11,7 @@ public interface IAdminService
 
     Task<AdminAccountEditInfo?> GetAccountForEditAsync(string id);
 
-    Task<AdminOperationResult> CreateAccountAsync(string fullName, string email, string password, string role, bool sendEmail = false);
+    Task<AdminOperationResult> CreateAccountAsync(string fullName, string email, string password, string role, bool sendEmail = false, List<int>? courseIds = null);
 
     Task<AdminOperationResult> UpdateAccountAsync(string id, string fullName, string email);
 

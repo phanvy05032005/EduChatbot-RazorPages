@@ -81,11 +81,6 @@
                 <div class="auth-logo-text">EduChatbot</div>
             </div>
 
-            <div class="auth-tabs mode-login" aria-label="Authentication mode">
-                <span class="auth-tab active">Login</span>
-                <a asp-controller="Account" asp-action="Register" class="auth-tab" data-auth-switch data-auth-mode="register">Register</a>
-            </div>
-
             <div class="auth-copy auth-copy-enter">
                 <h2 class="auth-form-title">Chào mừng <span class="auth-serif">quay lại</span></h2>
                 <p class="auth-form-subtitle">Sign in with your academic account.</p>
@@ -135,13 +130,6 @@
                     <span>Sign in</span>
                     <span class="arrow" aria-hidden="true">→</span>
                 </button>
-
-                <div class="auth-divider"><span>or</span></div>
-
-                <div class="auth-switch">
-                    Chưa có tài khoản?
-                    <a asp-controller="Account" asp-action="Register" data-auth-switch data-auth-mode="register">Create an account</a>
-                </div>
             </form>
         </div>
     </section>
