@@ -57,12 +57,7 @@ public class OpenRouterEmbeddingService : IEmbeddingService
         }
 
         using var doc = JsonDocument.Parse(responseBody);
-        var embedding = doc.RootElement
-            .GetProperty("data")[0]
-            .GetProperty("embedding")
-            .EnumerateArray()
-            .Select(value => value.GetSingle())
-            .ToArray();
+        var embedding = ReadEmbeddingFromResponse(doc.RootElement, responseBody);
 
         if (_embeddingSettings.Dimensions > 0 && embedding.Length != _embeddingSettings.Dimensions)
         {
@@ -71,5 +66,55 @@ public class OpenRouterEmbeddingService : IEmbeddingService
         }
 
         return embedding;
+    }
+
+    private static float[] ReadEmbeddingFromResponse(JsonElement root, string responseBody)
+    {
+        // OpenRouter có thể trả HTTP 200 nhưng body là error/model response khác schema.
+        // Vì vậy không dùng GetProperty trực tiếp để tránh KeyNotFoundException khó hiểu.
+        if (root.TryGetProperty("error", out var error))
+        {
+            throw new InvalidOperationException($"OpenRouter embedding API trả về lỗi: {SummarizeJson(error)}");
+        }
+
+        if (!root.TryGetProperty("data", out var data) ||
+            data.ValueKind != JsonValueKind.Array ||
+            data.GetArrayLength() == 0)
+        {
+            throw new InvalidOperationException(
+                $"OpenRouter embedding API không trả về trường data[0].embedding. Response: {SummarizeResponse(responseBody)}");
+        }
+
+        var firstItem = data[0];
+        if (!firstItem.TryGetProperty("embedding", out var embeddingElement) ||
+            embeddingElement.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidOperationException(
+                $"OpenRouter embedding API không trả về embedding dạng mảng. Response: {SummarizeResponse(responseBody)}");
+        }
+
+        return embeddingElement
+            .EnumerateArray()
+            .Select(value => value.GetSingle())
+            .ToArray();
+    }
+
+    private static string SummarizeJson(JsonElement element)
+    {
+        return SummarizeResponse(element.GetRawText());
+    }
+
+    private static string SummarizeResponse(string responseBody)
+    {
+        const int maxLength = 1000;
+
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return "(empty response)";
+        }
+
+        return responseBody.Length <= maxLength
+            ? responseBody
+            : responseBody[..maxLength] + "...";
     }
 }
