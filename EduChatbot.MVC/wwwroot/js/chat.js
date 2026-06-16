@@ -10,6 +10,7 @@
     const sendBtn = document.getElementById('chat-send-btn');
     const conversationId = document.getElementById('conversation-id')?.value;
     const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const sendUrl = chatForm?.dataset.sendUrl || '/Chat/Conversation?handler=SendMessage';
 
     if (!messagesContainer || !chatForm || !chatInput || !sendBtn) return;
 
@@ -65,7 +66,7 @@
         chatInput.style.height = 'auto';
         scrollToBottom();
 
-        fetch('/Chat/SendMessage', {
+        fetch(sendUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

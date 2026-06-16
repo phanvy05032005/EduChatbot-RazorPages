@@ -1,0 +1,104 @@
+@page
+@model EduChatbot.MVC.Pages.Documents.IndexModel
+
+@{
+    ViewData["Title"] = "Documents";
+}
+
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker">Documents</div>
+            <h1>Learning materials</h1>
+            <p>Search, inspect status, and manage uploaded academic files.</p>
+        </div>
+        <a asp-page="/Documents/Upload" class="role-primary-btn">Upload document</a>
+    </header>
+
+    @if (TempData["UploadMessage"] != null)
+    {
+        <div class="role-alert success">
+            <strong>@TempData["UploadMessage"]</strong>
+            <span>@TempData["ChunkCount"] chunks, @TempData["IndexStatus"]</span>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="role-alert danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form method="get" class="role-search">
+        <input type="search" name="searchTerm" value="@Model.Result.SearchTerm" placeholder="Search file name, lecturer, status" />
+        <button type="submit">Search</button>
+    </form>
+
+    @if (!Model.Result.Documents.Any())
+    {
+        <div class="role-empty-panel">
+            <strong data-i18n="docs.index.noDocuments">No documents uploaded yet.</strong>
+            <span data-i18n="docs.index.uploadHint">Upload PDF or DOCX file to extract, chunk, and embed.</span>
+        </div>
+    }
+    else
+    {
+        <div class="role-table-card">
+            <div class="role-table-toolbar">Showing @Model.Result.TotalCount document(s)</div>
+            <div class="table-responsive">
+                <table class="table role-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th data-i18n="docs.index.course">Course</th>
+                            <th>Match Score</th>
+                            <th>Lecturer</th>
+                            <th>Size</th>
+                            <th>Chunks</th>
+                            <th>Status</th>
+                            <th>Uploaded at</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var document in Model.Result.Documents)
+                        {
+                            var statusClass = document.Status == EduChatbot.Models.DocumentStatuses.Approved
+                                ? "completed"
+                                : document.Status == EduChatbot.Models.DocumentStatuses.PendingReview ? "processing" : "failed";
+                            var sizeMb = document.FileSize / 1024d / 1024d;
+                            var courseInfo = !string.IsNullOrWhiteSpace(document.SubjectCode)
+                                ? $"[{document.SubjectCode}] {document.SubjectName}"
+                                : document.Course != null ? $"[{document.Course.Code}] {document.Course.Name}" : "N/A";
+                            <tr>
+                                <td>
+                                    <div class="role-file-cell">
+                                        <span>DOC</span>
+                                        <strong>@document.FileName</strong>
+                                    </div>
+                                </td>
+                                <td><span style="font-size:0.85rem; font-weight:500; background:rgba(228, 240, 246, 0.08); border: 1px solid rgba(228, 240, 246, 0.1); padding:0.2rem 0.4rem; border-radius:4px; color: var(--edu-text);">@courseInfo</span></td>
+                                <td>@(document.MatchScore.HasValue ? document.MatchScore.Value.ToString("0.00") : "N/A")</td>
+                                <td>@document.UploadedBy</td>
+                                <td>@sizeMb.ToString("0.00") MB</td>
+                                <td>@document.ChunkCount</td>
+                                <td><span class="role-status @statusClass">@document.Status</span></td>
+                                <td>@document.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <div class="role-row-actions">
+                                        <a href="@document.FilePath" target="_blank">Open</a>
+                                        <a asp-page="/Documents/Details" asp-route-id="@document.Id">Details</a>
+                                        <a asp-page="/Documents/Edit" asp-route-id="@document.Id">Edit</a>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@document.Id">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="danger" onclick="return confirm('Delete this document and its chunks?');">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

@@ -1,0 +1,86 @@
+@page
+@model EduChatbot.MVC.Pages.Documents.UploadModel
+
+@{
+    ViewData["Title"] = "Upload Document";
+}
+
+<section class="role-page narrow">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker">Upload</div>
+            <h1>Upload document</h1>
+            <p>PDF/DOCX files are extracted, chunked, and indexed with real embeddings.</p>
+        </div>
+    </header>
+
+    <form method="post" enctype="multipart/form-data" class="role-form-card">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="role-form-errors"></div>
+
+        <div class="role-field">
+            <label for="courseId" data-i18n="docs.upload.course">Course</label>
+            <select id="courseId" asp-for="CourseId" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1rem;">
+                <option value="" style="background: var(--edu-bg); color: var(--edu-text);" data-i18n="docs.upload.selectCourse">-- Select course --</option>
+                @foreach (var course in Model.Courses)
+                {
+                    <option value="@course.Id" style="background: var(--edu-bg); color: var(--edu-text);">[@course.Code] - @course.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="role-field">
+            <label for="documentFile">Document file</label>
+            <label class="role-file-drop" for="documentFile">
+                <input type="file" id="documentFile" asp-for="DocumentFile" accept=".pdf,.docx" data-max-size="10485760" />
+                <span>Choose PDF or DOCX</span>
+                <small>Maximum file size: 10 MB</small>
+            </label>
+            <span id="documentFileValidation" class="role-validation"></span>
+        </div>
+
+        <div class="role-form-actions">
+            <button type="submit" class="role-primary-btn">Upload</button>
+            <a asp-page="/Documents/Index" class="role-secondary-btn">Cancel</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const documentInput = document.getElementById('documentFile');
+        const validationMessage = document.getElementById('documentFileValidation');
+
+        documentInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileName = file ? file.name : 'Choose PDF or DOCX';
+            const maxSize = Number(e.target.dataset.maxSize);
+
+            e.target.nextElementSibling.textContent = fileName;
+            validationMessage.textContent = '';
+
+            if (file && file.size > maxSize) {
+                validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 10 MB.';
+            }
+        });
+
+        document.querySelector('form.role-form-card').addEventListener('submit', function(e) {
+            const file = documentInput.files[0];
+            const maxSize = Number(documentInput.dataset.maxSize);
+
+            if (file && file.size > maxSize) {
+                e.preventDefault();
+                validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 10 MB.';
+                return;
+            }
+
+            const btn = this.querySelector('button[type="submit"]');
+            if(btn && documentInput.files.length > 0) {
+                btn.disabled = true;
+                btn.textContent = 'Uploading and indexing... please wait';
+                btn.style.opacity = '0.7';
+            }
+        });
+    </script>
+}
