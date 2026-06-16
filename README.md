@@ -1,8 +1,8 @@
 # EduChatbot - Hệ thống Chatbot học thuật
 
-EduChatbot là ứng dụng web ASP.NET Core MVC hỗ trợ quản lý tài liệu học tập và chatbot theo từng môn học. Hệ thống cho phép Admin quản lý tài khoản, môn học và phân công giảng viên; Lecturer upload tài liệu cho môn được phân công; Student đặt câu hỏi dựa trên các tài liệu đã được duyệt.
+EduChatbot là ứng dụng web ASP.NET Core Razor Pages hỗ trợ quản lý tài liệu học tập và chatbot theo từng môn học. Hệ thống cho phép Admin quản lý tài khoản, môn học và phân công giảng viên; Lecturer upload tài liệu cho môn được phân công; Student đặt câu hỏi dựa trên các tài liệu đã được duyệt.
 
-Dự án sử dụng .NET 9, ASP.NET Core MVC, Entity Framework Core, PostgreSQL, pgvector, OpenRouter AI API và kiến trúc 3 lớp.
+Dự án sử dụng .NET 9, ASP.NET Core Razor Pages, Entity Framework Core, PostgreSQL, pgvector, OpenRouter AI API và kiến trúc 3 lớp.
 
 ## Tính năng chính
 
@@ -26,10 +26,10 @@ Dự án đi theo kiến trúc 3 lớp:
 ![Kiến trúc 3 lớp EduChatbot](docs/images/architecture-3-layers.png)
 
 ```text
-EduChatbot.MVC
+EduChatbot.Web
 Presentation Layer
-- Controllers
-- Views
+- Razor Pages
+- PageModels
 - ViewModels
 - Authentication / Authorization
 - Nhận request và trả response
@@ -83,7 +83,7 @@ Thư mục này chứa:
 
 ```text
 EduChatbotSolution/
-├── EduChatbot.MVC/          # Dự án ASP.NET Core MVC
+├── EduChatbot.Web/          # Dự án ASP.NET Core Razor Pages
 ├── EduChatbot.Business/     # Service và business logic
 ├── EduChatbot.Data/         # DbContext, Repository, Migration
 ├── EduChatbot.Models/       # Entity và model dùng chung
@@ -162,47 +162,47 @@ POSTGRES_PASSWORD=123456
 Mặc định `appsettings.json` đang dùng connection string:
 
 ```text
-Host=localhost;Port=5433;Database=educhatbotdb;Username=postgres;Password=123456
+Host=localhost;Port=5433;Database=educhatbot_assignment2;Username=postgres;Password=123456
 ```
 
 Nếu bạn đổi `POSTGRES_PASSWORD`, cần cập nhật connection string bằng user-secrets ở bước dưới.
 
 ### 2. Cấu hình user-secrets
 
-Khởi tạo user-secrets cho project MVC nếu máy chưa có:
+Khởi tạo user-secrets cho project Web nếu máy chưa có:
 
 ```bash
-dotnet user-secrets init --project EduChatbot.MVC
+dotnet user-secrets init --project EduChatbot.Web
 ```
 
 Thêm OpenRouter API key:
 
 ```bash
-dotnet user-secrets set "OpenRouter:ApiKey" "YOUR_OPENROUTER_API_KEY" --project EduChatbot.MVC
+dotnet user-secrets set "OpenRouter:ApiKey" "YOUR_OPENROUTER_API_KEY" --project EduChatbot.Web
 ```
 
 Nếu password PostgreSQL không phải `123456`, override connection string:
 
 ```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=educhatbotdb;Username=postgres;Password=YOUR_POSTGRES_PASSWORD" --project EduChatbot.MVC
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=educhatbot_assignment2;Username=postgres;Password=YOUR_POSTGRES_PASSWORD" --project EduChatbot.Web
 ```
 
 Cấu hình SMTP nếu muốn gửi email thật:
 
 ```bash
-dotnet user-secrets set "Smtp:Host" "smtp.gmail.com" --project EduChatbot.MVC
-dotnet user-secrets set "Smtp:Port" "587" --project EduChatbot.MVC
-dotnet user-secrets set "Smtp:EnableSsl" "true" --project EduChatbot.MVC
-dotnet user-secrets set "Smtp:Username" "YOUR_EMAIL" --project EduChatbot.MVC
-dotnet user-secrets set "Smtp:Password" "YOUR_APP_PASSWORD" --project EduChatbot.MVC
-dotnet user-secrets set "Smtp:SenderEmail" "YOUR_EMAIL" --project EduChatbot.MVC
-dotnet user-secrets set "Smtp:SenderName" "EduChatbot System" --project EduChatbot.MVC
+dotnet user-secrets set "Smtp:Host" "smtp.gmail.com" --project EduChatbot.Web
+dotnet user-secrets set "Smtp:Port" "587" --project EduChatbot.Web
+dotnet user-secrets set "Smtp:EnableSsl" "true" --project EduChatbot.Web
+dotnet user-secrets set "Smtp:Username" "YOUR_EMAIL" --project EduChatbot.Web
+dotnet user-secrets set "Smtp:Password" "YOUR_APP_PASSWORD" --project EduChatbot.Web
+dotnet user-secrets set "Smtp:SenderEmail" "YOUR_EMAIL" --project EduChatbot.Web
+dotnet user-secrets set "Smtp:SenderName" "EduChatbot System" --project EduChatbot.Web
 ```
 
 Xem lại user-secrets đã cấu hình:
 
 ```bash
-dotnet user-secrets list --project EduChatbot.MVC
+dotnet user-secrets list --project EduChatbot.Web
 ```
 
 ## Chạy PostgreSQL + pgvector
@@ -255,7 +255,7 @@ dotnet tool install --global dotnet-ef
 Apply migration:
 
 ```bash
-dotnet ef database update --project EduChatbot.Data --startup-project EduChatbot.MVC
+dotnet ef database update --project EduChatbot.Data --startup-project EduChatbot.Web
 ```
 
 Lệnh này tạo các bảng cần thiết:
@@ -272,7 +272,7 @@ Lệnh này tạo các bảng cần thiết:
 ## Build dự án
 
 ```bash
-dotnet build EduChatbot.MVC/EduChatbot.MVC.csproj
+dotnet build EduChatbot.Web/EduChatbot.Web.csproj
 ```
 
 Kết quả mong đợi:
@@ -286,7 +286,7 @@ Build succeeded.
 ## Chạy ứng dụng web
 
 ```bash
-dotnet run --project EduChatbot.MVC/EduChatbot.MVC.csproj --launch-profile http
+dotnet run --project EduChatbot.Web/EduChatbot.Web.csproj --launch-profile http
 ```
 
 Mở trình duyệt:
@@ -427,7 +427,7 @@ Dự án dùng OpenRouter cho:
 Cấu hình chính nằm trong:
 
 ```text
-EduChatbot.MVC/appsettings.json
+EduChatbot.Web/appsettings.json
 ```
 
 Các section quan trọng:
@@ -448,7 +448,7 @@ Các section quan trọng:
 Không điền API key thật vào `appsettings.json`. Hãy dùng user-secrets:
 
 ```bash
-dotnet user-secrets set "OpenRouter:ApiKey" "YOUR_OPENROUTER_API_KEY" --project EduChatbot.MVC
+dotnet user-secrets set "OpenRouter:ApiKey" "YOUR_OPENROUTER_API_KEY" --project EduChatbot.Web
 ```
 
 ## File mẫu import Excel
@@ -491,25 +491,25 @@ git status
 Build:
 
 ```bash
-dotnet build EduChatbot.MVC/EduChatbot.MVC.csproj
+dotnet build EduChatbot.Web/EduChatbot.Web.csproj
 ```
 
 Run:
 
 ```bash
-dotnet run --project EduChatbot.MVC/EduChatbot.MVC.csproj --launch-profile http
+dotnet run --project EduChatbot.Web/EduChatbot.Web.csproj --launch-profile http
 ```
 
 Apply migrations:
 
 ```bash
-dotnet ef database update --project EduChatbot.Data --startup-project EduChatbot.MVC
+dotnet ef database update --project EduChatbot.Data --startup-project EduChatbot.Web
 ```
 
 Xem user-secrets:
 
 ```bash
-dotnet user-secrets list --project EduChatbot.MVC
+dotnet user-secrets list --project EduChatbot.Web
 ```
 
 Start database:
@@ -576,7 +576,7 @@ Máy bị hết dung lượng ổ đĩa.
 Dọn output build:
 
 ```bash
-dotnet clean EduChatbot.MVC/EduChatbot.MVC.csproj
+dotnet clean EduChatbot.Web/EduChatbot.Web.csproj
 rm -rf */bin */obj
 ```
 
@@ -606,7 +606,7 @@ Quy trình khuyến nghị:
 
 ```bash
 git status
-dotnet build EduChatbot.MVC/EduChatbot.MVC.csproj
+dotnet build EduChatbot.Web/EduChatbot.Web.csproj
 git add .
 git commit -m "docs: update project setup guide"
 git push origin main

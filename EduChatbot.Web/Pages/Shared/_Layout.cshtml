@@ -1,0 +1,239 @@
+@{
+    var extraBodyClass = ViewData["BodyClass"] as string;
+    var isAdminUser = User.IsInRole("Admin");
+    var bodyClass = string.IsNullOrWhiteSpace(extraBodyClass)
+        ? "app-shell"
+        : $"app-shell {extraBodyClass}";
+    if (isAdminUser)
+    {
+        bodyClass += " admin-layout";
+    }
+    var isChatLayout = extraBodyClass?.Contains("chat-layout") == true;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduChatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (isChatLayout)
+    {
+        <script>
+            (function () {
+                try {
+                    if (localStorage.getItem('eduChatbot.sidebarCollapsed') === 'true') {
+                        document.documentElement.classList.add('chat-sidebar-collapsed-persisted');
+                    }
+                } catch {
+                }
+            })();
+        </script>
+        <link rel="stylesheet" href="~/css/chat.css" asp-append-version="true" />
+    }
+    <link rel="stylesheet" href="~/EduChatbot.Web.styles.css" asp-append-version="true" />
+</head>
+<body class="@bodyClass">
+@if (User.IsInRole("Admin"))
+{
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="admin-brand">
+                <span class="admin-brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3.5 8.7 12 4.4l8.5 4.3-8.5 4.2-8.5-4.2Z" />
+                        <path d="M6.5 10.4v4.4c1.7 1.3 3.5 1.9 5.5 1.9s3.8-.6 5.5-1.9v-4.4" />
+                        <path d="M20.5 8.7v5.8" />
+                    </svg>
+                </span>
+                <div>
+                    <strong>EduChatbot</strong>
+                    <small>ADMIN</small>
+                </div>
+            </div>
+            <nav class="admin-menu">
+                <a asp-page="/Admin/Dashboard" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Dashboard" ? "active" : "")">
+                    <span class="admin-menu-icon">▦</span>
+                    <span data-i18n="admin.sidebar.dashboard">Dashboard</span>
+                </a>
+                <a asp-page="/Admin/Students" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Students" ? "active" : "")">
+                    <span class="admin-menu-icon">♙</span>
+                    <span data-i18n="admin.sidebar.studentAccounts">Student Accounts</span>
+                </a>
+                <a asp-page="/Admin/Lecturers" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Lecturers" ? "active" : "")">
+                    <span class="admin-menu-icon">♧</span>
+                    <span data-i18n="admin.sidebar.lecturerAccounts">Lecturer Accounts</span>
+                </a>
+                <a asp-page="/Admin/Courses" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Courses" ? "active" : "")">
+                    <span class="admin-menu-icon">📚</span>
+                    <span data-i18n="admin.sidebar.coursesAssignments">Courses &amp; Assignments</span>
+                </a>
+                <a asp-page="/Admin/PendingDocuments" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/PendingDocuments" ? "active" : "")">
+                    <span class="admin-menu-icon">□</span>
+                    <span data-i18n="admin.sidebar.pendingReview">Pending Review</span>
+                </a>
+                <a asp-page="/Admin/Roles" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Roles" ? "active" : "")">
+                    <span class="admin-menu-icon">◇</span>
+                    <span data-i18n="admin.sidebar.roleManagement">Role Management</span>
+                </a>
+                <a asp-page="/Admin/System" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/System" ? "active" : "")">
+                    <span class="admin-menu-icon">▭</span>
+                    <span data-i18n="admin.sidebar.systemManagement">System Management</span>
+                </a>
+                <a asp-page="/Admin/Statistics" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Statistics" ? "active" : "")">
+                    <span class="admin-menu-icon">▥</span>
+                    <span data-i18n="admin.sidebar.statistics">Statistics</span>
+                </a>
+            </nav>
+            <form asp-page="/Account/Logout" method="post" class="admin-logout">
+                @Html.AntiForgeryToken()
+                <button type="submit">
+                    <span class="admin-menu-icon">↳</span>
+                    <span data-i18n="admin.sidebar.logout">Logout</span>
+                </button>
+            </form>
+        </aside>
+        <div class="admin-content">
+            <header class="admin-topbar">
+                <div class="admin-breadcrumb">
+                    <span>EDUCHATBOT · ADMIN</span>
+                    <i aria-hidden="true">/</i>
+                    <strong>@ViewData["Title"]</strong>
+                </div>
+                <div class="admin-user-wrap">
+                    <button type="button" class="lang-toggle-btn" onclick="EduI18n.toggle()" title="Switch language" style="background: rgba(228,240,246,0.08); border: 1px solid rgba(228,240,246,0.15); color: #e4f0f6; border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; margin-right: 1rem;">VI</button>
+                    <div class="admin-user">
+                        <span aria-hidden="true"></span>
+                        @User.Identity?.Name
+                    </div>
+                    <div class="admin-avatar">A</div>
+                </div>
+            </header>
+            <main role="main" class="admin-main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+}
+else
+{
+    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Lecturer"))
+    {
+        <div class="role-shell">
+            <aside class="role-sidebar">
+                <div class="role-brand">
+                    <span class="role-brand-mark">LE</span>
+                    <div>
+                        <strong>EduChatbot</strong>
+                        <small>Lecturer Portal</small>
+                    </div>
+                </div>
+                <nav class="role-menu">
+                    <a asp-page="/Documents/Dashboard" data-i18n="nav.dashboard">Dashboard</a>
+                    <a asp-page="/Documents/Index" data-i18n="nav.learningMaterials">Learning Materials</a>
+                    <a asp-page="/Documents/Upload" data-i18n="nav.uploadDocument">Upload Document</a>
+                    <a asp-page="/Account/Profile" data-i18n="nav.profile">Profile</a>
+                </nav>
+                <form asp-page="/Account/Logout" method="post" class="role-logout">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" data-i18n="nav.logout">Logout</button>
+                </form>
+            </aside>
+            <div class="role-content">
+                <header class="role-topbar">
+                    <div>
+                        <span>Academic Chatbot System</span>
+                        <strong>@ViewData["Title"]</strong>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <button type="button" class="lang-toggle-btn" onclick="EduI18n.toggle()" title="Switch language" style="background: rgba(0, 102, 204, 0.08); border: 1px solid rgba(0, 102, 204, 0.15); color: #0066cc; border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 700; cursor: pointer; letter-spacing: 0.5px;">VI</button>
+                        <div class="role-user">@User.Identity?.Name</div>
+                    </div>
+                </header>
+                <main role="main" class="role-main">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+    else
+    {
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom mb-4">
+            <div class="container">
+                <a class="navbar-brand fw-semibold" asp-area="" asp-page="/Documents/Dashboard">EduChatbot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        @if (User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-page="/Chat/Index" data-i18n="nav.chat">Chat</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-page="/Account/Profile" data-i18n="nav.profile">Profile</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Lecturer"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-page="/Documents/Dashboard" data-i18n="nav.dashboard">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-page="/Documents/Index" data-i18n="nav.learningMaterials">Documents</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-page="/Documents/Upload" data-i18n="nav.uploadDocument">Upload</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item d-flex align-items-center me-3">
+                            <button type="button" class="lang-toggle-btn btn btn-sm btn-outline-secondary" onclick="EduI18n.toggle()" title="Switch language" style="font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.5rem; letter-spacing: 0.5px;">VI</button>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link">@User.Identity.Name</span>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-page="/Account/Logout" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link nav-link" data-i18n="nav.logout">Logout</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Account/Login" data-i18n="nav.login">Login</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    }
+}
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/i18n.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

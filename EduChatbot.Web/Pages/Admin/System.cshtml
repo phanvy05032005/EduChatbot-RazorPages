@@ -1,0 +1,22 @@
+@page
+@model EduChatbot.Web.Pages.Admin.SystemModel
+@{
+    ViewData["Title"] = "System Management";
+}
+
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <div class="admin-kicker"><span data-i18n="admin.sidebar.systemManagement">System</span> · <span data-i18n="admin.dashboard.live">Health</span></div>
+            <h1><span data-i18n="admin.system.title">System</span> <span class="admin-serif" data-i18n="admin.system.titleSerif">Management</span></h1>
+            <p data-i18n="admin.system.subtitle">Service status and system configuration overview.</p>
+        </div>
+        <a asp-page="/Admin/System" class="admin-secondary-btn" data-i18n="admin.system.refreshStatus">Refresh Status</a>
+    </div>
+    <div class="system-grid">
+        <article class="admin-card system-card success"><span>Database Status</span><strong>@Model.DatabaseStatus</strong><small>PostgreSQL connection</small></article>
+        <article class="admin-card system-card success"><span>Application Status</span><strong>@Model.ApplicationStatus</strong><small>ASP.NET Core</small></article>
+        <article class="admin-card system-card accent"><span>Storage Usage</span><strong>@Model.StorageUsage</strong><small>Uploaded documents</small></article>
+        <article class="admin-card system-card light"><span>System Version</span><strong>@Model.SystemVersion</strong><small>Current assembly</small></article>
+    </div>
+</div>

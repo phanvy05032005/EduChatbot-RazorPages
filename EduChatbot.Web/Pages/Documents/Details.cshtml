@@ -1,0 +1,109 @@
+@page "{id:int}"
+@model EduChatbot.Web.Pages.Documents.DetailsModel
+
+@{
+    ViewData["Title"] = "Document Details";
+    var document = Model.Document!;
+}
+
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker">Document</div>
+            <h1>@document.FileName</h1>
+            <p>Chunk details and real embedding preview.</p>
+        </div>
+        <div class="role-header-actions">
+            <a asp-page="/Documents/Index" class="role-secondary-btn">Back</a>
+            <a asp-page="/Documents/Edit" asp-route-id="@document.Id" class="role-secondary-btn">Edit</a>
+            <a href="@document.FilePath" target="_blank" class="role-primary-btn">Open file</a>
+        </div>
+    </header>
+
+    @if (TempData["UploadMessage"] != null)
+    {
+        <div class="role-alert success"><strong>@TempData["UploadMessage"]</strong></div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="role-alert danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="role-info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+        <article>
+            <span>Status</span>
+            <strong style="color: @(document.Status == EduChatbot.Models.DocumentStatuses.Approved ? "var(--edu-success)" : document.Status == EduChatbot.Models.DocumentStatuses.Rejected ? "var(--edu-danger)" : "inherit")">@document.Status</strong>
+        </article>
+        <article>
+            <span data-i18n="docs.details.course">Course</span>
+            <strong>@(!string.IsNullOrWhiteSpace(document.SubjectCode) ? $"[{document.SubjectCode}] {document.SubjectName}" : document.Course != null ? $"[{document.Course.Code}] {document.Course.Name}" : "N/A")</strong>
+        </article>
+        <article>
+            <span>Match Score</span>
+            <strong>@(document.MatchScore.HasValue ? document.MatchScore.Value.ToString("0.00") : "N/A")</strong>
+        </article>
+        <article>
+            <span>Chunks</span>
+            <strong>@document.ChunkCount</strong>
+        </article>
+        <article>
+            <span>Lecturer</span>
+            <strong>@document.UploadedBy</strong>
+        </article>
+        <article>
+            <span>Uploaded</span>
+            <strong>@document.UploadedAt.ToString("dd/MM/yyyy HH:mm")</strong>
+        </article>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(document.ValidationResult))
+    {
+        var isRejected = document.Status == EduChatbot.Models.DocumentStatuses.Rejected;
+        <div class="role-alert" style="margin-top: 1.5rem; padding: 1.2rem; border-radius: 8px; border-left: 5px solid @(isRejected ? "var(--edu-danger)" : "var(--edu-success)"); background: @(isRejected ? "rgba(255, 154, 162, 0.08)" : "rgba(168, 230, 207, 0.08)"); color: var(--edu-text);">
+            <h4 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: @(isRejected ? "var(--edu-danger)" : "var(--edu-success)");">
+                <span>Similarity</span> <span data-i18n="docs.details.matchScore">Match Score Result:</span>
+            </h4>
+            <p style="margin: 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-line;">@document.ValidationResult</p>
+        </div>
+    }
+
+    @if (!document.Chunks.Any())
+    {
+        <div class="role-alert warning" data-i18n="docs.details.noChunks">This document does not have chunk data yet.</div>
+    }
+    else
+    {
+        <div class="role-table-card">
+            <div class="role-table-toolbar">Chunks and embeddings</div>
+            <div class="table-responsive">
+                <table class="table role-table role-chunk-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Content</th>
+                            <th>Embedding preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var chunk in document.Chunks)
+                        {
+                            <tr>
+                                <td><span class="role-chunk-index">@chunk.ChunkIndex</span></td>
+                                <td>@chunk.Content</td>
+                                <td>
+                                    @{
+                                        var embeddingPreview = chunk.Embedding == null
+                                            ? "No embedding"
+                                            : string.Join(", ", chunk.Embedding.ToArray().Take(8).Select(value => value.ToString("0.0000"))) + " ...";
+                                    }
+                                    <code>@embeddingPreview</code>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

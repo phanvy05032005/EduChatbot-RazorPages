@@ -14,7 +14,7 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null)
     {
-        // Repository là nơi đọc dữ liệu từ database, Controller không gọi DbContext trực tiếp.
+        // Repository là nơi đọc dữ liệu từ database, Presentation layer không gọi DbContext trực tiếp.
         var query = _context.Documents.Include(document => document.Course).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(uploadedById))
