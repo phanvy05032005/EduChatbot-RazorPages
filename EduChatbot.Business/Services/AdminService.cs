@@ -121,6 +121,15 @@ public class AdminService : IAdminService
                 var course = await _context.Courses.FindAsync(courseId);
                 if (course != null)
                 {
+                    // Check if the course is already assigned to another lecturer
+                    var courseAlreadyAssigned = await _context.LecturerCourses
+                        .AnyAsync(lc => lc.CourseId == courseId);
+                    if (courseAlreadyAssigned)
+                    {
+                        await _userManager.DeleteAsync(user);
+                        return Failure($"Course '{course.Code} - {course.Name}' is already assigned to another lecturer.");
+                    }
+
                     assignedCourseNames.Add($"{course.Code} - {course.Name}");
                     var existing = await _context.LecturerCourses
                         .AnyAsync(lc => lc.LecturerId == user.Id && lc.CourseId == courseId);
@@ -838,13 +847,29 @@ public class AdminService : IAdminService
                 }
 
                 // Create LecturerCourse
+                bool courseConflict = false;
                 foreach (var course in courses)
                 {
+                    var courseAlreadyAssigned = await _context.LecturerCourses
+                        .AnyAsync(lc => lc.CourseId == course.Id);
+                    if (courseAlreadyAssigned)
+                    {
+                        await _userManager.DeleteAsync(user);
+                        failedCount++;
+                        errorMessages.Add($"Row {i + 1} ({email}): Course '{course.Code}' is already assigned to another lecturer.");
+                        courseConflict = true;
+                        break;
+                    }
+
                     _context.LecturerCourses.Add(new LecturerCourse
                     {
                         LecturerId = user.Id,
                         CourseId = course.Id
                     });
+                }
+                if (courseConflict)
+                {
+                    continue;
                 }
                 try
                 {
