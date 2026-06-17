@@ -10,7 +10,7 @@
         <div>
             <div class="role-kicker">Documents</div>
             <h1>Learning materials</h1>
-            <p>Search, inspect status, and manage uploaded academic files.</p>
+            <p>Search, inspect indexing status, and manage uploaded academic files.</p>
         </div>
         <a asp-page="/Documents/Upload" class="role-primary-btn">Upload document</a>
     </header>
@@ -50,7 +50,6 @@
                         <tr>
                             <th>File</th>
                             <th data-i18n="docs.index.course">Course</th>
-                            <th>Match Score</th>
                             <th>Lecturer</th>
                             <th>Size</th>
                             <th>Chunks</th>
@@ -64,7 +63,7 @@
                         {
                             var statusClass = document.Status == EduChatbot.Models.DocumentStatuses.Approved
                                 ? "completed"
-                                : document.Status == EduChatbot.Models.DocumentStatuses.PendingReview ? "processing" : "failed";
+                                : "failed";
                             var sizeMb = document.FileSize / 1024d / 1024d;
                             var courseInfo = !string.IsNullOrWhiteSpace(document.SubjectCode)
                                 ? $"[{document.SubjectCode}] {document.SubjectName}"
@@ -77,7 +76,6 @@
                                     </div>
                                 </td>
                                 <td><span style="font-size:0.85rem; font-weight:500; background:rgba(228, 240, 246, 0.08); border: 1px solid rgba(228, 240, 246, 0.1); padding:0.2rem 0.4rem; border-radius:4px; color: var(--edu-text);">@courseInfo</span></td>
-                                <td>@(document.MatchScore.HasValue ? document.MatchScore.Value.ToString("0.00") : "N/A")</td>
                                 <td>@document.UploadedBy</td>
                                 <td>@sizeMb.ToString("0.00") MB</td>
                                 <td>@document.ChunkCount</td>

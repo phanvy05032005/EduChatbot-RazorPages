@@ -2,6 +2,13 @@
 @model EduChatbot.Web.Pages.Admin.CoursesModel
 @{
     ViewData["Title"] = "Courses & Assignments";
+    var assignedLecturerIds = Model.Courses
+        .SelectMany(course => course.LecturerCourses)
+        .Select(assignment => assignment.LecturerId)
+        .ToHashSet();
+    var availableLecturers = Model.Lecturers
+        .Where(lecturer => !assignedLecturerIds.Contains(lecturer.Id))
+        .ToList();
 }
 
 <div class="admin-page">
@@ -82,12 +89,16 @@
                                                 <input type="hidden" name="courseId" value="@course.Id" />
                                                 <select name="lecturerId" required style="padding: 0.3rem; border: 1px solid var(--admin-border); border-radius: 4px; background: var(--admin-bg); color: var(--admin-text); font-size: 0.85rem;">
                                                     <option value="">-- Select lecturer --</option>
-                                                    @foreach (var lecturer in Model.Lecturers)
+                                                    @if (availableLecturers.Count == 0)
+                                                    {
+                                                        <option value="" disabled>No unassigned lecturers available</option>
+                                                    }
+                                                    @foreach (var lecturer in availableLecturers)
                                                     {
                                                         <option value="@lecturer.Id">@lecturer.FullName (@lecturer.Email)</option>
                                                     }
                                                 </select>
-                                                <button type="submit" style="background: var(--admin-primary); color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Assign</button>
+                                                <button type="submit" disabled="@(availableLecturers.Count == 0)" style="background: var(--admin-primary); color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Assign</button>
                                             </form>
                                         }
                                         else

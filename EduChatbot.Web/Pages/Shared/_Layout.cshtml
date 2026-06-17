@@ -73,10 +73,6 @@
                     <span class="admin-menu-icon">📚</span>
                     <span data-i18n="admin.sidebar.coursesAssignments">Courses &amp; Assignments</span>
                 </a>
-                <a asp-page="/Admin/PendingDocuments" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/PendingDocuments" ? "active" : "")">
-                    <span class="admin-menu-icon">□</span>
-                    <span data-i18n="admin.sidebar.pendingReview">Pending Review</span>
-                </a>
                 <a asp-page="/Admin/Roles" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Roles" ? "active" : "")">
                     <span class="admin-menu-icon">◇</span>
                     <span data-i18n="admin.sidebar.roleManagement">Role Management</span>

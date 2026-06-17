@@ -40,10 +40,6 @@
             <strong>@(!string.IsNullOrWhiteSpace(document.SubjectCode) ? $"[{document.SubjectCode}] {document.SubjectName}" : document.Course != null ? $"[{document.Course.Code}] {document.Course.Name}" : "N/A")</strong>
         </article>
         <article>
-            <span>Match Score</span>
-            <strong>@(document.MatchScore.HasValue ? document.MatchScore.Value.ToString("0.00") : "N/A")</strong>
-        </article>
-        <article>
             <span>Chunks</span>
             <strong>@document.ChunkCount</strong>
         </article>
@@ -56,17 +52,6 @@
             <strong>@document.UploadedAt.ToString("dd/MM/yyyy HH:mm")</strong>
         </article>
     </div>
-
-    @if (!string.IsNullOrWhiteSpace(document.ValidationResult))
-    {
-        var isRejected = document.Status == EduChatbot.Models.DocumentStatuses.Rejected;
-        <div class="role-alert" style="margin-top: 1.5rem; padding: 1.2rem; border-radius: 8px; border-left: 5px solid @(isRejected ? "var(--edu-danger)" : "var(--edu-success)"); background: @(isRejected ? "rgba(255, 154, 162, 0.08)" : "rgba(168, 230, 207, 0.08)"); color: var(--edu-text);">
-            <h4 style="margin-top: 0; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: @(isRejected ? "var(--edu-danger)" : "var(--edu-success)");">
-                <span>Similarity</span> <span data-i18n="docs.details.matchScore">Match Score Result:</span>
-            </h4>
-            <p style="margin: 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-line;">@document.ValidationResult</p>
-        </div>
-    }
 
     @if (!document.Chunks.Any())
     {
