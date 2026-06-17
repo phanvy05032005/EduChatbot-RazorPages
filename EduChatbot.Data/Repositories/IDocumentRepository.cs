@@ -4,7 +4,7 @@ namespace EduChatbot.Data.Repositories;
 
 public interface IDocumentRepository
 {
-    Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null);
+    Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null, int? courseId = null);
 
     Task<DocumentDashboardSummary> GetDashboardSummaryAsync();
 

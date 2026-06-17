@@ -41,10 +41,10 @@ public class DocumentService : IDocumentService
         _userManager = userManager;
     }
 
-    public async Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false)
+    public async Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false, int? courseId = null)
     {
         var ownerFilter = isAdmin ? null : currentUserId;
-        var documents = await _documentRepository.GetAllAsync(searchTerm, ownerFilter);
+        var documents = await _documentRepository.GetAllAsync(searchTerm, ownerFilter, courseId);
 
         return new DocumentListResult
         {

@@ -1,58 +1,129 @@
 @page
 @model EduChatbot.Web.Pages.Admin.AccountFormModel
 @{
-    ViewData["Title"] = Model.Input.IsEdit ? "Edit Account" : $"Create {Model.Input.AccountType} Account";
+    var titleText = Model.Input.IsEdit ? "Edit Account" : "Create Account";
+    ViewData["Title"] = titleText;
     var returnPage = Model.Input.AccountType == EduChatbot.Models.Identity.ApplicationRoles.Lecturer
         ? "/Admin/Lecturers"
         : "/Admin/Students";
+    var availableCourses = Model.Input.AvailableCourses
+        .Where(course => course.LecturerCourses.Count == 0)
+        .ToList();
 }
 
 <div class="admin-page admin-page-narrow">
     <div class="admin-page-header">
         <div>
-            <div class="admin-kicker"><span data-i18n="admin.accounts.accounts">Accounts</span> · @Model.Input.AccountType</div>
-            <h1><span data-i18n="@(Model.Input.IsEdit ? "admin.form.edit" : "admin.form.create")">@(Model.Input.IsEdit ? "Edit" : "Create")</span> <span class="admin-serif" data-i18n="admin.form.account">Account</span></h1>
-            <p data-i18n="admin.form.maintainDesc">Maintain @Model.Input.AccountType.ToLowerInvariant() identity information.</p>
+            <div class="admin-kicker">
+                <span data-i18n="admin.accounts.accounts">EDUCHATBOT</span> &middot; 
+                <span data-i18n="admin.accounts.manage">ADMIN</span> &middot; 
+                <span data-i18n="@(Model.Input.IsEdit ? "admin.form.edit" : "admin.form.create")">@titleText.ToUpperInvariant()</span>
+            </div>
+            <h1 data-i18n="@(Model.Input.IsEdit ? "admin.form.edit" : "admin.form.create")">@titleText</h1>
+            <p>
+                @if (Model.Input.IsEdit)
+                {
+                    <text>Modify the account details below.</text>
+                }
+                else
+                {
+                    <text>Create either a Student account or Lecturer account from a single form. Fill in the required details below.</text>
+                }
+            </p>
         </div>
     </div>
 
-    <form method="post" class="admin-card admin-form">
+    <form method="post" class="admin-form-unified">
         @Html.AntiForgeryToken()
         <input asp-for="Input.Id" type="hidden" />
-        <input asp-for="Input.AccountType" type="hidden" />
+        @if (Model.Input.IsEdit)
+        {
+            <input asp-for="Input.AccountType" type="hidden" />
+        }
 
         <div asp-validation-summary="ModelOnly" class="admin-form-errors"></div>
 
-        <div class="admin-field">
-            <label asp-for="Input.FullName" data-i18n="admin.form.fullName">Full Name</label>
-            <input asp-for="Input.FullName" maxlength="100" />
-            <span asp-validation-for="Input.FullName" class="admin-validation"></span>
-        </div>
-
-        <div class="admin-field">
-            <label asp-for="Input.Email" data-i18n="admin.accounts.email">Email</label>
-            <input asp-for="Input.Email" />
-            <span asp-validation-for="Input.Email" class="admin-validation"></span>
-        </div>
-
-        @if (!Model.Input.IsEdit)
-        {
-            <div class="admin-field">
-                <label asp-for="Input.Password" data-i18n="admin.form.password">Password</label>
-                <input asp-for="Input.Password" />
-                <span asp-validation-for="Input.Password" class="admin-validation"></span>
+        <!-- Panel 1: Account Information -->
+        <div class="admin-card unified-card mb-4" style="margin-bottom: 1.5rem;">
+            <div class="unified-card-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>Account Information</span>
             </div>
 
-            @if (Model.Input.AccountType == EduChatbot.Models.Identity.ApplicationRoles.Lecturer)
-            {
-                var availableCourses = Model.Input.AvailableCourses
-                    .Where(course => course.LecturerCourses.Count == 0)
-                    .ToList();
+            <div class="admin-form-row mb-3" style="margin-bottom: 1.25rem;">
                 <div class="admin-field">
+                    <label asp-for="Input.FullName" data-i18n="admin.form.fullName">Full Name</label>
+                    <input asp-for="Input.FullName" maxlength="100" placeholder="John Doe" />
+                    <span asp-validation-for="Input.FullName" class="admin-validation"></span>
+                </div>
+
+                <div class="admin-field">
+                    <label asp-for="Input.Email" data-i18n="admin.accounts.email">Email Address</label>
+                    <input asp-for="Input.Email" type="email" placeholder="john.doe@edu.com" />
+                    <span asp-validation-for="Input.Email" class="admin-validation"></span>
+                </div>
+            </div>
+
+            @if (!Model.Input.IsEdit)
+            {
+                <div class="admin-field mb-2">
+                    <label asp-for="Input.Password" data-i18n="admin.form.password">Password</label>
+                    <div class="password-toggle-wrapper">
+                        <input asp-for="Input.Password" type="password" id="PasswordInput" placeholder="********" />
+                        <button type="button" class="password-toggle-btn" id="PasswordToggle" aria-label="Toggle Password Visibility">
+                            <svg id="EyeIconOpen" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            <svg id="EyeIconClosed" class="d-none" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                <line x1="1" y1="1" x2="23" y2="23" />
+                            </svg>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.Password" class="admin-validation"></span>
+                </div>
+            }
+        </div>
+
+        <!-- Panel 2: Role Configuration -->
+        <div class="admin-card unified-card mb-4" style="margin-bottom: 1.5rem;">
+            <div class="unified-card-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M7 8h10M7 12h10M7 16h6" />
+                </svg>
+                <span>Role Configuration</span>
+            </div>
+
+            <div class="admin-form-row mb-2">
+                <div class="admin-field">
+                    <label asp-for="Input.AccountType" data-i18n="admin.sidebar.roleManagement">Account Role</label>
+                    @if (Model.Input.IsEdit)
+                    {
+                        <select asp-for="Input.AccountType" id="AccountRoleSelect" disabled>
+                            <option value="@EduChatbot.Models.Identity.ApplicationRoles.Student">Student</option>
+                            <option value="@EduChatbot.Models.Identity.ApplicationRoles.Lecturer">Lecturer</option>
+                        </select>
+                    }
+                    else
+                    {
+                        <select asp-for="Input.AccountType" id="AccountRoleSelect">
+                            <option value="" disabled selected>Select a role...</option>
+                            <option value="@EduChatbot.Models.Identity.ApplicationRoles.Student">Student</option>
+                            <option value="@EduChatbot.Models.Identity.ApplicationRoles.Lecturer">Lecturer</option>
+                        </select>
+                    }
+                    <span asp-validation-for="Input.AccountType" class="admin-validation"></span>
+                </div>
+
+                <div class="admin-field" id="AssignedCourseWrapper">
                     <label data-i18n="admin.form.assignedCourses">Assigned Course</label>
-                    <select name="Input.SelectedCourseIds"
-                            style="width: 100%; border: 1px solid rgba(228, 240, 246, 0.12); border-radius: 12px; background: rgba(228, 240, 246, 0.04); color: #e4f0f6; font: inherit; padding: 0.6rem 0.75rem;">
-                        <option value="">-- Select one course --</option>
+                    <select name="Input.SelectedCourseIds" id="AssignedCourseSelect" disabled>
+                        <option value="" disabled selected>Select a course...</option>
                         @if (availableCourses.Count == 0)
                         {
                             <option value="" disabled data-i18n="admin.form.noCourses">No courses available. Please create courses first.</option>
@@ -66,16 +137,60 @@
                         }
                     </select>
                 </div>
-            }
-        }
+            </div>
+        </div>
 
-        <div class="admin-form-actions">
-            <button type="submit" class="admin-primary-btn" data-i18n="admin.form.save">Save Account</button>
+        <!-- Action Buttons -->
+        <div class="admin-form-actions-bar">
             <a asp-page="@returnPage" class="admin-secondary-btn" data-i18n="admin.form.cancel">Cancel</a>
+            <button type="submit" class="admin-primary-btn" data-i18n="admin.form.save">Create Account</button>
         </div>
     </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            const $roleSelect = $('#AccountRoleSelect');
+            const $courseSelect = $('#AssignedCourseSelect');
+            const $pwdToggle = $('#PasswordToggle');
+            const $pwdInput = $('#PasswordInput');
+
+            // Function to update the assigned course select state
+            function updateCourseState() {
+                const selectedRole = $roleSelect.val();
+                if (selectedRole === 'Lecturer') {
+                    $courseSelect.prop('disabled', false);
+                    $('#AssignedCourseWrapper').removeClass('d-none');
+                } else {
+                    $courseSelect.prop('disabled', true);
+                    $courseSelect.val(''); // Reset selected course when student
+                    $('#AssignedCourseWrapper').addClass('d-none');
+                }
+            }
+
+            // Bind change event
+            $roleSelect.on('change', updateCourseState);
+
+            // Run initial check
+            updateCourseState();
+
+            // Password toggle visibility behavior
+            if ($pwdToggle.length && $pwdInput.length) {
+                $pwdToggle.on('click', function () {
+                    const type = $pwdInput.attr('type') === 'password' ? 'text' : 'password';
+                    $pwdInput.attr('type', type);
+                    
+                    if (type === 'password') {
+                        $('#EyeIconOpen').removeClass('d-none');
+                        $('#EyeIconClosed').addClass('d-none');
+                    } else {
+                        $('#EyeIconOpen').addClass('d-none');
+                        $('#EyeIconClosed').removeClass('d-none');
+                    }
+                });
+            }
+        });
+    </script>
 }

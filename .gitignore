@@ -274,6 +274,7 @@ Generated_Code/
 
 # Uploaded documents generated at runtime
 EduChatbot.MVC/wwwroot/uploads/
+EduChatbot.Web/wwwroot/uploads/
 
 # Backup & report files from converting an old project file
 # to a newer Visual Studio version. Backup files are not needed,
@@ -389,7 +390,7 @@ ASALocalRun/
 .vshistory/
 
 # BeatPulse healthcheck temp database
-healthchecksdb
+`healthchecksdb`
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
@@ -499,3 +500,4 @@ $RECYCLE.BIN/
 
 # Email logs generated during development
 EduChatbot.MVC/email-logs/
+EduChatbot.Web/email-logs/

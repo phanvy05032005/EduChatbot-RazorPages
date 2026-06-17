@@ -12,7 +12,7 @@ public class DocumentRepository : IDocumentRepository
         _context = context;
     }
 
-    public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null)
+    public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null, int? courseId = null)
     {
         // Repository là nơi đọc dữ liệu từ database, Presentation layer không gọi DbContext trực tiếp.
         var query = _context.Documents.Include(document => document.Course).AsQueryable();
@@ -20,6 +20,11 @@ public class DocumentRepository : IDocumentRepository
         if (!string.IsNullOrWhiteSpace(uploadedById))
         {
             query = query.Where(document => document.UploadedById == uploadedById);
+        }
+
+        if (courseId.HasValue)
+        {
+            query = query.Where(document => document.CourseId == courseId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
