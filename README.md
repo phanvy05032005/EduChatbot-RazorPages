@@ -10,9 +10,7 @@ Dự án sử dụng .NET 9, ASP.NET Core Razor Pages, Entity Framework Core, Po
 - Quản lý môn học và phân công Lecturer phụ trách môn học.
 - Lecturer chỉ được upload tài liệu cho môn học đã được Admin phân công.
 - Extract text từ file PDF/DOCX.
-- Tính độ phù hợp giữa tài liệu và môn học bằng Embedding + Cosine Similarity.
-- Admin review tài liệu có Match Score thấp.
-- Chunk tài liệu và lưu vector embedding vào PostgreSQL + pgvector.
+- Chunk tài liệu và lưu vector embedding vào PostgreSQL + pgvector ngay sau khi upload.
 - Chatbot trả lời theo phạm vi môn học được chọn.
 - Student và Lecturer có thể chỉnh sửa profile, đổi mật khẩu.
 - Email queue để gửi email thông báo tài khoản.
@@ -46,7 +44,6 @@ Business Layer
 - EmailQueueService
 - Business rules
 - Xử lý PDF/DOCX
-- Tính Match Score
 - Tích hợp AI / Embedding API
 
         |
@@ -306,12 +303,20 @@ Sau đó chạy lại project.
 
 ## Tài khoản mặc định
 
-Hệ thống tự seed một tài khoản Admin khi khởi động:
+Hệ thống tự seed các tài khoản mặc định khi khởi động:
 
 ```text
 Email: admin@educhatbot.local
 Password: Admin@123456
 Role: Admin
+
+Email: student@educhatbot.local
+Password: Student@123456
+Role: Student
+
+Email: lecturer@educhatbot.local
+Password: Lecturer@123456
+Role: Lecturer
 ```
 
 Sau khi login bằng Admin, bạn có thể tạo tài khoản Student và Lecturer trong Admin Dashboard.
@@ -324,8 +329,7 @@ Sau khi login bằng Admin, bạn có thể tạo tài khoản Student và Lectu
 2. Tạo môn học.
 3. Tạo tài khoản Lecturer.
 4. Phân công môn học cho Lecturer.
-5. Review tài liệu Pending Review.
-6. Quản lý tài khoản Student.
+5. Quản lý tài khoản Student.
 
 ### Lecturer
 
@@ -335,9 +339,8 @@ Sau khi login bằng Admin, bạn có thể tạo tài khoản Student và Lectu
 4. Upload file PDF/DOCX.
 5. Hệ thống kiểm tra:
    - Lecturer có được phân công môn đó không.
-   - Nội dung tài liệu có phù hợp với môn học không.
-6. Nếu Match Score đủ cao, tài liệu được Approved và index vào vector database.
-7. Nếu Match Score thấp, tài liệu chuyển sang Pending Review để Admin duyệt.
+   - File có đúng định dạng và extract text được không.
+6. Tài liệu được Approved và index vào vector database ngay sau khi upload thành công.
 
 ### Student
 
@@ -348,10 +351,6 @@ Sau khi login bằng Admin, bạn có thể tạo tài khoản Student và Lectu
 5. Hệ thống gửi context sang OpenRouter AI API và trả lời cho Student.
 
 ## Logic kiểm tra tài liệu upload
-
-Hệ thống dùng 2 lớp kiểm tra.
-
-### 1. Kiểm tra phân công môn học
 
 Đây là business rule bắt buộc:
 
@@ -373,49 +372,7 @@ lecturer_courses
 
 Nếu Lecturer không được phân công môn học đã chọn, hệ thống từ chối upload.
 
-### 2. Tính Match Score giữa tài liệu và môn học
-
-Sau khi Lecturer pass kiểm tra phân công môn học, hệ thống mới kiểm tra nội dung tài liệu.
-
-Hệ thống dùng:
-
-```text
-Embedding Model + Cosine Similarity
-```
-
-Hệ thống không dùng GPT/chat completion để quyết định tài liệu có đúng môn học hay không.
-
-Luồng xử lý:
-
-```text
-Course Code + Course Name + Course Description
-        ↓
-Generate subject embedding
-
-Extracted document text
-        ↓
-Generate document embedding
-
-Compare vectors bằng Cosine Similarity
-        ↓
-Match Score = Similarity * 100
-```
-
-Nếu:
-
-```text
-Match Score >= 50
-```
-
-tài liệu được Approved và index vào vector database.
-
-Nếu:
-
-```text
-Match Score < 50
-```
-
-tài liệu chuyển sang Pending Review để Admin duyệt.
+Sau khi pass kiểm tra phân công, hệ thống extract text, chia chunk, tạo embedding cho từng chunk và lưu vào vector database. Hệ thống không kiểm tra nội dung tài liệu có đúng môn học hay không; trách nhiệm nội dung thuộc về Lecturer.
 
 ## Cấu hình AI và Embedding
 
@@ -468,10 +425,10 @@ SampleExcels/LecturerImportTemplate.csv
 
 Giao diện upload đang nhận file `.xlsx`. Bạn có thể mở file `.csv` bằng Excel hoặc Google Sheets rồi export thành `.xlsx`.
 
-Với Lecturer import, cột `CourseCodes` hỗ trợ nhiều mã môn học trong một ô, phân tách bằng dấu `;`:
+Với Lecturer import, cột `CourseCodes` chỉ nhận một mã môn học cho mỗi lecturer:
 
 ```text
-PRN222;SWP391;PRM392
+PRN222
 ```
 
 ## Các lệnh thường dùng

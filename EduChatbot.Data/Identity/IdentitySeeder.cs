@@ -20,22 +20,52 @@ public static class IdentitySeeder
             }
         }
 
-        const string adminEmail = "admin@educhatbot.local";
-        const string adminPassword = "Admin@123456";
+        await SeedUserAsync(
+            userManager,
+            "admin@educhatbot.local",
+            "Admin@123456",
+            "System Admin",
+            ApplicationRoles.Admin);
 
-        var admin = await userManager.FindByEmailAsync(adminEmail);
-        if (admin == null)
+        await SeedUserAsync(
+            userManager,
+            "student@educhatbot.local",
+            "Student@123456",
+            "Test Student",
+            ApplicationRoles.Student);
+
+        await SeedUserAsync(
+            userManager,
+            "lecturer@educhatbot.local",
+            "Lecturer@123456",
+            "Test Lecturer",
+            ApplicationRoles.Lecturer);
+    }
+
+    private static async Task SeedUserAsync(
+        UserManager<ApplicationUser> userManager,
+        string email,
+        string password,
+        string fullName,
+        string role)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
         {
-            admin = new ApplicationUser
+            user = new ApplicationUser
             {
-                UserName = adminEmail,
-                Email = adminEmail,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true,
-                FullName = "System Admin"
+                FullName = fullName
             };
 
-            await userManager.CreateAsync(admin, adminPassword);
-            await userManager.AddToRoleAsync(admin, ApplicationRoles.Admin);
+            await userManager.CreateAsync(user, password);
+        }
+
+        if (!await userManager.IsInRoleAsync(user, role))
+        {
+            await userManager.AddToRoleAsync(user, role);
         }
     }
 }

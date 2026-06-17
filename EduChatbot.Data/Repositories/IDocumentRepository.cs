@@ -10,8 +10,6 @@ public interface IDocumentRepository
 
     Task<Document?> GetByIdAsync(int id, string? uploadedById = null);
 
-    Task<List<Document>> GetPendingReviewAsync();
-
     Task<bool> ExistsByUploadedByAndFileNameAsync(string uploadedById, string fileName);
 
     Task AddAsync(Document document);

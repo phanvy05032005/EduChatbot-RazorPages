@@ -8,8 +8,8 @@ public class DocumentUploadRules : IDocumentUploadRules
     private static readonly string[] Statuses =
     [
         DocumentStatuses.Approved,
-        DocumentStatuses.PendingReview,
         DocumentStatuses.Rejected,
+        DocumentStatuses.Processing,
         DocumentStatuses.Failed
     ];
 

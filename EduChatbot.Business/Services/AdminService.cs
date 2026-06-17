@@ -91,6 +91,33 @@ public class AdminService : IAdminService
             return Failure("Invalid account role.");
         }
 
+        var selectedCourseIds = courseIds?
+            .Distinct()
+            .ToList() ?? [];
+        Course? selectedCourse = null;
+        if (role == ApplicationRoles.Lecturer && selectedCourseIds.Count > 0)
+        {
+            if (selectedCourseIds.Count > 1)
+            {
+                return Failure("A lecturer can only be assigned to one course.");
+            }
+
+            selectedCourse = await _context.Courses.FindAsync(selectedCourseIds[0]);
+            if (selectedCourse == null)
+            {
+                return Failure("Course not found.");
+            }
+
+            var currentAssignment = await _context.LecturerCourses
+                .Include(lc => lc.Lecturer)
+                .FirstOrDefaultAsync(lc => lc.CourseId == selectedCourse.Id);
+            if (currentAssignment != null)
+            {
+                var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
+                return Failure($"Course already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
+            }
+        }
+
         var user = new ApplicationUser
         {
             UserName = email.Trim(),
@@ -114,34 +141,23 @@ public class AdminService : IAdminService
 
         // Assign lecturer to teach selected courses
         var assignedCourseNames = new List<string>();
-        if (role == ApplicationRoles.Lecturer && courseIds != null && courseIds.Count > 0)
+        if (role == ApplicationRoles.Lecturer && selectedCourse != null)
         {
-            foreach (var courseId in courseIds)
+            assignedCourseNames.Add($"{selectedCourse.Code} - {selectedCourse.Name}");
+            _context.LecturerCourses.Add(new LecturerCourse
             {
-                var course = await _context.Courses.FindAsync(courseId);
-                if (course != null)
-                {
-                    assignedCourseNames.Add($"{course.Code} - {course.Name}");
-                    var existing = await _context.LecturerCourses
-                        .AnyAsync(lc => lc.LecturerId == user.Id && lc.CourseId == courseId);
-                    if (!existing)
-                    {
-                        _context.LecturerCourses.Add(new LecturerCourse
-                        {
-                            LecturerId = user.Id,
-                            CourseId = courseId
-                        });
-                    }
-                }
-            }
+                LecturerId = user.Id,
+                CourseId = selectedCourse.Id
+            });
+
             try
             {
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
-                // Duplicate PK — another admin already assigned this lecturer.
-                // Silently ignore since the desired state is already achieved.
+                await _userManager.DeleteAsync(user);
+                return Failure("This course or lecturer already has an assignment. Please refresh and try again.");
             }
         }
 
@@ -658,13 +674,13 @@ public class AdminService : IAdminService
         var isLecturer = await _userManager.IsInRoleAsync(lecturer, ApplicationRoles.Lecturer);
         if (!isLecturer) return Failure("User is not a lecturer.");
 
-        // Use SERIALIZABLE transaction to prevent two admins from assigning
-        // different lecturers to the same course at the same time.
+        // Use SERIALIZABLE transaction to prevent two admins from creating
+        // conflicting course/lecturer assignments at the same time.
         await using var transaction = await _context.Database
             .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         try
         {
-            // A course can only have ONE lecturer assigned.
+            // A course can only have one lecturer assigned.
             var currentAssignment = await _context.LecturerCourses
                 .Include(lc => lc.Lecturer)
                 .FirstOrDefaultAsync(lc => lc.CourseId == courseId);
@@ -678,6 +694,18 @@ public class AdminService : IAdminService
                 }
                 var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
                 return Failure($"Course already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
+            }
+
+            var lecturerAssignment = await _context.LecturerCourses
+                .Include(lc => lc.Course)
+                .FirstOrDefaultAsync(lc => lc.LecturerId == lecturerId);
+            if (lecturerAssignment != null)
+            {
+                await transaction.RollbackAsync();
+                var assignedCourse = lecturerAssignment.Course == null
+                    ? "another course"
+                    : $"{lecturerAssignment.Course.Code} - {lecturerAssignment.Course.Name}";
+                return Failure($"Lecturer is already assigned to {assignedCourse}. Remove that assignment first before assigning a new course.");
             }
 
             var assignment = new LecturerCourse
@@ -695,7 +723,7 @@ public class AdminService : IAdminService
         catch (DbUpdateException)
         {
             await transaction.RollbackAsync();
-            return Failure("This course already has a lecturer assigned. Please refresh and try again.");
+            return Failure("This course or lecturer already has an assignment. Please refresh and try again.");
         }
     }
 
@@ -781,9 +809,9 @@ public class AdminService : IAdminService
                     continue;
                 }
 
-                // Parse course codes list: split by comma, trim, uppercase.
+                // Lecturer accounts may be assigned to exactly one course.
                 var courseCodes = rawCourseCodes
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(x => x.Trim().ToUpperInvariant())
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .Distinct()
@@ -793,6 +821,13 @@ public class AdminService : IAdminService
                 {
                     failedCount++;
                     errorMessages.Add($"Row {i + 1} ({email}): Invalid CourseCodes.");
+                    continue;
+                }
+
+                if (courseCodes.Count > 1)
+                {
+                    failedCount++;
+                    errorMessages.Add($"Row {i + 1} ({email}): A lecturer can only be assigned to one course.");
                     continue;
                 }
 
@@ -807,6 +842,18 @@ public class AdminService : IAdminService
                     var missing = courseCodes.Where(code => !existingCodes.Contains(code)).ToList();
                     failedCount++;
                     errorMessages.Add($"Row {i + 1} ({email}): CourseCode does not exist: {string.Join(", ", missing)}");
+                    continue;
+                }
+
+                var selectedCourse = courses[0];
+                var currentAssignment = await _context.LecturerCourses
+                    .Include(lc => lc.Lecturer)
+                    .FirstOrDefaultAsync(lc => lc.CourseId == selectedCourse.Id);
+                if (currentAssignment != null)
+                {
+                    var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
+                    failedCount++;
+                    errorMessages.Add($"Row {i + 1} ({email}): Course already has a lecturer assigned ({assignedName}).");
                     continue;
                 }
 
@@ -838,22 +885,21 @@ public class AdminService : IAdminService
                 }
 
                 // Create LecturerCourse
-                foreach (var course in courses)
+                _context.LecturerCourses.Add(new LecturerCourse
                 {
-                    _context.LecturerCourses.Add(new LecturerCourse
-                    {
-                        LecturerId = user.Id,
-                        CourseId = course.Id
-                    });
-                }
+                    LecturerId = user.Id,
+                    CourseId = selectedCourse.Id
+                });
                 try
                 {
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateException)
                 {
-                    // Duplicate PK — lecturer already assigned to this course by another admin.
-                    // Silently ignore since the desired state is already achieved.
+                    await _userManager.DeleteAsync(user);
+                    failedCount++;
+                    errorMessages.Add($"Row {i + 1} ({email}): Course or lecturer already has an assignment.");
+                    continue;
                 }
 
                 if (sendEmail)
@@ -861,7 +907,7 @@ public class AdminService : IAdminService
                     try
                     {
                         var subject = "[EduChatbot] New Lecturer Account Credentials";
-                        var assignedCourseNames = courses.Select(c => $"{c.Code} - {c.Name}").ToList();
+                        var assignedCourseNames = new List<string> { $"{selectedCourse.Code} - {selectedCourse.Name}" };
                         var body = BuildAccountEmailHtml(fullName, email, randomPassword, "Lecturer", assignedCourseNames);
 
                         await _emailQueueService.EnqueueAsync(email, subject, body);
