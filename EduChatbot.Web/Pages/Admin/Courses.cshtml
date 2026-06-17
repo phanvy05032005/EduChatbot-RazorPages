@@ -2,13 +2,7 @@
 @model EduChatbot.Web.Pages.Admin.CoursesModel
 @{
     ViewData["Title"] = "Courses & Assignments";
-    var assignedLecturerIds = Model.Courses
-        .SelectMany(course => course.LecturerCourses)
-        .Select(assignment => assignment.LecturerId)
-        .ToHashSet();
-    var availableLecturers = Model.Lecturers
-        .Where(lecturer => !assignedLecturerIds.Contains(lecturer.Id))
-        .ToList();
+    var availableLecturers = Model.Lecturers;
 }
 
 <div class="admin-page">
