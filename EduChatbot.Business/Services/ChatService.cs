@@ -73,28 +73,34 @@ public class ChatService : IChatService
         var conversation = await _chatRepository.GetConversationWithMessagesAsync(conversationId, userId);
         int? courseId = conversation?.CourseId;
 
-        // Step 2: Create embedding for question and search related chunks by cosine similarity with CourseId.
-        var questionEmbedding = await _embeddingService.CreateEmbeddingAsync(question);
-        var searchResults = await _chatRepository.SearchChunksAsync(questionEmbedding, courseId);
-
-        // Step 3: Check similarity threshold - block out-of-scope questions.
-        var relevantResults = searchResults
-            .Where(r => r.SimilarityScore >= _chatSettings.SimilarityThreshold)
-            .ToList();
-
         string aiResponseText;
-        List<ChunkSearchResult> resultsForCitation;
+        List<ChunkSearchResult> resultsForCitation = [];
 
-        if (relevantResults.Count == 0)
+        if (IsGreeting(question))
         {
-            aiResponseText = _chatSettings.OutOfScopeMessage;
-            resultsForCitation = [];
+            aiResponseText = "Xin chào! Tôi là trợ lý học tập AI. Tôi có thể giúp gì cho bạn về tài liệu học tập của môn học này?";
         }
         else
         {
-            var context = BuildPromptContext(relevantResults);
-            aiResponseText = await CallLlmAsync(question, context);
-            resultsForCitation = relevantResults;
+            // Step 2: Create embedding for question and search related chunks by cosine similarity with CourseId.
+            var questionEmbedding = await _embeddingService.CreateEmbeddingAsync(question);
+            var searchResults = await _chatRepository.SearchChunksAsync(questionEmbedding, courseId);
+
+            // Step 3: Check similarity threshold - block out-of-scope questions.
+            var relevantResults = searchResults
+                .Where(r => r.SimilarityScore >= _chatSettings.SimilarityThreshold)
+                .ToList();
+
+            if (relevantResults.Count == 0)
+            {
+                aiResponseText = _chatSettings.OutOfScopeMessage;
+            }
+            else
+            {
+                var context = BuildPromptContext(relevantResults);
+                aiResponseText = await CallLlmAsync(question, context);
+                resultsForCitation = relevantResults;
+            }
         }
 
         // Step 4: Build enhanced source citation with scores and previews.
@@ -135,6 +141,33 @@ public class ChatService : IChatService
 
         var conversation = await _chatRepository.GetConversationWithMessagesAsync(conversationId, userId);
         int? courseId = conversation?.CourseId;
+
+        if (IsGreeting(question))
+        {
+            var greetingText = "Xin chào! Tôi là trợ lý học tập AI. Tôi có thể giúp gì cho bạn về tài liệu học tập của môn học này?";
+
+            // Stream word by word with delay to simulate LLM streaming
+            var words = greetingText.Split(' ');
+            foreach (var word in words)
+            {
+                yield return JsonSerializer.Serialize(new { token = word + " " });
+                await Task.Delay(40, cancellationToken);
+            }
+
+            // Save to DB
+            var aiMsg = new ChatMessage
+            {
+                ConversationId = conversationId,
+                Role = "ai",
+                Content = greetingText,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _chatRepository.AddMessageAsync(aiMsg);
+            await UpdateConversationTitleAsync(conversationId, userId, question);
+
+            yield return JsonSerializer.Serialize(new { done = true });
+            yield break;
+        }
 
         // Step 2: Create embedding and search chunks.
         var questionEmbedding = await _embeddingService.CreateEmbeddingAsync(question);
@@ -199,6 +232,7 @@ public class ChatService : IChatService
         // Step 9: Update conversation title.
         await UpdateConversationTitleAsync(conversationId, userId, question);
 
+        // Step 10: Yield done.
         yield return JsonSerializer.Serialize(new { done = true });
     }
 
@@ -392,5 +426,26 @@ public class ChatService : IChatService
     public async Task<List<Course>> GetCoursesAsync()
     {
         return await _chatRepository.GetCoursesAsync();
+    }
+
+    private static readonly HashSet<string> Greetings = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "yo",
+        "xin chào", "xin chao", "chào", "chao", "chào bạn", "chao ban", "hello bạn", "hello ban",
+        "hi bạn", "hi ban", "alo", "alô", "helo", "hellooo", "hiii"
+    };
+
+    private static bool IsGreeting(string question)
+    {
+        if (string.IsNullOrWhiteSpace(question)) return false;
+        var clean = question.Trim().TrimEnd('?', '!', '.', ',').ToLowerInvariant();
+        return Greetings.Contains(clean);
+    }
+
+    private static bool ContainsVietnamese(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        string viChars = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ";
+        return text.ToLowerInvariant().Any(c => viChars.Contains(c));
     }
 }
