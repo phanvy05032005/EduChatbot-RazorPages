@@ -699,17 +699,6 @@ public class AdminService : IAdminService
                 return Failure($"Course already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
             }
 
-            var lecturerAssignment = await _context.LecturerCourses
-                .Include(lc => lc.Course)
-                .FirstOrDefaultAsync(lc => lc.LecturerId == lecturerId);
-            if (lecturerAssignment != null)
-            {
-                await transaction.RollbackAsync();
-                var assignedCourse = lecturerAssignment.Course == null
-                    ? "another course"
-                    : $"{lecturerAssignment.Course.Code} - {lecturerAssignment.Course.Name}";
-                return Failure($"Lecturer is already assigned to {assignedCourse}. Remove that assignment first before assigning a new course.");
-            }
 
             var assignment = new LecturerCourse
             {
