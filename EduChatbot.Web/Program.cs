@@ -1,4 +1,5 @@
 using EduChatbot.Business;
+using EduChatbot.Business.Hubs;
 using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,7 @@ builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
 
 // Đăng ký toàn bộ Business + Data thông qua Business layer để Web không phụ thuộc trực tiếp Data layer.
 builder.Services.AddEduChatbotApplication(builder.Configuration);
@@ -48,6 +50,8 @@ app.MapStaticAssets();
 
 app.MapRazorPages()
     .WithStaticAssets();
+
+app.MapHub<AdminHub>("/adminHub");
 
 await app.Services.SeedEduChatbotIdentityAsync();
 

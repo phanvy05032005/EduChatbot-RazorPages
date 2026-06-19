@@ -1,0 +1,55 @@
+@model List<EduChatbot.Models.Document>
+
+<div class="table-responsive">
+    <table class="table admin-table mb-0">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>Course</th>
+                <th>Size</th>
+                <th>Chunks</th>
+                <th>Status</th>
+                <th>Uploaded At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="text-center" style="color: rgba(228, 240, 246, 0.5); padding: 2rem; font-style: italic;">
+                        No materials uploaded yet.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var document in Model)
+                {
+                    var statusClass = document.Status == EduChatbot.Models.DocumentStatuses.Approved
+                        ? "is-active"
+                        : "is-locked";
+                    var sizeMb = document.FileSize / 1024d / 1024d;
+                    var courseInfo = !string.IsNullOrWhiteSpace(document.SubjectCode)
+                        ? $"[{document.SubjectCode}] {document.SubjectName}"
+                        : document.Course != null ? $"[{document.Course.Code}] {document.Course.Name}" : "N/A";
+                    <tr id="doc-row-@document.Id" class="material-row">
+                        <td>
+                            <strong style="color: #e4f0f6;">@document.FileName</strong>
+                        </td>
+                        <td>
+                            <span style="font-size:0.85rem; font-weight:500; background:rgba(228, 240, 246, 0.08); border: 1px solid rgba(228, 240, 246, 0.1); padding:0.2rem 0.4rem; border-radius:4px;">
+                                @courseInfo
+                            </span>
+                        </td>
+                        <td>@sizeMb.ToString("0.00") MB</td>
+                        <td>@document.ChunkCount</td>
+                        <td>
+                            <span class="admin-status @statusClass">@document.Status</span>
+                        </td>
+                        <td>@document.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

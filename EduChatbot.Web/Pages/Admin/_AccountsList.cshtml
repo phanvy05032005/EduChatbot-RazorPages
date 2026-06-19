@@ -44,7 +44,7 @@
         <button type="submit" data-i18n="admin.accounts.search">Search</button>
     </form>
 
-    <section class="admin-card admin-table-card">
+    <section id="accounts-table-card" class="admin-card admin-table-card">
         <div class="admin-card-header">
             <h2><span data-i18n="admin.accounts.list">List</span> @Model.AccountType</h2>
             <span>@Model.Accounts.Count <span data-i18n="admin.accounts.accounts">account(s)</span></span>
@@ -78,6 +78,10 @@
                             <td><span class="admin-status @(account.Status == "Active" ? "is-active" : "is-locked")">@account.Status</span></td>
                             <td class="admin-actions">
                                 <a asp-page="/Admin/AccountForm" asp-route-id="@account.Id" title="Edit" data-i18n="admin.accounts.edit">Edit</a>
+                                @if (isLecturer)
+                                {
+                                    <a asp-page="/Admin/LecturerDetail" asp-route-id="@account.Id" title="Details" data-i18n="admin.accounts.details">Details</a>
+                                }
                                 @if (account.Status == "Active")
                                 {
                                     <form method="post" asp-page-handler="Lock" class="d-inline">

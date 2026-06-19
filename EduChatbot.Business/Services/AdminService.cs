@@ -1,7 +1,9 @@
 using EduChatbot.Data;
 using EduChatbot.Models;
 using EduChatbot.Models.Identity;
+using EduChatbot.Business.Hubs;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MiniExcelLibs;
 using System.IO;
@@ -14,17 +16,20 @@ public class AdminService : IAdminService
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly IHubContext<AdminHub> _hubContext;
 
     public AdminService(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         IEmailService emailService,
-        IEmailQueueService emailQueueService)
+        IEmailQueueService emailQueueService,
+        IHubContext<AdminHub> hubContext)
     {
         _userManager = userManager;
         _context = context;
         _emailService = emailService;
         _emailQueueService = emailQueueService;
+        _hubContext = hubContext;
     }
 
     public async Task<AdminStatisticsInfo> GetStatisticsAsync()
@@ -188,6 +193,8 @@ public class AdminService : IAdminService
                 : $"{role} account created successfully, but email notification could not be queued.")
             : $"{role} account created successfully.";
 
+        await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Create", role);
+
         return Success(successMessage);
     }
 
@@ -204,9 +211,14 @@ public class AdminService : IAdminService
         user.UserName = email.Trim();
 
         var result = await _userManager.UpdateAsync(user);
-        return result.Succeeded
-            ? Success("Account updated successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Update", role);
+            return Success("Account updated successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public async Task<AdminOperationResult> LockAccountAsync(string id)
@@ -220,9 +232,14 @@ public class AdminService : IAdminService
         await _userManager.SetLockoutEnabledAsync(user, true);
         var result = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
 
-        return result.Succeeded
-            ? Success("Account locked successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "StatusChange", role);
+            return Success("Account locked successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public async Task<AdminOperationResult> UnlockAccountAsync(string id)
@@ -234,9 +251,14 @@ public class AdminService : IAdminService
         }
 
         var result = await _userManager.SetLockoutEndDateAsync(user, null);
-        return result.Succeeded
-            ? Success("Account unlocked successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "StatusChange", role);
+            return Success("Account unlocked successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public async Task<AdminOperationResult> DeleteAccountAsync(string id, string currentUserId)
@@ -253,15 +275,14 @@ public class AdminService : IAdminService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        if (roles.Contains(ApplicationRoles.Admin))
-        {
-            return Failure("Admin accounts cannot be deleted from this page.");
-        }
-
+        var role = roles.FirstOrDefault() ?? string.Empty;
         var result = await _userManager.DeleteAsync(user);
-        return result.Succeeded
-            ? Success("Account deleted successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Delete", role);
+            return Success("Account deleted successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public Task<bool> CanConnectToDatabaseAsync()
@@ -399,6 +420,11 @@ public class AdminService : IAdminService
                     }
                 }
                 successCount++;
+            }
+
+            if (successCount > 0)
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Import", ApplicationRoles.Student);
             }
 
             var msg = $"Successfully imported {successCount} student(s).";
@@ -632,6 +658,8 @@ public class AdminService : IAdminService
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 
+        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Create", normalizedCode);
+
         return Success("Course created successfully.");
     }
 
@@ -643,8 +671,11 @@ public class AdminService : IAdminService
             return Failure("Course not found.");
         }
 
+        var courseCode = course.Code;
         _context.Courses.Remove(course);
         await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Delete", courseCode);
 
         return Success("Course deleted successfully.");
     }
@@ -718,6 +749,8 @@ public class AdminService : IAdminService
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Assign", course.Code);
+
             return Success("Lecturer assigned to course successfully.");
         }
         catch (DbUpdateException)
@@ -736,8 +769,12 @@ public class AdminService : IAdminService
             return Failure("Course assignment not found.");
         }
 
+        var course = await _context.Courses.FindAsync(courseId);
+        var courseCode = course?.Code ?? string.Empty;
         _context.LecturerCourses.Remove(assignment);
         await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Remove", courseCode);
 
         return Success("Lecturer course assignment removed successfully.");
     }
@@ -922,6 +959,11 @@ public class AdminService : IAdminService
                 successCount++;
             }
 
+            if (successCount > 0)
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Import", ApplicationRoles.Lecturer);
+            }
+
             var msg = $"Successfully imported {successCount} lecturer(s).";
             if (failedCount > 0)
             {
@@ -1032,6 +1074,7 @@ public class AdminService : IAdminService
             if (successCount > 0)
             {
                 await _context.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Import", "");
             }
 
             var msg = $"Successfully imported {successCount} course(s).";
