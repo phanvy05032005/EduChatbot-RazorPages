@@ -11,6 +11,7 @@
     const conversationId = document.getElementById('conversation-id')?.value;
     const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const sendUrl = chatForm?.dataset.sendUrl || '/Chat/Conversation?handler=SendMessage';
+    const streamUrl = chatForm?.dataset.streamUrl || '/Chat/Conversation?handler=SendMessageStream';
 
     if (!messagesContainer || !chatForm || !chatInput || !sendBtn) return;
 
@@ -59,14 +60,34 @@
         ensureMessageStack();
         appendMessage('user', text);
 
-        const loadingId = 'loading-' + Date.now();
-        appendLoading(loadingId);
-
         chatInput.value = '';
         chatInput.style.height = 'auto';
         scrollToBottom();
 
-        fetch(sendUrl, {
+        // Create an empty streaming AI bubble.
+        var streamRow = document.createElement('div');
+        streamRow.className = 'msg-row ai';
+
+        var avatar = document.createElement('div');
+        avatar.className = 'msg-avatar ai';
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.textContent = 'AI';
+        streamRow.appendChild(avatar);
+
+        var contentDiv = document.createElement('div');
+        contentDiv.className = 'msg-content';
+
+        var bubble = document.createElement('div');
+        bubble.className = 'msg-bubble ai streaming-bubble';
+        bubble.innerHTML = '<span class="typing-cursor"></span>';
+        contentDiv.appendChild(bubble);
+        streamRow.appendChild(contentDiv);
+        ensureMessageStack().appendChild(streamRow);
+        scrollToBottom();
+
+        var accumulated = '';
+
+        fetch(streamUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -76,21 +97,96 @@
                 '&message=' + encodeURIComponent(text) +
                 '&__RequestVerificationToken=' + encodeURIComponent(antiForgeryToken)
         })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                removeLoading(loadingId);
-                appendMessage('ai', data.content, data.sources);
-                scrollToBottom();
-            })
-            .catch(function () {
-                removeLoading(loadingId);
-                appendMessage('ai', window.EduI18n ? EduI18n.t('chat.errorSending') : 'Sorry, an error occurred while sending the message. Please try again.');
-                scrollToBottom();
-            })
-            .finally(function () {
-                busy = false;
-                updateSendBtn();
-            });
+        .then(function (res) {
+            var reader = res.body.getReader();
+            var decoder = new TextDecoder();
+            var buffer = '';
+
+            function processChunk(result) {
+                if (result.done) {
+                    finishStream(streamRow, contentDiv, bubble, accumulated);
+                    return;
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i].trim();
+                    if (!line.startsWith('data: ')) continue;
+                    var jsonStr = line.substring(6);
+                    try {
+                        var data = JSON.parse(jsonStr);
+
+                        if (data.token) {
+                            accumulated += data.token;
+                            bubble.innerHTML = renderMarkdown(accumulated) + '<span class="typing-cursor"></span>';
+                            scrollToBottom();
+                        } else if (data.outOfScope) {
+                            accumulated = data.content;
+                            streamRow.classList.add('out-of-scope');
+                            avatar.textContent = '\u26a0';
+                            bubble.classList.add('out-of-scope-bubble');
+                            bubble.innerHTML = renderMarkdown(accumulated);
+                            scrollToBottom();
+                        } else if (data.sources && data.sources.length > 0) {
+                            renderStreamSources(contentDiv, data.sources);
+                            scrollToBottom();
+                        } else if (data.done) {
+                            finishStream(streamRow, contentDiv, bubble, accumulated);
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                }
+
+                return reader.read().then(processChunk);
+            }
+
+            return reader.read().then(processChunk);
+        })
+        .catch(function () {
+            bubble.classList.remove('streaming-bubble');
+            bubble.innerHTML = renderMarkdown(window.EduI18n ? EduI18n.t('chat.errorSending') : 'Sorry, an error occurred while sending the message. Please try again.');
+            scrollToBottom();
+        })
+        .finally(function () {
+            busy = false;
+            updateSendBtn();
+        });
+    }
+
+    function finishStream(row, contentDiv, bubble, content) {
+        bubble.classList.remove('streaming-bubble');
+        // Re-render final markdown without cursor.
+        if (content) {
+            bubble.innerHTML = renderMarkdown(content);
+        }
+    }
+
+    function renderStreamSources(contentDiv, sources) {
+        var sourcesDiv = document.createElement('div');
+        sourcesDiv.className = 'msg-sources';
+        sourcesDiv.innerHTML = '<div class="sources-label">Sources</div>';
+
+        var tagsDiv = document.createElement('div');
+        tagsDiv.className = 'source-list';
+        sources.forEach(function (s) {
+            var scorePercent = Math.round((s.score || 0) * 100);
+            var scoreClass = scorePercent >= 70 ? 'score-high' : scorePercent >= 50 ? 'score-medium' : 'score-low';
+
+            var tag = document.createElement('span');
+            tag.className = 'source-tag';
+            if (s.chunkPreview) tag.title = s.chunkPreview;
+            tag.innerHTML = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">' +
+                '<path d="M7 3.5h6.5L18 8v12.5H7V3.5Z" />' +
+                '<path d="M13.5 3.5V8H18" />' +
+                '</svg>' +
+                '<span>' + escapeHtml(s.doc) + '</span><i aria-hidden="true">&middot;</i><span>Chunk ' + s.chunk + '</span>' +
+                (scorePercent > 0 ? '<span class="source-score ' + scoreClass + '">' + scorePercent + '%</span>' : '');
+            tagsDiv.appendChild(tag);
+        });
+        sourcesDiv.appendChild(tagsDiv);
+        contentDiv.appendChild(sourcesDiv);
     }
 
     function ensureMessageStack() {
@@ -103,15 +199,16 @@
         return stack;
     }
 
-    function appendMessage(role, content, sources) {
+    function appendMessage(role, content, sources, isOutOfScope) {
         const row = document.createElement('div');
         row.className = 'msg-row ' + role;
+        if (isOutOfScope) row.classList.add('out-of-scope');
 
         if (role === 'ai') {
             const avatar = document.createElement('div');
             avatar.className = 'msg-avatar ai';
             avatar.setAttribute('aria-hidden', 'true');
-            avatar.textContent = 'AI';
+            avatar.textContent = isOutOfScope ? '⚠' : 'AI';
             row.appendChild(avatar);
         }
 
@@ -120,6 +217,7 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'msg-bubble ' + role;
+        if (isOutOfScope) bubble.classList.add('out-of-scope-bubble');
         if (role === 'ai') {
             bubble.innerHTML = renderMarkdown(content);
         } else {
@@ -135,13 +233,18 @@
             const tagsDiv = document.createElement('div');
             tagsDiv.className = 'source-list';
             sources.forEach(function (s) {
+                var scorePercent = Math.round((s.score || 0) * 100);
+                var scoreClass = scorePercent >= 70 ? 'score-high' : scorePercent >= 50 ? 'score-medium' : 'score-low';
+
                 const tag = document.createElement('span');
                 tag.className = 'source-tag';
+                if (s.chunkPreview) tag.title = s.chunkPreview;
                 tag.innerHTML = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">' +
                     '<path d="M7 3.5h6.5L18 8v12.5H7V3.5Z" />' +
                     '<path d="M13.5 3.5V8H18" />' +
                     '</svg>' +
-                    '<span>' + escapeHtml(s.doc) + '</span><i aria-hidden="true">&middot;</i><span>Chunk ' + s.chunk + '</span>';
+                    '<span>' + escapeHtml(s.doc) + '</span><i aria-hidden="true">&middot;</i><span>Chunk ' + s.chunk + '</span>' +
+                    (scorePercent > 0 ? '<span class="source-score ' + scoreClass + '">' + scorePercent + '%</span>' : '');
                 tagsDiv.appendChild(tag);
             });
             sourcesDiv.appendChild(tagsDiv);

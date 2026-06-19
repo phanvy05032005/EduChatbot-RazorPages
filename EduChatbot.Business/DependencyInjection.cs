@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<IChatService, ChatService>();
         services.Configure<OpenRouterSettings>(configuration.GetSection("OpenRouter"));
         services.Configure<EmbeddingSettings>(configuration.GetSection("Embedding"));
+        services.Configure<ChatSettings>(configuration.GetSection("Chat"));
         services.AddHttpClient<IEmbeddingService, OpenRouterEmbeddingService>();
         services.AddHttpClient<IChatService, ChatService>();
         services.AddScoped<IEmailService, EmailService>();

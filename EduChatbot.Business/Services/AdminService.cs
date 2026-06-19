@@ -94,27 +94,27 @@ public class AdminService : IAdminService
         var selectedCourseIds = courseIds?
             .Distinct()
             .ToList() ?? [];
-        Course? selectedCourse = null;
+        var selectedCourses = new List<Course>();
         if (role == ApplicationRoles.Lecturer && selectedCourseIds.Count > 0)
         {
-            if (selectedCourseIds.Count > 1)
+            foreach (var courseId in selectedCourseIds)
             {
-                return Failure("A lecturer can only be assigned to one course.");
-            }
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null)
+                {
+                    return Failure($"Course not found (ID: {courseId}).");
+                }
 
-            selectedCourse = await _context.Courses.FindAsync(selectedCourseIds[0]);
-            if (selectedCourse == null)
-            {
-                return Failure("Course not found.");
-            }
+                var currentAssignment = await _context.LecturerCourses
+                    .Include(lc => lc.Lecturer)
+                    .FirstOrDefaultAsync(lc => lc.CourseId == course.Id);
+                if (currentAssignment != null)
+                {
+                    var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
+                    return Failure($"Course '{course.Code} - {course.Name}' already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
+                }
 
-            var currentAssignment = await _context.LecturerCourses
-                .Include(lc => lc.Lecturer)
-                .FirstOrDefaultAsync(lc => lc.CourseId == selectedCourse.Id);
-            if (currentAssignment != null)
-            {
-                var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
-                return Failure($"Course already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
+                selectedCourses.Add(course);
             }
         }
 
@@ -141,14 +141,17 @@ public class AdminService : IAdminService
 
         // Assign lecturer to teach selected courses
         var assignedCourseNames = new List<string>();
-        if (role == ApplicationRoles.Lecturer && selectedCourse != null)
+        if (role == ApplicationRoles.Lecturer && selectedCourses.Count > 0)
         {
-            assignedCourseNames.Add($"{selectedCourse.Code} - {selectedCourse.Name}");
-            _context.LecturerCourses.Add(new LecturerCourse
+            foreach (var course in selectedCourses)
             {
-                LecturerId = user.Id,
-                CourseId = selectedCourse.Id
-            });
+                assignedCourseNames.Add($"{course.Code} - {course.Name}");
+                _context.LecturerCourses.Add(new LecturerCourse
+                {
+                    LecturerId = user.Id,
+                    CourseId = course.Id
+                });
+            }
 
             try
             {
@@ -703,17 +706,6 @@ public class AdminService : IAdminService
                 return Failure($"Course already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
             }
 
-            var lecturerAssignment = await _context.LecturerCourses
-                .Include(lc => lc.Course)
-                .FirstOrDefaultAsync(lc => lc.LecturerId == lecturerId);
-            if (lecturerAssignment != null)
-            {
-                await transaction.RollbackAsync();
-                var assignedCourse = lecturerAssignment.Course == null
-                    ? "another course"
-                    : $"{lecturerAssignment.Course.Code} - {lecturerAssignment.Course.Name}";
-                return Failure($"Lecturer is already assigned to {assignedCourse}. Remove that assignment first before assigning a new course.");
-            }
 
             var assignment = new LecturerCourse
             {
@@ -816,7 +808,7 @@ public class AdminService : IAdminService
                     continue;
                 }
 
-                // Lecturer accounts may be assigned to exactly one course.
+                // Lecturer accounts may be assigned to multiple courses.
                 var courseCodes = rawCourseCodes
                     .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(x => x.Trim().ToUpperInvariant())
@@ -828,13 +820,6 @@ public class AdminService : IAdminService
                 {
                     failedCount++;
                     errorMessages.Add($"Row {i + 1} ({email}): Invalid CourseCodes.");
-                    continue;
-                }
-
-                if (courseCodes.Count > 1)
-                {
-                    failedCount++;
-                    errorMessages.Add($"Row {i + 1} ({email}): A lecturer can only be assigned to one course.");
                     continue;
                 }
 
@@ -852,15 +837,24 @@ public class AdminService : IAdminService
                     continue;
                 }
 
-                var selectedCourse = courses[0];
-                var currentAssignment = await _context.LecturerCourses
-                    .Include(lc => lc.Lecturer)
-                    .FirstOrDefaultAsync(lc => lc.CourseId == selectedCourse.Id);
-                if (currentAssignment != null)
+                // Check if any of these courses is already assigned to another lecturer
+                bool hasConflict = false;
+                foreach (var course in courses)
                 {
-                    var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
-                    failedCount++;
-                    errorMessages.Add($"Row {i + 1} ({email}): Course already has a lecturer assigned ({assignedName}).");
+                    var currentAssignment = await _context.LecturerCourses
+                        .Include(lc => lc.Lecturer)
+                        .FirstOrDefaultAsync(lc => lc.CourseId == course.Id);
+                    if (currentAssignment != null)
+                    {
+                        var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
+                        failedCount++;
+                        errorMessages.Add($"Row {i + 1} ({email}): Course '{course.Code}' is already assigned to another lecturer ({assignedName}).");
+                        hasConflict = true;
+                        break;
+                    }
+                }
+                if (hasConflict)
+                {
                     continue;
                 }
 
@@ -892,11 +886,14 @@ public class AdminService : IAdminService
                 }
 
                 // Create LecturerCourse
-                _context.LecturerCourses.Add(new LecturerCourse
+                foreach (var course in courses)
                 {
-                    LecturerId = user.Id,
-                    CourseId = selectedCourse.Id
-                });
+                    _context.LecturerCourses.Add(new LecturerCourse
+                    {
+                        LecturerId = user.Id,
+                        CourseId = course.Id
+                    });
+                }
                 try
                 {
                     await _context.SaveChangesAsync();
@@ -914,7 +911,7 @@ public class AdminService : IAdminService
                     try
                     {
                         var subject = "[EduChatbot] New Lecturer Account Credentials";
-                        var assignedCourseNames = new List<string> { $"{selectedCourse.Code} - {selectedCourse.Name}" };
+                        var assignedCourseNames = courses.Select(c => $"{c.Code} - {c.Name}").ToList();
                         var body = BuildAccountEmailHtml(fullName, email, randomPassword, "Lecturer", assignedCourseNames);
 
                         await _emailQueueService.EnqueueAsync(email, subject, body);
