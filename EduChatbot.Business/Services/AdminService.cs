@@ -199,9 +199,16 @@ public class AdminService : IAdminService
             return Failure("Account not found.");
         }
 
+        var cleanedEmail = email.Trim();
+        var existingUser = await _userManager.FindByEmailAsync(cleanedEmail);
+        if (existingUser != null && existingUser.Id != id)
+        {
+            return Failure($"Email '{cleanedEmail}' is already in use by another account.");
+        }
+
         user.FullName = fullName.Trim();
-        user.Email = email.Trim();
-        user.UserName = email.Trim();
+        user.Email = cleanedEmail;
+        user.UserName = cleanedEmail;
 
         var result = await _userManager.UpdateAsync(user);
         return result.Succeeded
