@@ -1,8 +1,11 @@
+using System.Security.Claims;
 using EduChatbot.Business.Services;
 using EduChatbot.Models;
 using EduChatbot.Models.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+
+using Microsoft.AspNetCore.Mvc;
 
 namespace EduChatbot.Web.Pages.Documents;
 
@@ -18,8 +21,17 @@ public class DashboardModel : PageModel
 
     public DocumentDashboardSummary Summary { get; private set; } = new();
 
+    public List<Course> AssignedCourses { get; private set; } = [];
+
     public async Task OnGetAsync()
     {
         Summary = await _documentService.GetDashboardSummaryAsync();
+
+        var lecturerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(lecturerId))
+        {
+            AssignedCourses = await _documentService.GetAvailableCoursesForUserAsync(
+                lecturerId, User.IsInRole(ApplicationRoles.Admin));
+        }
     }
 }

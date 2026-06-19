@@ -4,7 +4,7 @@ namespace EduChatbot.Business.Services;
 
 public interface IDocumentService
 {
-    Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false);
+    Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false, int? courseId = null);
 
     Task<DocumentDashboardSummary> GetDashboardSummaryAsync();
 
