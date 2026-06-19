@@ -12,6 +12,9 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 using OpenXmlParagraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 using OpenXmlText = DocumentFormat.OpenXml.Wordprocessing.Text;
 
+using Microsoft.AspNetCore.SignalR;
+using EduChatbot.Business.Hubs;
+
 namespace EduChatbot.Business.Services;
 
 public class DocumentService : IDocumentService
@@ -22,6 +25,7 @@ public class DocumentService : IDocumentService
     private readonly IEmbeddingService _embeddingService;
     private readonly ILogger<DocumentService> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IHubContext<AdminHub> _hubContext;
 
     public DocumentService(
         IDocumentRepository documentRepository,
@@ -29,7 +33,8 @@ public class DocumentService : IDocumentService
         IDocumentUploadRules documentUploadRules,
         IEmbeddingService embeddingService,
         ILogger<DocumentService> logger,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        IHubContext<AdminHub> hubContext)
     {
         _documentRepository = documentRepository;
         _courseRepository = courseRepository;
@@ -37,6 +42,7 @@ public class DocumentService : IDocumentService
         _embeddingService = embeddingService;
         _logger = logger;
         _userManager = userManager;
+        _hubContext = hubContext;
     }
 
     public async Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false, int? courseId = null)
@@ -94,6 +100,11 @@ public class DocumentService : IDocumentService
         document.FileName = fileName.Trim();
 
         await _documentRepository.UpdateAsync(document);
+
+        if (!string.IsNullOrWhiteSpace(document.UploadedById))
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveMaterialChange", "Update", document.UploadedById, document.UploadedBy, document.FileName);
+        }
 
         return new DocumentUploadResult
         {
@@ -237,6 +248,11 @@ public class DocumentService : IDocumentService
 
             await _documentRepository.AddAsync(document);
 
+            if (!string.IsNullOrWhiteSpace(document.UploadedById))
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveMaterialChange", "Create", document.UploadedById, document.UploadedBy, document.FileName);
+            }
+
             return new DocumentUploadResult
             {
                 IsSuccess = true,
@@ -300,6 +316,8 @@ public class DocumentService : IDocumentService
             return false;
         }
 
+        var uploadedById = document.UploadedById;
+
         await _documentRepository.DeleteAsync(document);
 
         var physicalFilePath = Path.Combine(webRootPath, document.FilePath.TrimStart('/'));
@@ -307,6 +325,11 @@ public class DocumentService : IDocumentService
         {
             // Xóa file vật lý sau khi database đã xóa thành công.
             File.Delete(physicalFilePath);
+        }
+
+        if (!string.IsNullOrWhiteSpace(uploadedById))
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveMaterialChange", "Delete", uploadedById, document.UploadedBy, document.FileName);
         }
 
         return true;
