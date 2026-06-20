@@ -112,15 +112,15 @@
             refreshSection('dashboard-container', notifyTitle, notifyMsg);
         }
         
-        // 2. If on Students page and change is Student, or Lecturers page and change is Lecturer
+        // 2. If on Users page (unified students/lecturers management)
         const pathLower = window.location.pathname.toLowerCase();
-        const isStudentsPage = pathLower.includes('/admin/students');
-        const isLecturersPage = pathLower.includes('/admin/lecturers');
+        const isUsersPage = pathLower.includes('/admin/users');
         
-        if ((isStudentsPage && role === 'Student') || (isLecturersPage && role === 'Lecturer')) {
-            refreshSection('accounts-table-card', notifyTitle, notifyMsg, () => {
-                // Highlight new rows
-                highlightElements('.admin-table tbody tr');
+        if (isUsersPage) {
+            const targetCardId = role === 'Student' ? 'accounts-table-card-students' : 'accounts-table-card-lecturers';
+            refreshSection(targetCardId, notifyTitle, notifyMsg, () => {
+                // Highlight new rows inside the updated table card
+                highlightElements(`#${targetCardId} .admin-table tbody tr`);
             });
         }
     });

@@ -1,5 +1,7 @@
 using EduChatbot.Business;
-using EduChatbot.Business.Hubs;
+using EduChatbot.Web.Hubs;
+using EduChatbot.Business.Services;
+using EduChatbot.Web.Services;
 using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +31,7 @@ builder.Services.AddSignalR();
 
 // Đăng ký toàn bộ Business + Data thông qua Business layer để Web không phụ thuộc trực tiếp Data layer.
 builder.Services.AddEduChatbotApplication(builder.Configuration);
+builder.Services.AddScoped<IRealtimeService, RealtimeService>();
 
 var app = builder.Build();
 
