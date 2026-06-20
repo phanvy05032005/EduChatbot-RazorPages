@@ -97,15 +97,65 @@ public class ProfileModel : PageModel
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                ModelState.AddModelError(string.Empty, MapIdentityErrorToVietnamese(error));
             }
 
             return Page();
         }
 
+        user.HasChangedPassword = true;
+        await _userManager.UpdateAsync(user);
+
         await _signInManager.RefreshSignInAsync(user);
         TempData["ProfileMessage"] = "Password changed successfully.";
         return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostChangePasswordAjaxAsync(string currentPassword, string newPassword, string confirmPassword)
+    {
+        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            return new JsonResult(new { success = false, message = "Vui lòng điền đầy đủ các thông tin." });
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            return new JsonResult(new { success = false, message = "Mật khẩu mới và mật khẩu xác nhận không khớp." });
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return new JsonResult(new { success = false, message = "Không tìm thấy thông tin tài khoản." });
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (!result.Succeeded)
+        {
+            var errorMessages = result.Errors.Select(e => MapIdentityErrorToVietnamese(e));
+            return new JsonResult(new { success = false, message = string.Join(" ", errorMessages) });
+        }
+
+        user.HasChangedPassword = true;
+        await _userManager.UpdateAsync(user);
+        await _signInManager.RefreshSignInAsync(user);
+
+        return new JsonResult(new { success = true, message = "Thay đổi mật khẩu thành công!" });
+    }
+
+    private string MapIdentityErrorToVietnamese(IdentityError error)
+    {
+        return error.Code switch
+        {
+            "PasswordMismatch" => "Mật khẩu hiện tại không chính xác.",
+            "PasswordTooShort" => "Mật khẩu phải có ít nhất 6 ký tự.",
+            "PasswordRequiresNonAlphanumeric" => "Mật khẩu phải chứa ít nhất một ký tự đặc biệt (ví dụ: @, #, $, ...).",
+            "PasswordRequiresDigit" => "Mật khẩu phải chứa ít nhất một chữ số ('0'-'9').",
+            "PasswordRequiresLower" => "Mật khẩu phải chứa ít nhất một chữ cái thường ('a'-'z').",
+            "PasswordRequiresUpper" => "Mật khẩu phải chứa ít nhất một chữ cái hoa ('A'-'Z').",
+            "PasswordRequiresUniqueChars" => "Mật khẩu phải chứa nhiều ký tự khác nhau hơn.",
+            _ => error.Description
+        };
     }
 
     private void LoadProfile(ApplicationUser user)

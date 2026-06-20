@@ -256,6 +256,20 @@
         'admin.pending.reason': 'Lý do',
         'admin.pending.approve': 'Duyệt',
         'admin.pending.reject': 'Từ chối',
+
+        /* ---- Password Change Modal & Banner ---- */
+        'pwd.modal.title': 'Thay đổi mật khẩu của bạn',
+        'pwd.modal.desc': 'Tài khoản của bạn đã được quản trị viên tạo. Vui lòng thay đổi mật khẩu của bạn để tiếp tục an toàn.',
+        'pwd.modal.currentPassword': 'Mật khẩu hiện tại',
+        'pwd.modal.newPassword': 'Mật khẩu mới',
+        'pwd.modal.confirmPassword': 'Xác nhận mật khẩu mới',
+        'pwd.modal.cancel': 'Hủy',
+        'pwd.modal.save': 'Đổi mật khẩu',
+        'pwd.modal.errorFillAll': 'Vui lòng điền đầy đủ các thông tin.',
+        'pwd.modal.errorMatch': 'Mật khẩu mới và mật khẩu xác nhận không khớp.',
+        'pwd.banner.title': 'Yêu cầu đổi mật khẩu',
+        'pwd.banner.desc': 'Bạn chưa đổi mật khẩu mặc định. Nhấp vào đây để đổi mật khẩu ngay.',
+        'pwd.banner.action': 'Đổi ngay',
     };
 
     /* ---------- Core logic ---------- */
