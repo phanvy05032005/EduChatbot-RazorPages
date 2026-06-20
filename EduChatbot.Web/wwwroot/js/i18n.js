@@ -21,6 +21,7 @@
         'nav.learningMaterials': 'Tài liệu học tập',
         'nav.uploadDocument': 'Tải lên tài liệu',
         'nav.myCourses': 'Môn học của tôi',
+        'nav.allCourses': 'Tất cả môn học',
 
         /* ---- Admin Sidebar ---- */
         'admin.sidebar.dashboard': 'Bảng điều khiển',

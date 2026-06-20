@@ -190,6 +190,7 @@
                                 </td>
                                 <td style="padding: 0.85rem 1rem;" class="admin-actions">
                                     <a asp-page="/Admin/AccountForm" asp-route-id="@account.Id" title="Edit">Edit</a>
+                                    <a asp-page="/Admin/LecturerDetail" asp-route-id="@account.Id" title="Details">Detail</a>
                                     @if (account.Status == "Active")
                                     {
                                         <form method="post" asp-page-handler="Lock" class="d-inline">
