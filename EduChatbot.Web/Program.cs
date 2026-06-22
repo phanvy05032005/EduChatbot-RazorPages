@@ -3,6 +3,7 @@ using EduChatbot.Business.Hubs;
 using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 // Load environment variables from .env file if it exists
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "../.env");

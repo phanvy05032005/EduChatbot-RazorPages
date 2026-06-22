@@ -108,7 +108,21 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     <span data-i18n="profile.currentPassword">Current password</span>
                 </label>
-                <input asp-for="PasswordInput.CurrentPassword" autocomplete="current-password" placeholder="••••••••" />
+                <div class="pwd-input-wrapper">
+                    <input asp-for="PasswordInput.CurrentPassword" autocomplete="current-password" placeholder="••••••••" />
+                    <button type="button" class="pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                            <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="account-profile-field">
@@ -116,7 +130,21 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
                     <span data-i18n="profile.newPassword">New password</span>
                 </label>
-                <input asp-for="PasswordInput.NewPassword" autocomplete="new-password" placeholder="••••••••" />
+                <div class="pwd-input-wrapper">
+                    <input asp-for="PasswordInput.NewPassword" autocomplete="new-password" placeholder="••••••••" />
+                    <button type="button" class="pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                            <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="account-profile-field">
@@ -124,7 +152,21 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     <span data-i18n="profile.confirmPassword">Confirm new password</span>
                 </label>
-                <input asp-for="PasswordInput.ConfirmPassword" autocomplete="new-password" placeholder="••••••••" />
+                <div class="pwd-input-wrapper">
+                    <input asp-for="PasswordInput.ConfirmPassword" autocomplete="new-password" placeholder="••••••••" />
+                    <button type="button" class="pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
+                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                            <line x1="2" x2="22" y1="2" y2="22"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="account-profile-actions">
@@ -139,4 +181,33 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const forms = document.querySelectorAll("form");
+            forms.forEach(form => {
+                const toggleButtons = form.querySelectorAll(".pwd-toggle-btn");
+                toggleButtons.forEach(button => {
+                    button.addEventListener("click", function () {
+                        const input = this.parentElement.querySelector("input");
+                        if (!input) return;
+                        
+                        const eyeOpen = this.querySelector(".eye-open");
+                        const eyeClosed = this.querySelector(".eye-closed");
+                        
+                        if (input.type === "password") {
+                            input.type = "text";
+                            if (eyeOpen) eyeOpen.style.display = "none";
+                            if (eyeClosed) eyeClosed.style.display = "block";
+                            this.title = "Hide password";
+                        } else {
+                            input.type = "password";
+                            if (eyeOpen) eyeOpen.style.display = "block";
+                            if (eyeClosed) eyeClosed.style.display = "none";
+                            this.title = "Show password";
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 }
