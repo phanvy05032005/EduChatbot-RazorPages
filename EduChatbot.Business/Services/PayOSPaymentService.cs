@@ -144,7 +144,8 @@ public class PayOSPaymentService : IPayOSPaymentService
             Amount = (int)PremiumPrice,
             Description = PremiumDescription,
             ReturnUrl = returnUrl,
-            CancelUrl = cancelUrl
+            CancelUrl = cancelUrl,
+            ExpiredAt = (int)DateTimeOffset.UtcNow.AddSeconds(90).ToUnixTimeSeconds()
         };
 
         var paymentLink = await _payOSClient.PaymentRequests.CreateAsync(paymentRequest);

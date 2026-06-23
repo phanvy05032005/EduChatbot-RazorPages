@@ -15,19 +15,22 @@ public class ChatService : IChatService
     private readonly HttpClient _httpClient;
     private readonly OpenRouterSettings _settings;
     private readonly ChatSettings _chatSettings;
+    private readonly ISubscriptionAccessService _accessService;
 
     public ChatService(
         IChatRepository chatRepository,
         IEmbeddingService embeddingService,
         HttpClient httpClient,
         IOptions<OpenRouterSettings> settings,
-        IOptions<ChatSettings> chatSettings)
+        IOptions<ChatSettings> chatSettings,
+        ISubscriptionAccessService accessService)
     {
         _chatRepository = chatRepository;
         _embeddingService = embeddingService;
         _httpClient = httpClient;
         _settings = settings.Value;
         _chatSettings = chatSettings.Value;
+        _accessService = accessService;
     }
 
     public async Task<List<ChatConversation>> GetConversationsAsync(string userId)
@@ -60,6 +63,8 @@ public class ChatService : IChatService
 
     public async Task<ChatMessage> SendMessageAsync(int conversationId, string userId, string question)
     {
+        await _accessService.CheckCanChatAsync(userId);
+
         // Step 1: Save user message to DB.
         var userMessage = new ChatMessage
         {
@@ -119,6 +124,8 @@ public class ChatService : IChatService
         };
         await _chatRepository.AddMessageAsync(aiMessage);
 
+        await _accessService.ConsumeChatRequestAsync(userId);
+
         // Step 6: Update conversation title if this is the first message.
         await UpdateConversationTitleAsync(conversationId, userId, question);
 
@@ -129,6 +136,8 @@ public class ChatService : IChatService
         int conversationId, string userId, string question,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        await _accessService.CheckCanChatAsync(userId);
+
         // Step 1: Save user message to DB.
         var userMessage = new ChatMessage
         {
@@ -163,6 +172,7 @@ public class ChatService : IChatService
                 CreatedAt = DateTime.UtcNow
             };
             await _chatRepository.AddMessageAsync(aiMsg);
+            await _accessService.ConsumeChatRequestAsync(userId);
             await UpdateConversationTitleAsync(conversationId, userId, question);
 
             yield return JsonSerializer.Serialize(new { done = true });
@@ -193,6 +203,7 @@ public class ChatService : IChatService
                 CreatedAt = DateTime.UtcNow
             };
             await _chatRepository.AddMessageAsync(aiMsg);
+            await _accessService.ConsumeChatRequestAsync(userId);
             await UpdateConversationTitleAsync(conversationId, userId, question);
 
             yield return JsonSerializer.Serialize(new { done = true });
@@ -225,6 +236,7 @@ public class ChatService : IChatService
             CreatedAt = DateTime.UtcNow
         };
         await _chatRepository.AddMessageAsync(aiMessage);
+        await _accessService.ConsumeChatRequestAsync(userId);
 
         // Step 8: Yield sources.
         yield return JsonSerializer.Serialize(new { sources = sourceCitations });

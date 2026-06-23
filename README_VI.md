@@ -257,10 +257,10 @@ Sau khi khởi chạy ứng dụng thành công, bạn có thể thực hiện k
   * Gói Premium chuyển trạng thái sang `ACTIVE`, đồng thời gói Basic chuyển sang `SUSPENDED`.
   * Số lượt hỏi khả dụng hiển thị là `100` lượt và tính năng làm Quiz sẽ hiển thị: `Đã mở khóa`.
 
-### 12.5 Xử lý giao dịch chờ giả lập (Pending Payment Bypass)
+### 12.5 Xử lý giao dịch chờ giả lập (Pending Payment Bypass) & Hết hạn liên kết
 * Khi bạn bấm nâng cấp Premium nhưng không thanh toán mà quay lại ứng dụng, hệ thống sẽ báo: *"Bạn đang có một giao dịch Premium chờ xử lý"*.
-* Hệ thống khóa việc tạo giao dịch mới trong vòng 15 phút để chờ giao dịch cũ hết hạn (stale pending).
-* Để reset nhanh phục vụ demo mà không cần đợi 15 phút, bạn có thể thực hiện chạy câu lệnh SQL này trong database:
+* Để hỗ trợ kiểm thử nhanh, liên kết thanh toán PayOS được cấu hình thời gian hết hạn là **90 giây** kể từ lúc tạo. Nếu sau 90 giây người dùng không hoàn tất thanh toán, liên kết sẽ tự động hết hạn (Expired), trạng thái giao dịch chuyển thành `CANCELLED` và hệ thống tự động giải phóng để cho phép tạo giao dịch nâng cấp mới. Đồng thời, khi truy cập liên kết đã hết hạn, người dùng sẽ tự động chuyển hướng quay lại màn hình danh sách gói `/Subscription/Plans`.
+* Ngoài ra, để reset nhanh phục vụ demo mà không cần đợi liên kết hết hạn, bạn có thể thực hiện chạy câu lệnh SQL này trong database:
   ```sql
   UPDATE payment_transactions
   SET created_at = NOW() - INTERVAL '20 minutes'
