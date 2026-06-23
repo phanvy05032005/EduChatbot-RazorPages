@@ -49,7 +49,7 @@ public class ChatRepository : IChatRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<DocumentChunk>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 5)
+    public async Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 5)
     {
         if (queryEmbedding.Length == 0)
         {
@@ -67,9 +67,15 @@ public class ChatRepository : IChatRepository
             query = query.Where(c => c.Document!.CourseId == courseId.Value);
         }
 
+        // Project into ChunkSearchResult with similarity score (1 - cosine distance).
         return await query
             .OrderBy(c => c.Embedding!.CosineDistance(vector))
             .Take(topK)
+            .Select(c => new ChunkSearchResult
+            {
+                Chunk = c,
+                SimilarityScore = 1.0 - c.Embedding!.CosineDistance(vector)
+            })
             .ToListAsync();
     }
 

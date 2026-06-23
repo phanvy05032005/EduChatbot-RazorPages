@@ -1,0 +1,127 @@
+@page
+@model EduChatbot.Web.Pages.Admin.LecturerDetailModel
+@{
+    ViewData["Title"] = "Lecturer Details";
+    var isLocked = Model.Lecturer.LockoutEnd.HasValue && Model.Lecturer.LockoutEnd.Value.UtcDateTime > DateTime.UtcNow;
+    var statusText = isLocked ? "Locked" : "Active";
+    var statusClass = isLocked ? "is-locked" : "is-active";
+}
+
+<div class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <div class="admin-kicker">
+                <span data-i18n="admin.lecturerDetail.kicker">Lecturers</span> · Detail
+            </div>
+            <h1>
+                <span data-i18n="admin.lecturerDetail.title">Lecturer Details:</span>
+                <span class="admin-serif">@Model.Lecturer.FullName</span>
+            </h1>
+            <p data-i18n="admin.lecturerDetail.subtitle">View lecturer information, teaching assignments, and uploaded materials in real-time.</p>
+        </div>
+        <a asp-page="/Admin/Lecturers" class="admin-primary-btn" style="background: rgba(228, 240, 246, 0.1); color: var(--admin-text); border: 1px solid var(--admin-border); text-decoration: none;" data-i18n="admin.lecturerDetail.back">
+            Back to list
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-top: 1rem;">
+        <!-- Left Column: Lecturer Info & Courses -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <section class="admin-card">
+                <div class="admin-card-header">
+                    <h2 data-i18n="admin.lecturerDetail.info">Lecturer Info</h2>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="margin-bottom: 1.25rem;">
+                        <span style="display:block; font-size: 0.8rem; color: #9a3412; font-weight:700; text-transform:uppercase;" data-i18n="admin.accounts.fullName">Full Name</span>
+                        <strong style="font-size: 1.15rem; color: #e4f0f6;">@Model.Lecturer.FullName</strong>
+                    </div>
+                    <div style="margin-bottom: 1.25rem;">
+                        <span style="display:block; font-size: 0.8rem; color: #9a3412; font-weight:700; text-transform:uppercase;" data-i18n="admin.accounts.email">Email</span>
+                        <strong style="font-size: 1.15rem; color: #e4f0f6;">@Model.Lecturer.Email</strong>
+                    </div>
+                    <div style="margin-bottom: 1.25rem;">
+                        <span style="display:block; font-size: 0.8rem; color: #9a3412; font-weight:700; text-transform:uppercase;" data-i18n="admin.accounts.department">Department</span>
+                        <strong style="font-size: 1.15rem; color: #e4f0f6;">General Department</strong>
+                    </div>
+                    <div>
+                        <span style="display:block; font-size: 0.8rem; color: #9a3412; font-weight:700; text-transform:uppercase;" data-i18n="admin.accounts.status">Status</span>
+                        <span class="admin-status @statusClass" style="margin-top: 0.35rem;">
+                            @statusText
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="admin-card">
+                <div class="admin-card-header">
+                    <h2 data-i18n="admin.lecturerDetail.courses">Assigned Courses</h2>
+                    <span>@Model.AssignedCourses.Count <span data-i18n="admin.lecturerDetail.coursesCount">course(s)</span></span>
+                </div>
+                <div style="padding: 1.5rem;">
+                    @if (Model.AssignedCourses.Count == 0)
+                    {
+                        <em style="color: rgba(228, 240, 246, 0.65);" data-i18n="admin.lecturerDetail.noCourses">No courses assigned to this lecturer.</em>
+                    }
+                    else
+                    {
+                        <ul style="padding-left: 1.25rem; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+                            @foreach (var course in Model.AssignedCourses)
+                            {
+                                <li>
+                                    <strong style="color: #e4f0f6;">@course.Code</strong> - <span style="color: rgba(228, 240, 246, 0.85);">@course.Name</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <!-- Right Column: Learning Materials -->
+        <div>
+            <section id="materials-table-card" class="admin-card admin-table-card">
+                <div class="admin-card-header">
+                    <h2 data-i18n="admin.lecturerDetail.materials">Uploaded Materials</h2>
+                    <span id="materials-count">@Model.Documents.Count <span data-i18n="admin.lecturerDetail.docsCount">document(s)</span></span>
+                </div>
+                <div id="materials-table-container">
+                    <partial name="_LecturerMaterialsTable" model="Model.Documents" />
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const lecturerId = "@Model.Lecturer.Id";
+
+            // Define the global handler that admin-realtime.js will invoke
+            window.refreshLecturerMaterials = function (incomingLecturerId, title, message) {
+                if (incomingLecturerId !== lecturerId) return;
+
+                const url = `?handler=MaterialsPartial&id=${lecturerId}`;
+                
+                $.get(url)
+                    .done(function (html) {
+                        // Update table
+                        $("#materials-table-container").html(html);
+
+                        // Parse count
+                        const rowCount = $("#materials-table-container tbody tr.material-row").length;
+                        const isVi = typeof EduI18n !== 'undefined' && EduI18n.getLang() === 'vi';
+                        const docsText = isVi ? `${rowCount} tài liệu` : `${rowCount} document(s)`;
+                        $("#materials-count").text(docsText);
+
+                        // Highlight rows
+                        $("#materials-table-container tbody tr.material-row").addClass("realtime-highlight");
+                    })
+                    .fail(function (xhr, status, error) {
+                        console.error("Error refreshing materials list:", error);
+                    });
+            };
+        });
+    </script>
+}

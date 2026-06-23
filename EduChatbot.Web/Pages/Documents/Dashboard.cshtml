@@ -9,11 +9,50 @@
     <header class="role-hero">
         <div>
             <div class="role-kicker">Lecturer workspace</div>
-            <h1>Document dashboard</h1>
-            <p>Academic documents indexed for retrieval augmented generation.</p>
+            <h1>Dashboard</h1>
+            <p>Manage your assigned courses and academic documents.</p>
         </div>
         <a asp-page="/Documents/Upload" class="role-primary-btn">Upload document</a>
     </header>
+
+    <!-- ===== Assigned Courses ===== -->
+    <div class="role-section-header">
+        <h2>My Assigned Courses</h2>
+        <span>@Model.AssignedCourses.Count course(s)</span>
+    </div>
+
+    @if (Model.AssignedCourses.Count == 0)
+    {
+        <div class="role-empty-panel">
+            <strong>No courses assigned yet.</strong>
+            <span>Contact an administrator to be assigned to courses.</span>
+        </div>
+    }
+    else
+    {
+        <div class="role-course-grid">
+            @foreach (var course in Model.AssignedCourses)
+            {
+                <article class="role-course-card">
+                    <div class="role-course-header">
+                        <span class="role-course-code">@course.Code</span>
+                    </div>
+                    <h3 class="role-course-name">@course.Name</h3>
+                    <p class="role-course-desc">
+                        @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
+                    </p>
+                    <a asp-page="/Documents/Index" asp-route-courseId="@course.Id" class="role-course-link">
+                        View Details <span aria-hidden="true">→</span>
+                    </a>
+                </article>
+            }
+        </div>
+    }
+
+    <!-- ===== Document Statistics ===== -->
+    <div class="role-section-header" style="margin-top: 3rem;">
+        <h2>Document Statistics</h2>
+    </div>
 
     <div class="role-stat-grid">
         <article class="role-stat-card">
@@ -49,3 +88,4 @@
         </a>
     </div>
 </section>
+

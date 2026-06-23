@@ -1,7 +1,9 @@
 using EduChatbot.Data;
 using EduChatbot.Models;
 using EduChatbot.Models.Identity;
+using EduChatbot.Business.Hubs;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MiniExcelLibs;
 using System.IO;
@@ -14,17 +16,20 @@ public class AdminService : IAdminService
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly IHubContext<AdminHub> _hubContext;
 
     public AdminService(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         IEmailService emailService,
-        IEmailQueueService emailQueueService)
+        IEmailQueueService emailQueueService,
+        IHubContext<AdminHub> hubContext)
     {
         _userManager = userManager;
         _context = context;
         _emailService = emailService;
         _emailQueueService = emailQueueService;
+        _hubContext = hubContext;
     }
 
     public async Task<AdminStatisticsInfo> GetStatisticsAsync()
@@ -91,6 +96,33 @@ public class AdminService : IAdminService
             return Failure("Invalid account role.");
         }
 
+        var selectedCourseIds = courseIds?
+            .Distinct()
+            .ToList() ?? [];
+        var selectedCourses = new List<Course>();
+        if (role == ApplicationRoles.Lecturer && selectedCourseIds.Count > 0)
+        {
+            foreach (var courseId in selectedCourseIds)
+            {
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null)
+                {
+                    return Failure($"Course not found (ID: {courseId}).");
+                }
+
+                var currentAssignment = await _context.LecturerCourses
+                    .Include(lc => lc.Lecturer)
+                    .FirstOrDefaultAsync(lc => lc.CourseId == course.Id);
+                if (currentAssignment != null)
+                {
+                    var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
+                    return Failure($"Course '{course.Code} - {course.Name}' already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
+                }
+
+                selectedCourses.Add(course);
+            }
+        }
+
         var user = new ApplicationUser
         {
             UserName = email.Trim(),
@@ -114,34 +146,26 @@ public class AdminService : IAdminService
 
         // Assign lecturer to teach selected courses
         var assignedCourseNames = new List<string>();
-        if (role == ApplicationRoles.Lecturer && courseIds != null && courseIds.Count > 0)
+        if (role == ApplicationRoles.Lecturer && selectedCourses.Count > 0)
         {
-            foreach (var courseId in courseIds)
+            foreach (var course in selectedCourses)
             {
-                var course = await _context.Courses.FindAsync(courseId);
-                if (course != null)
+                assignedCourseNames.Add($"{course.Code} - {course.Name}");
+                _context.LecturerCourses.Add(new LecturerCourse
                 {
-                    assignedCourseNames.Add($"{course.Code} - {course.Name}");
-                    var existing = await _context.LecturerCourses
-                        .AnyAsync(lc => lc.LecturerId == user.Id && lc.CourseId == courseId);
-                    if (!existing)
-                    {
-                        _context.LecturerCourses.Add(new LecturerCourse
-                        {
-                            LecturerId = user.Id,
-                            CourseId = courseId
-                        });
-                    }
-                }
+                    LecturerId = user.Id,
+                    CourseId = course.Id
+                });
             }
+
             try
             {
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
-                // Duplicate PK — another admin already assigned this lecturer.
-                // Silently ignore since the desired state is already achieved.
+                await _userManager.DeleteAsync(user);
+                return Failure("This course or lecturer already has an assignment. Please refresh and try again.");
             }
         }
 
@@ -172,6 +196,8 @@ public class AdminService : IAdminService
                 : $"{role} account created successfully, but email notification could not be queued.")
             : $"{role} account created successfully.";
 
+        await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Create", role);
+
         return Success(successMessage);
     }
 
@@ -183,14 +209,26 @@ public class AdminService : IAdminService
             return Failure("Account not found.");
         }
 
+        var cleanedEmail = email.Trim();
+        var existingUser = await _userManager.FindByEmailAsync(cleanedEmail);
+        if (existingUser != null && existingUser.Id != id)
+        {
+            return Failure($"Email '{cleanedEmail}' is already in use by another account.");
+        }
+
         user.FullName = fullName.Trim();
-        user.Email = email.Trim();
-        user.UserName = email.Trim();
+        user.Email = cleanedEmail;
+        user.UserName = cleanedEmail;
 
         var result = await _userManager.UpdateAsync(user);
-        return result.Succeeded
-            ? Success("Account updated successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Update", role);
+            return Success("Account updated successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public async Task<AdminOperationResult> LockAccountAsync(string id)
@@ -204,9 +242,14 @@ public class AdminService : IAdminService
         await _userManager.SetLockoutEnabledAsync(user, true);
         var result = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
 
-        return result.Succeeded
-            ? Success("Account locked successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "StatusChange", role);
+            return Success("Account locked successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public async Task<AdminOperationResult> UnlockAccountAsync(string id)
@@ -218,9 +261,14 @@ public class AdminService : IAdminService
         }
 
         var result = await _userManager.SetLockoutEndDateAsync(user, null);
-        return result.Succeeded
-            ? Success("Account unlocked successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "StatusChange", role);
+            return Success("Account unlocked successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public async Task<AdminOperationResult> DeleteAccountAsync(string id, string currentUserId)
@@ -237,15 +285,14 @@ public class AdminService : IAdminService
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        if (roles.Contains(ApplicationRoles.Admin))
-        {
-            return Failure("Admin accounts cannot be deleted from this page.");
-        }
-
+        var role = roles.FirstOrDefault() ?? string.Empty;
         var result = await _userManager.DeleteAsync(user);
-        return result.Succeeded
-            ? Success("Account deleted successfully.")
-            : Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
+        if (result.Succeeded)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Delete", role);
+            return Success("Account deleted successfully.");
+        }
+        return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
     }
 
     public Task<bool> CanConnectToDatabaseAsync()
@@ -383,6 +430,11 @@ public class AdminService : IAdminService
                     }
                 }
                 successCount++;
+            }
+
+            if (successCount > 0)
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Import", ApplicationRoles.Student);
             }
 
             var msg = $"Successfully imported {successCount} student(s).";
@@ -616,6 +668,8 @@ public class AdminService : IAdminService
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 
+        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Create", normalizedCode);
+
         return Success("Course created successfully.");
     }
 
@@ -627,8 +681,11 @@ public class AdminService : IAdminService
             return Failure("Course not found.");
         }
 
+        var courseCode = course.Code;
         _context.Courses.Remove(course);
         await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Delete", courseCode);
 
         return Success("Course deleted successfully.");
     }
@@ -658,13 +715,13 @@ public class AdminService : IAdminService
         var isLecturer = await _userManager.IsInRoleAsync(lecturer, ApplicationRoles.Lecturer);
         if (!isLecturer) return Failure("User is not a lecturer.");
 
-        // Use SERIALIZABLE transaction to prevent two admins from assigning
-        // different lecturers to the same course at the same time.
+        // Use SERIALIZABLE transaction to prevent two admins from creating
+        // conflicting course/lecturer assignments at the same time.
         await using var transaction = await _context.Database
             .BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         try
         {
-            // A course can only have ONE lecturer assigned.
+            // A course can only have one lecturer assigned.
             var currentAssignment = await _context.LecturerCourses
                 .Include(lc => lc.Lecturer)
                 .FirstOrDefaultAsync(lc => lc.CourseId == courseId);
@@ -680,6 +737,7 @@ public class AdminService : IAdminService
                 return Failure($"Course already has a lecturer assigned ({assignedName}). Remove them first before assigning a new one.");
             }
 
+
             var assignment = new LecturerCourse
             {
                 LecturerId = lecturerId,
@@ -690,12 +748,14 @@ public class AdminService : IAdminService
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Assign", course.Code);
+
             return Success("Lecturer assigned to course successfully.");
         }
         catch (DbUpdateException)
         {
             await transaction.RollbackAsync();
-            return Failure("This course already has a lecturer assigned. Please refresh and try again.");
+            return Failure("This course or lecturer already has an assignment. Please refresh and try again.");
         }
     }
 
@@ -708,8 +768,12 @@ public class AdminService : IAdminService
             return Failure("Course assignment not found.");
         }
 
+        var course = await _context.Courses.FindAsync(courseId);
+        var courseCode = course?.Code ?? string.Empty;
         _context.LecturerCourses.Remove(assignment);
         await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Remove", courseCode);
 
         return Success("Lecturer course assignment removed successfully.");
     }
@@ -781,9 +845,9 @@ public class AdminService : IAdminService
                     continue;
                 }
 
-                // Parse course codes list: split by comma, trim, uppercase.
+                // Lecturer accounts may be assigned to multiple courses.
                 var courseCodes = rawCourseCodes
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(x => x.Trim().ToUpperInvariant())
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .Distinct()
@@ -807,6 +871,27 @@ public class AdminService : IAdminService
                     var missing = courseCodes.Where(code => !existingCodes.Contains(code)).ToList();
                     failedCount++;
                     errorMessages.Add($"Row {i + 1} ({email}): CourseCode does not exist: {string.Join(", ", missing)}");
+                    continue;
+                }
+
+                // Check if any of these courses is already assigned to another lecturer
+                bool hasConflict = false;
+                foreach (var course in courses)
+                {
+                    var currentAssignment = await _context.LecturerCourses
+                        .Include(lc => lc.Lecturer)
+                        .FirstOrDefaultAsync(lc => lc.CourseId == course.Id);
+                    if (currentAssignment != null)
+                    {
+                        var assignedName = currentAssignment.Lecturer?.FullName ?? currentAssignment.Lecturer?.Email ?? "Another lecturer";
+                        failedCount++;
+                        errorMessages.Add($"Row {i + 1} ({email}): Course '{course.Code}' is already assigned to another lecturer ({assignedName}).");
+                        hasConflict = true;
+                        break;
+                    }
+                }
+                if (hasConflict)
+                {
                     continue;
                 }
 
@@ -852,8 +937,10 @@ public class AdminService : IAdminService
                 }
                 catch (DbUpdateException)
                 {
-                    // Duplicate PK — lecturer already assigned to this course by another admin.
-                    // Silently ignore since the desired state is already achieved.
+                    await _userManager.DeleteAsync(user);
+                    failedCount++;
+                    errorMessages.Add($"Row {i + 1} ({email}): Course or lecturer already has an assignment.");
+                    continue;
                 }
 
                 if (sendEmail)
@@ -874,6 +961,11 @@ public class AdminService : IAdminService
                 }
 
                 successCount++;
+            }
+
+            if (successCount > 0)
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Import", ApplicationRoles.Lecturer);
             }
 
             var msg = $"Successfully imported {successCount} lecturer(s).";
@@ -986,6 +1078,7 @@ public class AdminService : IAdminService
             if (successCount > 0)
             {
                 await _context.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Import", "");
             }
 
             var msg = $"Successfully imported {successCount} course(s).";

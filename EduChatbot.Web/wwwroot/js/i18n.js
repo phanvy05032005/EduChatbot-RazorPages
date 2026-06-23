@@ -20,9 +20,11 @@
         'nav.upload': 'Tải lên',
         'nav.learningMaterials': 'Tài liệu học tập',
         'nav.uploadDocument': 'Tải lên tài liệu',
+        'nav.myCourses': 'Môn học của tôi',
 
         /* ---- Admin Sidebar ---- */
         'admin.sidebar.dashboard': 'Bảng điều khiển',
+        'admin.sidebar.users': 'Quản lý người dùng',
         'admin.sidebar.studentAccounts': 'Tài khoản sinh viên',
         'admin.sidebar.lecturerAccounts': 'Tài khoản giảng viên',
         'admin.sidebar.coursesAssignments': 'Môn học & Phân công',

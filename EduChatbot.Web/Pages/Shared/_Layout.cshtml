@@ -61,13 +61,13 @@
                     <span class="admin-menu-icon">▦</span>
                     <span data-i18n="admin.sidebar.dashboard">Dashboard</span>
                 </a>
-                <a asp-page="/Admin/Students" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Students" ? "active" : "")">
-                    <span class="admin-menu-icon">♙</span>
-                    <span data-i18n="admin.sidebar.studentAccounts">Student Accounts</span>
-                </a>
-                <a asp-page="/Admin/Lecturers" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Lecturers" ? "active" : "")">
-                    <span class="admin-menu-icon">♧</span>
-                    <span data-i18n="admin.sidebar.lecturerAccounts">Lecturer Accounts</span>
+                @{
+                    var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+                    var isUsersActive = currentPage == "/Admin/Users" || currentPage == "/Admin/Students" || currentPage == "/Admin/Lecturers";
+                }
+                <a asp-page="/Admin/Users" class="admin-link @(isUsersActive ? "active" : "")">
+                    <span class="admin-menu-icon">👤</span>
+                    <span data-i18n="admin.sidebar.users">Users</span>
                 </a>
                 <a asp-page="/Admin/Courses" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Courses" ? "active" : "")">
                     <span class="admin-menu-icon">📚</span>
@@ -130,10 +130,14 @@ else
                     </div>
                 </div>
                 <nav class="role-menu">
-                    <a asp-page="/Documents/Dashboard" data-i18n="nav.dashboard">Dashboard</a>
-                    <a asp-page="/Documents/Index" data-i18n="nav.learningMaterials">Learning Materials</a>
-                    <a asp-page="/Documents/Upload" data-i18n="nav.uploadDocument">Upload Document</a>
-                    <a asp-page="/Account/Profile" data-i18n="nav.profile">Profile</a>
+                    @{
+                        var currentRolePage = ViewContext.RouteData.Values["page"]?.ToString();
+                        var isDashboardActive = currentRolePage == "/Documents/Dashboard";
+                    }
+                    <a asp-page="/Documents/Dashboard" data-i18n="nav.dashboard" class="@(isDashboardActive ? "active" : "")">Dashboard</a>
+                    <a asp-page="/Documents/Index" data-i18n="nav.learningMaterials" class="@(currentRolePage == "/Documents/Index" ? "active" : "")">Learning Materials</a>
+                    <a asp-page="/Documents/Upload" data-i18n="nav.uploadDocument" class="@(currentRolePage == "/Documents/Upload" ? "active" : "")">Upload Document</a>
+                    <a asp-page="/Account/Profile" data-i18n="nav.profile" class="@(currentRolePage == "/Account/Profile" ? "active" : "")">Profile</a>
                 </nav>
                 <form asp-page="/Account/Logout" method="post" class="role-logout">
                     @Html.AntiForgeryToken()
@@ -173,12 +177,6 @@ else
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-page="/Chat/Index" data-i18n="nav.chat">Chat</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-page="/Subscription/Plans">Subscription</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-page="/Subscription/Me">My Subscription</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-page="/Account/Profile" data-i18n="nav.profile">Profile</a>
@@ -236,6 +234,11 @@ else
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/i18n.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (User.IsInRole("Admin"))
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+        <script src="~/js/admin-realtime.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

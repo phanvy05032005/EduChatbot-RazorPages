@@ -9,11 +9,27 @@
     <header class="role-hero compact">
         <div>
             <div class="role-kicker">Documents</div>
-            <h1>Learning materials</h1>
-            <p>Search, inspect indexing status, and manage uploaded academic files.</p>
+            @if (Model.FilteredCourse != null)
+            {
+                <h1>[@Model.FilteredCourse.Code] @Model.FilteredCourse.Name</h1>
+                <p>Showing documents for this course.</p>
+            }
+            else
+            {
+                <h1>Learning materials</h1>
+                <p>Search, inspect indexing status, and manage uploaded academic files.</p>
+            }
         </div>
         <a asp-page="/Documents/Upload" class="role-primary-btn">Upload document</a>
     </header>
+
+    @if (Model.FilteredCourse != null)
+    {
+        <div style="margin-bottom: 1rem;">
+            <a asp-page="/Documents/Index" class="role-secondary-btn">← All documents</a>
+            <a asp-page="/Documents/Dashboard" class="role-secondary-btn" style="margin-left: 0.5rem;">← Back to Dashboard</a>
+        </div>
+    }
 
     @if (TempData["UploadMessage"] != null)
     {
@@ -29,6 +45,10 @@
     }
 
     <form method="get" class="role-search">
+        @if (Model.FilteredCourse != null)
+        {
+            <input type="hidden" name="courseId" value="@Model.FilteredCourse.Id" />
+        }
         <input type="search" name="searchTerm" value="@Model.Result.SearchTerm" placeholder="Search file name, lecturer, status" />
         <button type="submit">Search</button>
     </form>

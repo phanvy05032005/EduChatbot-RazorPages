@@ -12,7 +12,7 @@ public class DocumentRepository : IDocumentRepository
         _context = context;
     }
 
-    public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null)
+    public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null, int? courseId = null)
     {
         // Repository là nơi đọc dữ liệu từ database, Presentation layer không gọi DbContext trực tiếp.
         var query = _context.Documents.Include(document => document.Course).AsQueryable();
@@ -20,6 +20,11 @@ public class DocumentRepository : IDocumentRepository
         if (!string.IsNullOrWhiteSpace(uploadedById))
         {
             query = query.Where(document => document.UploadedById == uploadedById);
+        }
+
+        if (courseId.HasValue)
+        {
+            query = query.Where(document => document.CourseId == courseId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -42,7 +47,7 @@ public class DocumentRepository : IDocumentRepository
         {
             TotalDocuments = await _context.Documents.CountAsync(),
             ReadyDocuments = await _context.Documents.CountAsync(document => document.Status == DocumentStatuses.Approved),
-            ProcessingDocuments = await _context.Documents.CountAsync(document => document.Status == DocumentStatuses.PendingReview),
+            ProcessingDocuments = await _context.Documents.CountAsync(document => document.Status == DocumentStatuses.Processing),
             FailedDocuments = await _context.Documents.CountAsync(document =>
                 document.Status == DocumentStatuses.Rejected ||
                 document.Status == DocumentStatuses.Failed),
@@ -63,15 +68,6 @@ public class DocumentRepository : IDocumentRepository
         }
 
         return await query.FirstOrDefaultAsync(document => document.Id == id);
-    }
-
-    public async Task<List<Document>> GetPendingReviewAsync()
-    {
-        return await _context.Documents
-            .Include(document => document.Course)
-            .Where(document => document.Status == DocumentStatuses.PendingReview)
-            .OrderByDescending(document => document.UploadedAt)
-            .ToListAsync();
     }
 
     public async Task<bool> ExistsByUploadedByAndFileNameAsync(string uploadedById, string fileName)

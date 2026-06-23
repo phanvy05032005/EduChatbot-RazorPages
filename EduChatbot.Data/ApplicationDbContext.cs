@@ -289,6 +289,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(lc => new { lc.LecturerId, lc.CourseId });
             entity.Property(lc => lc.LecturerId).HasColumnName("lecturer_id");
             entity.Property(lc => lc.CourseId).HasColumnName("course_id");
+            entity.HasIndex(lc => lc.LecturerId).IsUnique();
+            entity.HasIndex(lc => lc.CourseId).IsUnique();
 
             entity.HasOne(lc => lc.Lecturer)
                 .WithMany()

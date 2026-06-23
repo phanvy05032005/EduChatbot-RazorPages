@@ -46,10 +46,8 @@ public class AccountFormModel : PageModel
             AccountType = string.IsNullOrWhiteSpace(accountType) ? ApplicationRoles.Student : accountType
         };
 
-        if (Input.AccountType == ApplicationRoles.Lecturer)
-        {
-            Input.AvailableCourses = await _adminService.GetCoursesAsync();
-        }
+        // Always load available courses on GET for unified creation dropdown
+        Input.AvailableCourses = await _adminService.GetCoursesAsync();
 
         return Page();
     }
@@ -65,6 +63,11 @@ public class AccountFormModel : PageModel
         if (string.IsNullOrWhiteSpace(Input.Password))
         {
             ModelState.AddModelError($"{nameof(Input)}.{nameof(AdminAccountFormViewModel.Password)}", "Please enter the password.");
+        }
+
+        if (Input.AccountType == ApplicationRoles.Student)
+        {
+            Input.SelectedCourseIds = [];
         }
 
         if (!ModelState.IsValid)
@@ -112,7 +115,7 @@ public class AccountFormModel : PageModel
 
     private async Task LoadCoursesIfNeededAsync()
     {
-        if (Input.AccountType == ApplicationRoles.Lecturer)
+        if (!Input.IsEdit)
         {
             Input.AvailableCourses = await _adminService.GetCoursesAsync();
         }
