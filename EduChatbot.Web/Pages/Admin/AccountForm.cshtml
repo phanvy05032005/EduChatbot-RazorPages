@@ -1,0 +1,81 @@
+@page
+@model EduChatbot.Web.Pages.Admin.AccountFormModel
+@{
+    ViewData["Title"] = Model.Input.IsEdit ? "Edit Account" : $"Create {Model.Input.AccountType} Account";
+    var returnPage = Model.Input.AccountType == EduChatbot.Models.Identity.ApplicationRoles.Lecturer
+        ? "/Admin/Lecturers"
+        : "/Admin/Students";
+}
+
+<div class="admin-page admin-page-narrow">
+    <div class="admin-page-header">
+        <div>
+            <div class="admin-kicker"><span data-i18n="admin.accounts.accounts">Accounts</span> · @Model.Input.AccountType</div>
+            <h1><span data-i18n="@(Model.Input.IsEdit ? "admin.form.edit" : "admin.form.create")">@(Model.Input.IsEdit ? "Edit" : "Create")</span> <span class="admin-serif" data-i18n="admin.form.account">Account</span></h1>
+            <p data-i18n="admin.form.maintainDesc">Maintain @Model.Input.AccountType.ToLowerInvariant() identity information.</p>
+        </div>
+    </div>
+
+    <form method="post" class="admin-card admin-form">
+        @Html.AntiForgeryToken()
+        <input asp-for="Input.Id" type="hidden" />
+        <input asp-for="Input.AccountType" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly" class="admin-form-errors"></div>
+
+        <div class="admin-field">
+            <label asp-for="Input.FullName" data-i18n="admin.form.fullName">Full Name</label>
+            <input asp-for="Input.FullName" maxlength="100" />
+            <span asp-validation-for="Input.FullName" class="admin-validation"></span>
+        </div>
+
+        <div class="admin-field">
+            <label asp-for="Input.Email" data-i18n="admin.accounts.email">Email</label>
+            <input asp-for="Input.Email" />
+            <span asp-validation-for="Input.Email" class="admin-validation"></span>
+        </div>
+
+        @if (!Model.Input.IsEdit)
+        {
+            <div class="admin-field">
+                <label asp-for="Input.Password" data-i18n="admin.form.password">Password</label>
+                <input asp-for="Input.Password" />
+                <span asp-validation-for="Input.Password" class="admin-validation"></span>
+            </div>
+
+            @if (Model.Input.AccountType == EduChatbot.Models.Identity.ApplicationRoles.Lecturer)
+            {
+                var availableCourses = Model.Input.AvailableCourses
+                    .Where(course => course.LecturerCourses.Count == 0)
+                    .ToList();
+                <div class="admin-field">
+                    <label data-i18n="admin.form.assignedCourses">Assigned Course</label>
+                    <select name="Input.SelectedCourseIds"
+                            style="width: 100%; border: 1px solid rgba(228, 240, 246, 0.12); border-radius: 12px; background: rgba(228, 240, 246, 0.04); color: #e4f0f6; font: inherit; padding: 0.6rem 0.75rem;">
+                        <option value="">-- Select one course --</option>
+                        @if (availableCourses.Count == 0)
+                        {
+                            <option value="" disabled data-i18n="admin.form.noCourses">No courses available. Please create courses first.</option>
+                        }
+                        else
+                        {
+                            @foreach (var course in availableCourses)
+                            {
+                                <option value="@course.Id">[@course.Code] - @course.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+        }
+
+        <div class="admin-form-actions">
+            <button type="submit" class="admin-primary-btn" data-i18n="admin.form.save">Save Account</button>
+            <a asp-page="@returnPage" class="admin-secondary-btn" data-i18n="admin.form.cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

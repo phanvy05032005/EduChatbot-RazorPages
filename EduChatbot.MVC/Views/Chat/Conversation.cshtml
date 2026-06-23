@@ -1,0 +1,142 @@
+@model EduChatbot.Models.ChatConversation
+
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_Layout";
+    var sidebarConversations = ViewBag.Conversations as IReadOnlyList<EduChatbot.Models.ChatConversation>
+        ?? new List<EduChatbot.Models.ChatConversation> { Model };
+    ViewData["ActiveConversationId"] = Model.Id;
+    ViewData["BodyClass"] = "chat-layout";
+}
+
+<section class="chat-shell">
+    <partial name="_StudentSidebar" model="sidebarConversations" view-data="ViewData" />
+
+    <main class="chat-main">
+        <header class="chat-main-header">
+            <div class="chat-header-topic">
+                <span>EDU &middot; CHAT</span>
+                <strong style="display: inline-block;">@Model.Title</strong>
+                @if (Model.Course != null)
+                {
+                    <span style="font-size: 0.85rem; font-weight: 500; background: rgba(37,99,235,0.1); color: #2563eb; padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.8rem; display: inline-flex; align-items: center; vertical-align: middle;">
+                        📚 @Model.Course.Code - @Model.Course.Name
+                    </span>
+                }
+            </div>
+            <div class="chat-mode-pill">
+                <span aria-hidden="true"></span>
+                Academic mode
+            </div>
+        </header>        <div id="chat-messages" class="chat-scroll">
+            @if (Model.Messages == null || Model.Messages.Count == 0)
+            {
+                <div id="chat-welcome" class="chat-empty-state">
+                    <h1 data-i18n="chat.welcome">What would you like to learn today?</h1>
+
+                    <div class="suggestions-grid">
+                        <button type="button" class="suggestion-btn" data-question="ASP.NET Core MVC là gì?" data-i18n="chat.suggestion1">
+                            What is ASP.NET Core MVC?
+                        </button>
+                        <button type="button" class="suggestion-btn" data-question="Giải thích Entity Framework Core" data-i18n="chat.suggestion2">
+                            Explain Entity Framework Core
+                        </button>
+                        <button type="button" class="suggestion-btn" data-question="Repository Pattern hoạt động ra sao?" data-i18n="chat.suggestion3">
+                            How does Repository Pattern work?
+                        </button>
+                        <button type="button" class="suggestion-btn" data-question="So sánh SQL Server và PostgreSQL" data-i18n="chat.suggestion4">
+                            Compare SQL Server and PostgreSQL
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="chat-message-stack">
+                    @foreach (var msg in Model.Messages)
+                    {
+                        <div class="msg-row @msg.Role">
+                            @if (msg.Role == "ai")
+                            {
+                                <div class="msg-avatar ai" aria-hidden="true">AI</div>
+                            }
+
+                            <div class="msg-content">
+                                <div class="msg-bubble @msg.Role">@msg.Content</div>
+                                @if (msg.Role == "ai" && !string.IsNullOrWhiteSpace(msg.SourceChunks))
+                                {
+                                    <div class="msg-sources">
+                                        <div class="sources-label">Sources</div>
+                                        <div class="source-list">
+                                            @try
+                                            {
+                                                var sources = System.Text.Json.JsonDocument.Parse(msg.SourceChunks);
+                                                foreach (var src in sources.RootElement.EnumerateArray())
+                                                {
+                                                    var docName = src.GetProperty("doc").GetString();
+                                                    var chunkIdx = src.GetProperty("chunk").GetInt32();
+                                                    <span class="source-tag">
+                                                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                            <path d="M7 3.5h6.5L18 8v12.5H7V3.5Z" />
+                                                            <path d="M13.5 3.5V8H18" />
+                                                        </svg>
+                                                        <span>@docName</span>
+                                                        <i aria-hidden="true">&middot;</i>
+                                                        <span>Chunk @chunkIdx</span>
+                                                    </span>
+                                                }
+                                            }
+                                            catch { }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="chat-composer-area">
+            <form id="chat-form" class="chat-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="conversation-id" value="@Model.Id" />
+                <div class="chat-input-wrapper">
+                    <textarea id="chat-input" rows="1" placeholder="Ask about learning materials..." data-i18n-placeholder="chat.inputPlaceholder"></textarea>
+                    <div class="chat-input-toolbar">
+                        <div class="chat-input-tools" aria-hidden="true">
+                            <span>+</span>
+                            <span>
+                                <svg viewBox="0 0 24 24" focusable="false">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path d="M3 12h18" />
+                                    <path d="M12 3c2.4 2.4 3.6 5.4 3.6 9s-1.2 6.6-3.6 9" />
+                                    <path d="M12 3c-2.4 2.4-3.6 5.4-3.6 9s1.2 6.6 3.6 9" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="chat-input-actions">
+                            <span class="chat-mic" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false">
+                                    <path d="M12 4a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V7a3 3 0 0 0-3-3Z" />
+                                    <path d="M5 11a7 7 0 0 0 14 0" />
+                                    <path d="M12 18v3" />
+                                </svg>
+                            </span>
+                            <button type="submit" id="chat-send-btn" class="chat-send-btn" disabled aria-label="Send message">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M4 11.5 20 4l-7.5 16-1.6-6.9L4 11.5Z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="chat-disclaimer" data-i18n="chat.aiDisclaimer">AI can make mistakes. Please cross-check with original documents.</div>
+        </div>
+    </main>
+</section>
+
+@section Scripts {
+    <script src="~/js/chat.js" asp-append-version="true"></script>
+}

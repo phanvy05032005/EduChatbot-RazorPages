@@ -1,0 +1,51 @@
+@page
+@model EduChatbot.Web.Pages.Subscription.CallbackModel
+
+@{
+    ViewData["Title"] = Model.IsSuccess ? "Thanh toán thành công" : "Kết quả thanh toán";
+    ViewData["BodyClass"] = "student-profile";
+}
+
+<link rel="stylesheet" href="~/css/subscription.css" asp-append-version="true" />
+
+<section class="sub-page">
+    <div class="sub-callback">
+        @if (Model.IsProcessed && Model.IsSuccess)
+        {
+            <div class="sub-callback-icon success">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h2>Thanh toán thành công!</h2>
+            <p>@Model.Message</p>
+            <div class="sub-callback-actions">
+                <a asp-page="/Subscription/Me" class="sub-link-btn primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    Xem gói Premium
+                </a>
+                <a asp-page="/Chat/Index" class="sub-link-btn">
+                    Quay lại Chat
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="sub-callback-icon failed">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+            </div>
+            <h2>Thanh toán không thành công</h2>
+            <p>@Model.Message</p>
+            @if (Model.ErrorDetail != null)
+            {
+                <p style="font-size: 0.88rem;">@Model.ErrorDetail</p>
+            }
+            <div class="sub-callback-actions">
+                <a asp-page="/Subscription/Plans" class="sub-link-btn primary">
+                    Thử lại
+                </a>
+                <a asp-page="/Chat/Index" class="sub-link-btn">
+                    Quay lại Chat
+                </a>
+            </div>
+        }
+    </div>
+</section>

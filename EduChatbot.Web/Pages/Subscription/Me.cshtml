@@ -1,0 +1,112 @@
+@page
+@model EduChatbot.Web.Pages.Subscription.MeModel
+
+@{
+    ViewData["Title"] = "My Subscription";
+    ViewData["BodyClass"] = "student-profile";
+    var sub = Model.Subscription;
+    var usedPercent = sub.TokenLimit > 0
+        ? Math.Min((double)sub.UsedTokens / sub.TokenLimit * 100, 100)
+        : 0;
+}
+
+<link rel="stylesheet" href="~/css/subscription.css" asp-append-version="true" />
+
+<section class="sub-page">
+    <header class="sub-hero">
+        <div class="sub-kicker">My Subscription</div>
+        <h1>Gói dịch vụ của bạn</h1>
+        <p>Xem chi tiết gói hiện tại và mức sử dụng token.</p>
+    </header>
+
+    @if (TempData["SubMessage"] != null)
+    {
+        var msgType = TempData["SubMessageType"]?.ToString() ?? "warning";
+        <div class="sub-alert @msgType">
+            @if (msgType == "warning")
+            {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            }
+            else
+            {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            }
+            <strong>@TempData["SubMessage"]</strong>
+        </div>
+    }
+
+    <div class="sub-me-grid">
+        <div class="sub-me-stat accent">
+            <span>Gói hiện tại</span>
+            <strong>@sub.AccountTitle</strong>
+        </div>
+        <div class="sub-me-stat success">
+            <span>Lượt hỏi còn lại</span>
+            <strong>@sub.RemainingTokens.ToString("N0")</strong>
+        </div>
+        <div class="sub-me-stat warning">
+            <span>Lượt hỏi đã dùng</span>
+            <strong>@sub.UsedTokens.ToString("N0")</strong>
+        </div>
+    </div>
+
+    <div class="sub-me-detail">
+        <div class="sub-me-detail-header">
+            <div class="sub-me-detail-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </div>
+            <h2>Chi tiết gói dịch vụ</h2>
+        </div>
+
+        <div class="sub-me-detail-row">
+            <label>Loại gói</label>
+            <span class="value">@sub.SubscriptionType</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label>Tên gói</label>
+            <span class="value">@sub.AccountTitle</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label>Hạn mức lượt hỏi</label>
+            <span class="value">@sub.TokenLimit.ToString("N0")</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label>Thời gian reset tiếp theo</label>
+            <span class="value">@sub.NextRefreshTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label>Quiz</label>
+            @if (sub.QuizUnlocked)
+            {
+                <span class="value success">Đã mở khóa</span>
+            }
+            else
+            {
+                <span class="value danger">Bị khóa — Cần nâng cấp Premium</span>
+            }
+        </div>
+
+        <div class="sub-token-bar">
+            <div class="sub-token-bar-label">
+                <span>Lượt hỏi đã dùng</span>
+                <span>@sub.UsedTokens.ToString("N0") / @sub.TokenLimit.ToString("N0")</span>
+            </div>
+            <div class="sub-token-bar-track">
+                <div class="sub-token-bar-fill" style="width: @usedPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+            </div>
+        </div>
+
+        <div class="sub-me-actions">
+            @if (!sub.QuizUnlocked)
+            {
+                <a asp-page="/Subscription/Plans" class="sub-link-btn primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    Nâng cấp Premium
+                </a>
+            }
+            <a asp-page="/Chat/Index" class="sub-link-btn">
+                Quay lại Chat
+            </a>
+        </div>
+    </div>
+</section>

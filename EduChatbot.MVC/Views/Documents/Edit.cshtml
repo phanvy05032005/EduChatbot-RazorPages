@@ -1,0 +1,43 @@
+@model EduChatbot.MVC.Models.DocumentEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Document";
+}
+
+<section class="role-page narrow">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker">Edit document</div>
+            <h1>Update metadata</h1>
+            <p>Change document display metadata without changing the uploaded file or embeddings.</p>
+        </div>
+        <div class="role-header-actions">
+            <a asp-controller="Documents" asp-action="Details" asp-route-id="@Model.Id" class="role-secondary-btn">Back</a>
+            <a href="@Model.FilePath" target="_blank" class="role-primary-btn">Open file</a>
+        </div>
+    </header>
+
+    <form asp-controller="Documents" asp-action="Edit" method="post" class="role-form-card">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="StoredFileName" type="hidden" />
+        <input asp-for="FilePath" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly" class="role-form-errors"></div>
+
+        <div class="role-field">
+            <label asp-for="FileName">File name</label>
+            <input asp-for="FileName" maxlength="255" />
+            <span asp-validation-for="FileName" class="role-validation"></span>
+        </div>
+
+        <div class="role-form-actions">
+            <button type="submit" class="role-primary-btn">Save changes</button>
+            <a asp-controller="Documents" asp-action="Details" asp-route-id="@Model.Id" class="role-secondary-btn">Cancel</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

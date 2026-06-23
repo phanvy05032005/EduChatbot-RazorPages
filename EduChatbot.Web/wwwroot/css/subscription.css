@@ -1,0 +1,510 @@
+/* =====================================================
+   Subscription Pages – dark theme matching Student UI
+   Uses the same --edu-* CSS variables from site.css
+   ===================================================== */
+
+/* ---- Plans Page ---- */
+.sub-page {
+  width: min(100% - 2rem, 1080px);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) 0;
+  color: var(--edu-text);
+}
+
+.sub-hero {
+  margin-bottom: 2rem;
+  animation: subFadeUp 0.5s ease both;
+}
+
+.sub-kicker {
+  margin-bottom: 0.5rem;
+  color: var(--edu-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sub-hero h1 {
+  margin: 0;
+  color: var(--edu-text);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.sub-hero p {
+  margin: 0.6rem 0 0;
+  color: var(--edu-muted);
+  line-height: 1.7;
+  max-width: 580px;
+}
+
+/* Plan Cards Grid */
+.sub-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.sub-plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--edu-border);
+  border-radius: 14px;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  background: var(--edu-surface);
+  backdrop-filter: blur(18px);
+  transition: border-color 0.25s ease, transform 0.25s ease;
+  animation: subFadeUp 0.5s ease both;
+}
+
+.sub-plan-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.sub-plan-card:hover {
+  border-color: var(--edu-border-strong);
+  transform: translateY(-2px);
+}
+
+.sub-plan-card.is-premium {
+  border-color: rgba(111, 168, 201, 0.3);
+}
+
+.sub-plan-card.is-premium:hover {
+  border-color: var(--edu-accent);
+}
+
+/* Badge "Đang sử dụng" */
+.sub-current-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(168, 230, 207, 0.12);
+  color: var(--edu-success);
+  border: 1px solid rgba(168, 230, 207, 0.22);
+}
+
+.sub-plan-name {
+  margin: 0 0 0.25rem;
+  color: var(--edu-text);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.sub-plan-price {
+  margin: 0 0 1.25rem;
+  font-size: 0.92rem;
+}
+
+.sub-plan-price strong {
+  color: var(--edu-text);
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.sub-plan-price span {
+  color: var(--edu-muted);
+  font-weight: 600;
+}
+
+/* Feature list */
+.sub-plan-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.sub-plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--edu-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.sub-plan-features li svg {
+  flex: 0 0 auto;
+  color: var(--edu-success);
+}
+
+.sub-plan-features li.locked svg {
+  color: var(--edu-soft);
+}
+
+.sub-plan-features li.locked {
+  color: var(--edu-soft);
+}
+
+/* Action area */
+.sub-plan-action {
+  margin-top: 1.5rem;
+}
+
+.sub-upgrade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.7rem 1.2rem;
+  color: var(--edu-bg);
+  background: linear-gradient(135deg, var(--edu-text), var(--edu-accent));
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(111, 168, 201, 0.2);
+  transition: all 0.2s ease;
+}
+
+.sub-upgrade-btn:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 6px 20px rgba(111, 168, 201, 0.3);
+  transform: translateY(-1px);
+  color: var(--edu-bg);
+}
+
+.sub-upgrade-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(111, 168, 201, 0.15);
+}
+
+.sub-upgrade-btn:disabled,
+.sub-upgrade-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sub-upgrade-btn svg {
+  flex: 0 0 auto;
+}
+
+/* Already premium message */
+.sub-already-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(168, 230, 207, 0.22);
+  border-radius: 10px;
+  padding: 0.7rem 1.2rem;
+  color: var(--edu-success);
+  background: rgba(168, 230, 207, 0.06);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+/* ---- Alert messages ---- */
+.sub-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  font-weight: 600;
+  animation: subFadeUp 0.4s ease both;
+}
+
+.sub-alert svg {
+  flex: 0 0 auto;
+}
+
+.sub-alert.success {
+  border: 1px solid rgba(168, 230, 207, 0.22);
+  color: var(--edu-success);
+  background: rgba(168, 230, 207, 0.06);
+}
+
+.sub-alert.warning {
+  border: 1px solid rgba(255, 215, 154, 0.22);
+  color: var(--edu-warning);
+  background: rgba(255, 215, 154, 0.06);
+}
+
+.sub-alert.danger {
+  border: 1px solid rgba(255, 154, 162, 0.22);
+  color: var(--edu-danger);
+  background: rgba(255, 154, 162, 0.06);
+}
+
+/* ---- Callback Page ---- */
+.sub-callback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  animation: subFadeUp 0.5s ease both;
+}
+
+.sub-callback-icon {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+}
+
+.sub-callback-icon.success {
+  background: rgba(168, 230, 207, 0.12);
+  color: var(--edu-success);
+  border: 2px solid rgba(168, 230, 207, 0.22);
+}
+
+.sub-callback-icon.failed {
+  background: rgba(255, 154, 162, 0.12);
+  color: var(--edu-danger);
+  border: 2px solid rgba(255, 154, 162, 0.22);
+}
+
+.sub-callback h2 {
+  margin: 0 0 0.5rem;
+  color: var(--edu-text);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.sub-callback p {
+  margin: 0 0 1.5rem;
+  color: var(--edu-muted);
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+.sub-callback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+}
+
+.sub-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 42px;
+  border: 1px solid var(--edu-border);
+  border-radius: 10px;
+  padding: 0.55rem 1rem;
+  color: var(--edu-text);
+  background: rgba(228, 240, 246, 0.04);
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.sub-link-btn:hover {
+  border-color: var(--edu-border-strong);
+  background: rgba(228, 240, 246, 0.08);
+  color: var(--edu-text);
+}
+
+.sub-link-btn.primary {
+  border: 0;
+  color: var(--edu-bg);
+  background: linear-gradient(135deg, var(--edu-text), var(--edu-accent));
+  box-shadow: 0 4px 14px rgba(111, 168, 201, 0.2);
+}
+
+.sub-link-btn.primary:hover {
+  filter: brightness(1.06);
+  color: var(--edu-bg);
+}
+
+/* ---- My Subscription Page ---- */
+.sub-me-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sub-me-stat {
+  border: 1px solid var(--edu-border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  background: var(--edu-surface);
+  backdrop-filter: blur(18px);
+  animation: subFadeUp 0.5s ease both;
+}
+
+.sub-me-stat:nth-child(2) { animation-delay: 0.06s; }
+.sub-me-stat:nth-child(3) { animation-delay: 0.12s; }
+
+.sub-me-stat span {
+  display: block;
+  color: var(--edu-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sub-me-stat strong {
+  display: block;
+  margin-top: 0.85rem;
+  color: var(--edu-text);
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.sub-me-stat.accent strong {
+  color: var(--edu-accent);
+}
+
+.sub-me-stat.success strong {
+  color: var(--edu-success);
+}
+
+.sub-me-stat.warning strong {
+  color: var(--edu-warning);
+}
+
+.sub-me-detail {
+  border: 1px solid var(--edu-border);
+  border-radius: 14px;
+  padding: clamp(1.15rem, 3vw, 1.6rem);
+  background: var(--edu-surface);
+  backdrop-filter: blur(18px);
+  animation: subFadeUp 0.55s ease both;
+}
+
+.sub-me-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--edu-border);
+  margin-bottom: 1rem;
+}
+
+.sub-me-detail-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: rgba(111, 168, 201, 0.11);
+  color: var(--edu-accent);
+}
+
+.sub-me-detail-header h2 {
+  margin: 0;
+  color: var(--edu-text);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.sub-me-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid rgba(228, 240, 246, 0.055);
+}
+
+.sub-me-detail-row:last-child {
+  border-bottom: 0;
+}
+
+.sub-me-detail-row label {
+  color: var(--edu-soft);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.sub-me-detail-row .value {
+  color: var(--edu-text);
+  font-weight: 700;
+}
+
+.sub-me-detail-row .value.success {
+  color: var(--edu-success);
+}
+
+.sub-me-detail-row .value.danger {
+  color: var(--edu-danger);
+}
+
+.sub-me-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+/* ---- Token Progress Bar ---- */
+.sub-token-bar {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.sub-token-bar-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  color: var(--edu-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sub-token-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(228, 240, 246, 0.08);
+  overflow: hidden;
+}
+
+.sub-token-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--edu-accent), var(--edu-success));
+  transition: width 0.6s ease;
+}
+
+/* ---- Animations ---- */
+@keyframes subFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .sub-plans-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sub-me-grid {
+    grid-template-columns: 1fr;
+  }
+}
