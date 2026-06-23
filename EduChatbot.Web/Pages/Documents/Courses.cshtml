@@ -1,0 +1,87 @@
+@page
+@model EduChatbot.Web.Pages.Documents.CoursesModel
+@{
+    ViewData["Title"] = "Courses";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker" data-i18n="admin.courses.kicker">Courses</div>
+            <h1 data-i18n="admin.sidebar.coursesAssignments">Courses &amp; Assignments</h1>
+            <p data-i18n="docs.courses.subtitle">View all academic courses and assignments in the system.</p>
+        </div>
+    </header>
+
+    <div class="role-table-card" id="courses-table-card">
+        <div class="role-table-toolbar">
+            <span data-i18n="admin.courses.courseList">List Courses</span> · @Model.Courses.Count <span data-i18n="admin.courses.courses">course(s)</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table role-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th data-i18n="admin.courses.code">Course Code</th>
+                        <th data-i18n="admin.courses.name">Course Name</th>
+                        <th data-i18n="admin.system.storageDetail">Description</th>
+                        <th data-i18n="admin.courses.assignedLecturers">Assigned Lecturers</th>
+                        <th data-i18n="admin.accounts.actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var course in Model.Courses)
+                    {
+                        var isAssignedToMe = course.LecturerCourses.Any(lc => lc.LecturerId == currentUserId);
+                        var lecturersList = course.LecturerCourses.Select(lc => lc.Lecturer?.FullName ?? lc.Lecturer?.Email ?? "Unknown").ToList();
+
+                        <tr class="@(isAssignedToMe ? "realtime-highlight" : "")" style="@(isAssignedToMe ? "border-left: 4px solid var(--edu-primary);" : "")">
+                            <td>
+                                <code style="font-size: 0.9rem; font-weight: 700; color: var(--edu-primary);">@course.Code</code>
+                            </td>
+                            <td>
+                                <strong>@course.Name</strong>
+                            </td>
+                            <td class="text-muted" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
+                            </td>
+                            <td>
+                                @if (lecturersList.Count > 0)
+                                {
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                        @foreach (var lecturer in lecturersList)
+                                        {
+                                            var isMe = course.LecturerCourses.Any(lc => (lc.Lecturer?.FullName == lecturer || lc.Lecturer?.Email == lecturer) && lc.LecturerId == currentUserId);
+                                            <span style="font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 6px; background: @(isMe ? "rgba(0, 102, 204, 0.15)" : "rgba(228, 240, 246, 0.08)"); border: 1px solid @(isMe ? "rgba(0, 102, 204, 0.3)" : "rgba(228, 240, 246, 0.15)"); color: @(isMe ? "var(--edu-primary)" : "var(--edu-text)");">
+                                                @lecturer @(isMe ? " (You)" : "")
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" style="font-style: italic;" data-i18n="admin.courses.noLecturer">No lecturer assigned</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="role-row-actions">
+                                    <a asp-page="/Documents/Index" asp-route-courseId="@course.Id" data-i18n="nav.documents">Documents</a>
+                                    @if (isAssignedToMe)
+                                    {
+                                        <a asp-page="/Documents/Upload" asp-route-courseId="@course.Id" data-i18n="nav.upload">Upload</a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Courses.Count == 0)
+        {
+            <div class="role-empty-panel">
+                <strong data-i18n="admin.courses.noCourses">No courses found in the system.</strong>
+            </div>
+        }
+    </div>
+</section>

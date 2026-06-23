@@ -1,9 +1,7 @@
 using EduChatbot.Data;
 using EduChatbot.Models;
 using EduChatbot.Models.Identity;
-using EduChatbot.Business.Hubs;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MiniExcelLibs;
 using System.IO;
@@ -16,20 +14,20 @@ public class AdminService : IAdminService
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IEmailQueueService _emailQueueService;
-    private readonly IHubContext<AdminHub> _hubContext;
+    private readonly IRealtimeService _realtimeService;
 
     public AdminService(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         IEmailService emailService,
         IEmailQueueService emailQueueService,
-        IHubContext<AdminHub> hubContext)
+        IRealtimeService realtimeService)
     {
         _userManager = userManager;
         _context = context;
         _emailService = emailService;
         _emailQueueService = emailQueueService;
-        _hubContext = hubContext;
+        _realtimeService = realtimeService;
     }
 
     public async Task<AdminStatisticsInfo> GetStatisticsAsync()
@@ -196,7 +194,7 @@ public class AdminService : IAdminService
                 : $"{role} account created successfully, but email notification could not be queued.")
             : $"{role} account created successfully.";
 
-        await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Create", role);
+        await _realtimeService.NotifyAccountChangeAsync("Create", role);
 
         return Success(successMessage);
     }
@@ -225,7 +223,7 @@ public class AdminService : IAdminService
         {
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault() ?? string.Empty;
-            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Update", role);
+            await _realtimeService.NotifyAccountChangeAsync("Update", role);
             return Success("Account updated successfully.");
         }
         return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
@@ -246,7 +244,7 @@ public class AdminService : IAdminService
         {
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault() ?? string.Empty;
-            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "StatusChange", role);
+            await _realtimeService.NotifyAccountChangeAsync("StatusChange", role);
             return Success("Account locked successfully.");
         }
         return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
@@ -265,7 +263,7 @@ public class AdminService : IAdminService
         {
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault() ?? string.Empty;
-            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "StatusChange", role);
+            await _realtimeService.NotifyAccountChangeAsync("StatusChange", role);
             return Success("Account unlocked successfully.");
         }
         return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
@@ -289,7 +287,7 @@ public class AdminService : IAdminService
         var result = await _userManager.DeleteAsync(user);
         if (result.Succeeded)
         {
-            await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Delete", role);
+            await _realtimeService.NotifyAccountChangeAsync("Delete", role);
             return Success("Account deleted successfully.");
         }
         return Failure(string.Join(" ", result.Errors.Select(error => error.Description)));
@@ -434,7 +432,7 @@ public class AdminService : IAdminService
 
             if (successCount > 0)
             {
-                await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Import", ApplicationRoles.Student);
+                await _realtimeService.NotifyAccountChangeAsync("Import", ApplicationRoles.Student);
             }
 
             var msg = $"Successfully imported {successCount} student(s).";
@@ -668,7 +666,7 @@ public class AdminService : IAdminService
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 
-        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Create", normalizedCode);
+        await _realtimeService.NotifyCourseChangeAsync("Create", normalizedCode);
 
         return Success("Course created successfully.");
     }
@@ -685,7 +683,7 @@ public class AdminService : IAdminService
         _context.Courses.Remove(course);
         await _context.SaveChangesAsync();
 
-        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Delete", courseCode);
+        await _realtimeService.NotifyCourseChangeAsync("Delete", courseCode);
 
         return Success("Course deleted successfully.");
     }
@@ -748,7 +746,7 @@ public class AdminService : IAdminService
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Assign", course.Code);
+            await _realtimeService.NotifyCourseChangeAsync("Assign", course.Code);
 
             return Success("Lecturer assigned to course successfully.");
         }
@@ -773,7 +771,7 @@ public class AdminService : IAdminService
         _context.LecturerCourses.Remove(assignment);
         await _context.SaveChangesAsync();
 
-        await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Remove", courseCode);
+        await _realtimeService.NotifyCourseChangeAsync("Remove", courseCode);
 
         return Success("Lecturer course assignment removed successfully.");
     }
@@ -965,7 +963,7 @@ public class AdminService : IAdminService
 
             if (successCount > 0)
             {
-                await _hubContext.Clients.All.SendAsync("ReceiveAccountChange", "Import", ApplicationRoles.Lecturer);
+                await _realtimeService.NotifyAccountChangeAsync("Import", ApplicationRoles.Lecturer);
             }
 
             var msg = $"Successfully imported {successCount} lecturer(s).";
@@ -1078,7 +1076,7 @@ public class AdminService : IAdminService
             if (successCount > 0)
             {
                 await _context.SaveChangesAsync();
-                await _hubContext.Clients.All.SendAsync("ReceiveCourseChange", "Import", "");
+                await _realtimeService.NotifyCourseChangeAsync("Import", "");
             }
 
             var msg = $"Successfully imported {successCount} course(s).";

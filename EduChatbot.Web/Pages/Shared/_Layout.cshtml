@@ -160,6 +160,7 @@ else
                         var isDashboardActive = currentRolePage == "/Documents/Dashboard";
                     }
                     <a asp-page="/Documents/Dashboard" data-i18n="nav.dashboard" class="@(isDashboardActive ? "active" : "")">Dashboard</a>
+                    <a asp-page="/Documents/Courses" data-i18n="nav.allCourses" class="@(currentRolePage == "/Documents/Courses" ? "active" : "")">All Courses</a>
                     <a asp-page="/Documents/Index" data-i18n="nav.learningMaterials" class="@(currentRolePage == "/Documents/Index" ? "active" : "")">Learning Materials</a>
                     <a asp-page="/Documents/Upload" data-i18n="nav.uploadDocument" class="@(currentRolePage == "/Documents/Upload" ? "active" : "")">Upload Document</a>
                     <a asp-page="/Account/Profile" data-i18n="nav.profile" class="@(currentRolePage == "/Account/Profile" ? "active" : "")">Profile</a>
@@ -259,10 +260,17 @@ else
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/i18n.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @if (User.IsInRole("Admin"))
+    @if (User.IsInRole("Admin") || User.IsInRole("Lecturer"))
     {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    }
+    @if (User.IsInRole("Admin"))
+    {
         <script src="~/js/admin-realtime.js" asp-append-version="true"></script>
+    }
+    @if (User.IsInRole("Lecturer"))
+    {
+        <script src="~/js/lecturer-realtime.js" asp-append-version="true"></script>
     }
 
     @if (userNeedsPasswordChange)

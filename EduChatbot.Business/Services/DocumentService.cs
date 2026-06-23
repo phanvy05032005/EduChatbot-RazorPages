@@ -12,9 +12,6 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 using OpenXmlParagraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 using OpenXmlText = DocumentFormat.OpenXml.Wordprocessing.Text;
 
-using Microsoft.AspNetCore.SignalR;
-using EduChatbot.Business.Hubs;
-
 namespace EduChatbot.Business.Services;
 
 public class DocumentService : IDocumentService
@@ -25,7 +22,7 @@ public class DocumentService : IDocumentService
     private readonly IEmbeddingService _embeddingService;
     private readonly ILogger<DocumentService> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IHubContext<AdminHub> _hubContext;
+    private readonly IRealtimeService _realtimeService;
 
     public DocumentService(
         IDocumentRepository documentRepository,
@@ -34,7 +31,7 @@ public class DocumentService : IDocumentService
         IEmbeddingService embeddingService,
         ILogger<DocumentService> logger,
         UserManager<ApplicationUser> userManager,
-        IHubContext<AdminHub> hubContext)
+        IRealtimeService realtimeService)
     {
         _documentRepository = documentRepository;
         _courseRepository = courseRepository;
@@ -42,7 +39,7 @@ public class DocumentService : IDocumentService
         _embeddingService = embeddingService;
         _logger = logger;
         _userManager = userManager;
-        _hubContext = hubContext;
+        _realtimeService = realtimeService;
     }
 
     public async Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false, int? courseId = null)
@@ -103,7 +100,7 @@ public class DocumentService : IDocumentService
 
         if (!string.IsNullOrWhiteSpace(document.UploadedById))
         {
-            await _hubContext.Clients.All.SendAsync("ReceiveMaterialChange", "Update", document.UploadedById, document.UploadedBy, document.FileName);
+            await _realtimeService.NotifyMaterialChangeAsync("Update", document.UploadedById, document.UploadedBy, document.FileName);
         }
 
         return new DocumentUploadResult
@@ -250,7 +247,7 @@ public class DocumentService : IDocumentService
 
             if (!string.IsNullOrWhiteSpace(document.UploadedById))
             {
-                await _hubContext.Clients.All.SendAsync("ReceiveMaterialChange", "Create", document.UploadedById, document.UploadedBy, document.FileName);
+                await _realtimeService.NotifyMaterialChangeAsync("Create", document.UploadedById, document.UploadedBy, document.FileName);
             }
 
             return new DocumentUploadResult
@@ -329,7 +326,7 @@ public class DocumentService : IDocumentService
 
         if (!string.IsNullOrWhiteSpace(uploadedById))
         {
-            await _hubContext.Clients.All.SendAsync("ReceiveMaterialChange", "Delete", uploadedById, document.UploadedBy, document.FileName);
+            await _realtimeService.NotifyMaterialChangeAsync("Delete", uploadedById, document.UploadedBy, document.FileName);
         }
 
         return true;
