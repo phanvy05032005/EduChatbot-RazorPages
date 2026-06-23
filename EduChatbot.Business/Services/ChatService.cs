@@ -423,6 +423,11 @@ public class ChatService : IChatService
         }
     }
 
+    public async Task<bool> DeleteConversationAsync(int conversationId, string userId)
+    {
+        return await _chatRepository.DeleteConversationAsync(conversationId, userId);
+    }
+
     public async Task<List<Course>> GetCoursesAsync()
     {
         return await _chatRepository.GetCoursesAsync();

@@ -18,5 +18,7 @@ public interface IChatService
     /// </summary>
     IAsyncEnumerable<string> SendMessageStreamAsync(int conversationId, string userId, string question, CancellationToken cancellationToken = default);
 
+    Task<bool> DeleteConversationAsync(int conversationId, string userId);
+
     Task<List<Course>> GetCoursesAsync();
 }

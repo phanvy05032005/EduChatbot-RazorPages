@@ -392,7 +392,7 @@
             });
         }
 
-        document.querySelectorAll('.chat-nav-action, .chat-sidebar-item, .chat-brand-link').forEach(function (link) {
+        document.querySelectorAll('.chat-nav-action, .chat-sidebar-item-link, .chat-brand-link').forEach(function (link) {
             link.addEventListener('click', function (event) {
                 const href = this.getAttribute('href');
                 if (!href || href === '#') {
@@ -416,4 +416,98 @@
             toggle?.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
         }
     }
+
+    // Sidebar dropdown toggle and conversation deletion AJAX handling
+    (function initSidebarDropdowns() {
+        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        // Toggle dropdown on ellipsis button click
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.chat-sidebar-action-btn');
+            if (btn) {
+                e.stopPropagation();
+                const parentActions = btn.closest('.chat-sidebar-item-actions');
+                const menu = parentActions.querySelector('.chat-sidebar-dropdown-menu');
+                
+                // Close any other open menus
+                document.querySelectorAll('.chat-sidebar-dropdown-menu.show').forEach(m => {
+                    if (m !== menu) {
+                        m.classList.remove('show');
+                        m.closest('.chat-sidebar-item-actions')?.classList.remove('menu-open');
+                    }
+                });
+
+                const isShowing = menu.classList.toggle('show');
+                parentActions.classList.toggle('menu-open', isShowing);
+                return;
+            }
+
+            // Close all dropdowns when clicking outside
+            document.querySelectorAll('.chat-sidebar-dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+                menu.closest('.chat-sidebar-item-actions')?.classList.remove('menu-open');
+            });
+        });
+
+        // Handle delete conversation button click
+        document.addEventListener('click', function (e) {
+            const deleteBtn = e.target.closest('.chat-sidebar-dropdown-item[data-action="delete"]');
+            if (!deleteBtn) return;
+
+            e.preventDefault();
+            const conversationId = deleteBtn.dataset.conversationId;
+            if (!conversationId) return;
+
+            const confirmed = confirm('Bạn có chắc chắn muốn xóa cuộc trò chuyện này?');
+            if (!confirmed) return;
+
+            fetch('/Chat/Index?handler=DeleteConversation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': antiForgeryToken
+                },
+                body: 'id=' + encodeURIComponent(conversationId) + '&__RequestVerificationToken=' + encodeURIComponent(antiForgeryToken)
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Lỗi từ máy chủ khi xóa cuộc trò chuyện.');
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Remove from DOM
+                    const wrapper = deleteBtn.closest('.chat-sidebar-item-wrapper');
+                    if (wrapper) {
+                        const isCurrentActive = wrapper.classList.contains('active');
+                        const group = wrapper.closest('.chat-sidebar-group');
+                        wrapper.remove();
+
+                        // If no more items in the group, remove the group header
+                        if (group && group.querySelectorAll('.chat-sidebar-item-wrapper').length === 0) {
+                            group.remove();
+                        }
+
+                        // If the sidebar is now completely empty, show empty state message
+                        const sidebarList = document.querySelector('.chat-sidebar-list');
+                        if (sidebarList && sidebarList.querySelectorAll('.chat-sidebar-item-wrapper').length === 0) {
+                            sidebarList.innerHTML = '<div class="chat-sidebar-empty" data-i18n="chat.noConversationsShort">No conversations yet.</div>';
+                        }
+
+                        // If we deleted the currently active conversation, redirect to Index
+                        if (isCurrentActive) {
+                            window.location.href = '/Chat/Index';
+                        }
+                    }
+                } else {
+                    alert('Không thể xóa cuộc trò chuyện: ' + (data.error || 'Lỗi không xác định'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Có lỗi xảy ra: ' + err.message);
+            });
+        });
+    })();
 })();

@@ -14,6 +14,8 @@ public interface IChatRepository
 
     Task UpdateConversationAsync(ChatConversation conversation);
 
+    Task<bool> DeleteConversationAsync(int conversationId, string userId);
+
     Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 5);
 
     Task<List<Course>> GetCoursesAsync();

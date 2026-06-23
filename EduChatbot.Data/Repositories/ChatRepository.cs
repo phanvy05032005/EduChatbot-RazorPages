@@ -49,6 +49,20 @@ public class ChatRepository : IChatRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task<bool> DeleteConversationAsync(int conversationId, string userId)
+    {
+        var conversation = await _context.ChatConversations
+            .FirstOrDefaultAsync(c => c.Id == conversationId && c.UserId == userId);
+        if (conversation == null)
+        {
+            return false;
+        }
+
+        _context.ChatConversations.Remove(conversation);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 5)
     {
         if (queryEmbedding.Length == 0)

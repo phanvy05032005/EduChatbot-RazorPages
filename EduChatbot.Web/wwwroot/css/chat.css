@@ -220,7 +220,12 @@ body.chat-layout.chat-sidebar-ready .chat-main {
     min-height: 0;
     overflow-y: auto;
     padding: 20px 8px 10px;
-    scrollbar-color: rgba(228, 240, 246, 0.2) transparent;
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+}
+
+.chat-sidebar-list::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in Chrome/Safari/Webkit/Edge */
 }
 
 .chat-sidebar-group {
@@ -241,25 +246,137 @@ body.chat-layout.chat-sidebar-ready .chat-main {
     gap: 2px;
 }
 
-.chat-sidebar-item {
-    display: block;
-    min-height: 36px;
-    overflow: hidden;
+.chat-sidebar-item-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: 0;
     color: rgba(228, 240, 246, 0.82);
     font-size: 14px;
     font-weight: 560;
     line-height: 1.35;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.chat-sidebar-item-wrapper:hover,
+.chat-sidebar-item-wrapper.active {
+    background: rgba(228, 240, 246, 0.08);
+}
+
+.chat-sidebar-item-link {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 8px 36px 8px 10px;
+    color: inherit;
     text-decoration: none;
     text-overflow: ellipsis;
     white-space: nowrap;
+    overflow: hidden;
 }
 
-.chat-sidebar-item:hover,
-.chat-sidebar-item.active {
-    background: rgba(228, 240, 246, 0.08);
+.chat-sidebar-item-link:hover {
     color: var(--chat-text);
+}
+
+.chat-sidebar-item-wrapper.active .chat-sidebar-item-link {
+    color: var(--chat-text);
+}
+
+.chat-sidebar-item-actions {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+}
+
+.chat-sidebar-item-wrapper:hover .chat-sidebar-item-actions,
+.chat-sidebar-item-actions.menu-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.chat-sidebar-action-btn {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(228, 240, 246, 0.45);
+    padding: 0;
+    cursor: pointer;
+}
+
+.chat-sidebar-action-btn:hover {
+    background: rgba(228, 240, 246, 0.1);
+    color: var(--chat-text);
+}
+
+.chat-sidebar-action-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.chat-sidebar-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 1000;
+    display: none;
+    min-width: 120px;
+    background: var(--chat-panel);
+    border: 1px solid var(--chat-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    padding: 4px;
+}
+
+.chat-sidebar-dropdown-menu.show {
+    display: block;
+}
+
+.chat-sidebar-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 550;
+    text-align: left;
+    cursor: pointer;
+    color: var(--chat-text);
+}
+
+.chat-sidebar-dropdown-item:hover {
+    background: rgba(228, 240, 246, 0.05);
+}
+
+.chat-sidebar-dropdown-item.text-danger {
+    color: var(--chat-danger, #ff9aa2) !important;
+}
+
+.chat-sidebar-dropdown-item.text-danger:hover {
+    background: rgba(255, 154, 162, 0.1);
+}
+
+.chat-sidebar-dropdown-item svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2px;
 }
 
 .chat-sidebar-empty {
@@ -420,7 +537,12 @@ body.chat-layout.chat-sidebar-ready .chat-main {
 .chat-scroll {
     min-height: 0;
     overflow-y: auto;
-    scrollbar-color: rgba(228, 240, 246, 0.24) transparent;
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+}
+
+.chat-scroll::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in Chrome/Safari/Webkit/Edge */
 }
 
 .chat-message-stack {
@@ -784,6 +906,12 @@ body.chat-layout.chat-sidebar-ready .chat-main {
     margin: 0 auto;
     overflow-y: auto;
     padding: 48px 0;
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+}
+
+.chat-list-panel::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in Chrome/Safari/Webkit/Edge */
 }
 
 .chat-list-heading {
