@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EduChatbot.Web.Models;
+namespace EduChatbot.Web.ViewModels;
 
 public class DocumentEditViewModel
 {

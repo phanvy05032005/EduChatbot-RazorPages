@@ -1,4 +1,4 @@
-namespace EduChatbot.Web.Models;
+namespace EduChatbot.Web.ViewModels;
 
 public class ChatMessageViewModel
 {

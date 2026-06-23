@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using EduChatbot.Business.Services;
-using EduChatbot.Web.Models;
+using EduChatbot.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 

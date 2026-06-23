@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using EduChatbot.Business.Services;
-using EduChatbot.Web.Models;
+using EduChatbot.Web.ViewModels;
 using EduChatbot.Models;
 using EduChatbot.Models.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace EduChatbot.Web.Pages.Chat;
 
 [Authorize(Roles = ApplicationRoles.Student)]
+[ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 public class ConversationModel : PageModel
 {
     private readonly IChatService _chatService;

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using EduChatbot.Business.Services;
 using EduChatbot.Models.Identity;
-using EduChatbot.Web.Models;
+using EduChatbot.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;

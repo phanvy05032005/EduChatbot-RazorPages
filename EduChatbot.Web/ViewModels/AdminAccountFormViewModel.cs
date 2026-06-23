@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using EduChatbot.Models;
 
-namespace EduChatbot.Web.Models;
+namespace EduChatbot.Web.ViewModels;
 
 public class AdminAccountFormViewModel
 {
