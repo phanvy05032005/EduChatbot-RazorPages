@@ -33,6 +33,7 @@ builder.Services.AddSignalR();
 // Đăng ký toàn bộ Business + Data thông qua Business layer để Web không phụ thuộc trực tiếp Data layer.
 builder.Services.AddEduChatbotApplication(builder.Configuration);
 builder.Services.AddScoped<IRealtimeService, RealtimeService>();
+builder.Services.AddScoped<IStudentRealtimeNotifier, StudentRealtimeNotifier>();
 
 
 var app = builder.Build();
@@ -57,6 +58,7 @@ app.MapRazorPages()
     .WithStaticAssets();
 
 app.MapHub<AdminHub>("/adminHub");
+app.MapHub<EduNotificationHub>("/notificationHub");
 
 await app.Services.SeedEduChatbotIdentityAsync();
 

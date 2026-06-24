@@ -668,7 +668,14 @@ public class AdminService : IAdminService
 
         await _realtimeService.NotifyCourseChangeAsync("Create", normalizedCode);
 
-        return Success("Course created successfully.");
+        return new AdminOperationResult
+        {
+            IsSuccess = true,
+            Message = "Course created successfully.",
+            CourseId = course.Id,
+            CourseCode = course.Code,
+            CourseName = course.Name
+        };
     }
 
     public async Task<AdminOperationResult> DeleteCourseAsync(int id)

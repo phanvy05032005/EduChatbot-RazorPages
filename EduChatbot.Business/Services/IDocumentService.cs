@@ -29,4 +29,6 @@ public interface IDocumentService
         int courseId);
 
     Task<List<Course>> GetAvailableCoursesForUserAsync(string userId, bool isAdmin);
+
+    Task<Document?> GetApprovedDocumentForStudentAsync(int id);
 }

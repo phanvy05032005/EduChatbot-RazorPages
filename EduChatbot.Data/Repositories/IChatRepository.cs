@@ -6,6 +6,8 @@ public interface IChatRepository
 {
     Task<List<ChatConversation>> GetConversationsByUserAsync(string userId);
 
+    Task<List<ChatConversationSummary>> GetConversationSummariesByUserAsync(string userId);
+
     Task<ChatConversation?> GetConversationWithMessagesAsync(int conversationId, string userId);
 
     Task<ChatConversation> AddConversationAsync(ChatConversation conversation);

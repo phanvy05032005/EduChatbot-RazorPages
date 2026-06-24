@@ -24,6 +24,10 @@ public class DocumentService : IDocumentService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IRealtimeService _realtimeService;
 
+    private static readonly System.Text.RegularExpressions.Regex CjkRegex = new(
+        @"[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF]",
+        System.Text.RegularExpressions.RegexOptions.Compiled);
+
     public DocumentService(
         IDocumentRepository documentRepository,
         ICourseRepository courseRepository,
@@ -221,6 +225,22 @@ public class DocumentService : IDocumentService
 
             var documentChunks = await CreateDocumentChunksAsync(extractedText);
 
+            string? validationResult = null;
+            if (CjkRegex.IsMatch(extractedText))
+            {
+                validationResult = "Warning: Extracted text contains CJK (Chinese/Japanese/Korean) characters. This may cause alignment noise.";
+                _logger.LogWarning("CJK characters detected in uploaded document. File: {FileName}", safeOriginalFileName);
+                
+                for (int i = 0; i < documentChunks.Count; i++)
+                {
+                    if (CjkRegex.IsMatch(documentChunks[i].Content))
+                    {
+                        _logger.LogWarning("  -> CJK detected in Chunk #{Index}. Snippet: {Snippet}", i, 
+                            documentChunks[i].Content.Length > 200 ? documentChunks[i].Content[..200] : documentChunks[i].Content);
+                    }
+                }
+            }
+
             var document = new Document
             {
                 FileName = safeOriginalFileName,
@@ -239,7 +259,7 @@ public class DocumentService : IDocumentService
                 SubjectCode = course.Code,
                 SubjectName = course.Name,
                 MatchScore = null,
-                ValidationResult = null,
+                ValidationResult = validationResult,
                 Chunks = documentChunks
             };
 
@@ -256,7 +276,11 @@ public class DocumentService : IDocumentService
                 Message = "Document uploaded and indexed successfully.",
                 DocumentId = document.Id,
                 ChunkCount = document.ChunkCount,
-                Status = document.Status
+                Status = document.Status,
+                CourseId = document.CourseId,
+                CourseCode = document.SubjectCode,
+                CourseName = document.SubjectName,
+                FileName = document.FileName
             };
         }
         catch (Exception ex)
@@ -480,5 +504,15 @@ public class DocumentService : IDocumentService
         }
 
         return await _courseRepository.GetAssignedCoursesAsync(userId);
+    }
+
+    public async Task<Document?> GetApprovedDocumentForStudentAsync(int id)
+    {
+        var document = await _documentRepository.GetByIdAsync(id, uploadedById: null);
+        if (document != null && document.Status == DocumentStatuses.Approved)
+        {
+            return document;
+        }
+        return null;
     }
 }

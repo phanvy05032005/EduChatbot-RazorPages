@@ -1,6 +1,7 @@
 using EduChatbot.Business.Services;
 using EduChatbot.Models;
 using EduChatbot.Models.Identity;
+using EduChatbot.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -12,10 +13,12 @@ namespace EduChatbot.Web.Pages.Admin;
 public class CoursesModel : PageModel
 {
     private readonly IAdminService _adminService;
+    private readonly IStudentRealtimeNotifier _studentRealtimeNotifier;
 
-    public CoursesModel(IAdminService adminService)
+    public CoursesModel(IAdminService adminService, IStudentRealtimeNotifier studentRealtimeNotifier)
     {
         _adminService = adminService;
+        _studentRealtimeNotifier = studentRealtimeNotifier;
     }
 
     public List<Course> Courses { get; private set; } = [];
@@ -36,6 +39,17 @@ public class CoursesModel : PageModel
 
         var result = await _adminService.CreateCourseAsync(code, name, description);
         TempData[result.IsSuccess ? "AdminMessage" : "AdminError"] = result.Message;
+
+        if (result.IsSuccess && result.CourseId.HasValue)
+        {
+            await _studentRealtimeNotifier.NotifyCourseCreatedAsync(new StudentCourseCreatedPayload
+            {
+                CourseId = result.CourseId.Value,
+                CourseCode = result.CourseCode ?? string.Empty,
+                CourseName = result.CourseName ?? string.Empty
+            });
+        }
+
         return RedirectToPage();
     }
 

@@ -77,6 +77,11 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/i18n.js" asp-append-version="true"></script>
     <script src="~/js/student.js" asp-append-version="true"></script>
+    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Student"))
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+        <script src="~/js/student-realtime.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -22,6 +22,36 @@ public class ChatRepository : IChatRepository
             .ToListAsync();
     }
 
+    public async Task<List<ChatConversationSummary>> GetConversationSummariesByUserAsync(string userId)
+    {
+        return await _context.ChatConversations
+            .Where(c => c.UserId == userId && c.Messages.Any())
+            .OrderByDescending(c => c.UpdatedAt)
+            .Select(c => new ChatConversationSummary
+            {
+                Id = c.Id,
+                DisplayTitle = (c.Title != null && c.Title != "" && c.Title != "New conversation" && c.Title != "Cuộc trò chuyện mới")
+                    ? c.Title
+                    : c.Messages
+                        .Where(m => m.Role == "user")
+                        .OrderBy(m => m.CreatedAt)
+                        .Select(m => m.Content)
+                        .FirstOrDefault() ?? "New conversation",
+
+                DisplayPreview = c.Messages
+                    .OrderByDescending(m => m.CreatedAt)
+                    .Select(m => m.Content)
+                    .FirstOrDefault(),
+
+                MessageCount = c.Messages.Count(),
+
+                CourseName = c.Course != null ? c.Course.Name : "Chung",
+                CourseCode = c.Course != null ? c.Course.Code : null,
+                UpdatedAt = c.UpdatedAt
+            })
+            .ToListAsync();
+    }
+
     public async Task<ChatConversation?> GetConversationWithMessagesAsync(int conversationId, string userId)
     {
         return await _context.ChatConversations
