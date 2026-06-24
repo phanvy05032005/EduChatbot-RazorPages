@@ -379,3 +379,1153 @@ ngrok http 5287
 * Cơ chế đếm số lượt hỏi sử dụng **đếm số lượt hỏi thành công** (Request Count) thay vì đếm số token để giúp buổi demo trực quan và dễ theo dõi.
 * Hạn mức mặc định: Gói **Basic** có **20 lượt hỏi/ngày**, gói **Premium** có **100 lượt hỏi/ngày** và mở khóa chức năng tự động sinh Quiz kiểm tra kiến thức.
 * Việc cập nhật gói Premium hoạt động hoàn toàn tự động thông qua PayOS Webhook hoặc Callback URL. Bạn có thể sử dụng mã đơn thanh toán giả lập của PayOS trong môi trường Sandbox để demo quy trình thanh toán thành công mà không mất phí thật.
+
+---
+
+## 20. Phụ lục mở rộng cho người triển khai
+
+Phần phụ lục này tổng hợp thêm nhiều ghi chú thực chiến hơn cho người cài đặt, bảo trì, demo, chấm đồ án và mở rộng hệ thống.
+
+Mục tiêu của phần này là:
+* Giúp người mới có thể hiểu tổng thể dự án mà không cần đọc hết source code ngay từ đầu.
+* Giúp người hướng dẫn hoặc người chấm có thể nắm nhanh kiến trúc và các quyết định triển khai.
+* Giúp nhóm phát triển có thêm tài liệu vận hành nội bộ bằng tiếng Việt.
+* Giúp việc chuyển giao dự án cho thành viên khác trong nhóm diễn ra nhẹ nhàng hơn.
+
+---
+
+## 21. Bức tranh tổng quan hệ thống
+
+Hãy hình dung hệ thống dưới dạng chuỗi xử lý:
+
+1. Admin tạo người dùng và môn học.
+2. Admin phân công giảng viên phụ trách môn học.
+3. Lecturer đăng nhập, chọn môn học mình được phân công.
+4. Lecturer tải tài liệu PDF hoặc DOCX.
+5. Hệ thống đọc tài liệu, tách nội dung, chia nhỏ thành nhiều đoạn.
+6. Hệ thống gọi API embedding để tạo vector cho từng đoạn.
+7. Các vector được lưu vào PostgreSQL với extension pgvector.
+8. Student đăng nhập, mở chat trong một môn học cụ thể.
+9. Câu hỏi của Student được chuyển thành embedding.
+10. Hệ thống tìm các đoạn tài liệu gần nhất về mặt ngữ nghĩa.
+11. Các đoạn phù hợp được đưa vào prompt gửi cho OpenRouter.
+12. Mô hình AI sinh ra câu trả lời.
+13. Câu trả lời được lưu lại cùng với metadata nguồn tham chiếu.
+14. Nếu Student dùng gói Basic hoặc Premium, hệ thống sẽ trừ hạn mức theo cấu hình hiện hành.
+15. Khi Student nâng cấp gói, PayOS sẽ tạo payment link.
+16. Sau thanh toán, callback hoặc webhook sẽ đồng bộ trạng thái giao dịch.
+17. Tài khoản được nâng cấp Premium và được tăng hạn mức.
+
+Điểm quan trọng ở đây là:
+* Chat không trả lời từ “kiến thức trống”.
+* Chat cố gắng trả lời dựa trên tài liệu nội bộ.
+* Dữ liệu vector là phần cốt lõi để tạo trải nghiệm RAG.
+* Subscription chỉ là lớp business bao phía trên để kiểm soát quyền lợi người dùng.
+
+---
+
+## 22. Tư duy thiết kế chính
+
+Hệ thống ưu tiên:
+* Dễ hiểu cho đồ án.
+* Dễ chạy trên máy cá nhân.
+* Không yêu cầu hạ tầng quá phức tạp.
+* Dễ demo với luồng người dùng rõ ràng.
+* Giữ business logic tương đối tập trung trong Business layer.
+
+Hệ thống chưa theo hướng:
+* Microservices.
+* Event-driven phức tạp.
+* CQRS đầy đủ.
+* Message broker như RabbitMQ hoặc Kafka.
+* Scale ngang nhiều node.
+
+Điều này là hợp lý cho bài toán đồ án hoặc MVP học thuật.
+
+---
+
+## 23. Ý nghĩa từng layer trong solution
+
+### 23.1 Presentation Layer
+
+`EduChatbot.Web` chịu trách nhiệm:
+* Nhận request HTTP.
+* Render Razor Pages.
+* Nhận form submit.
+* Trả JSON ở các endpoint nhỏ nếu cần.
+* Chứa asset frontend như CSS, JS.
+* Khởi tạo app ở `Program.cs`.
+
+Đây là nơi phù hợp để xử lý:
+* Routing.
+* UI state.
+* TempData.
+* ViewModel để render dữ liệu.
+* Các redirect sau thao tác người dùng.
+
+Không nên nhồi business logic nặng vào đây.
+
+### 23.2 Business Layer
+
+`EduChatbot.Business` là trái tim của hệ thống.
+
+Nó xử lý:
+* Chat flow.
+* Embedding flow.
+* Payment flow.
+* Subscription flow.
+* Email queue flow.
+* Rule upload document.
+* Các quyết định nghiệp vụ như hạn mức, trạng thái, quyền lợi.
+
+Khi cần thay đổi hành vi hệ thống, đa phần bạn sẽ sửa ở layer này trước.
+
+### 23.3 Data Layer
+
+`EduChatbot.Data` chịu trách nhiệm:
+* Định nghĩa `ApplicationDbContext`.
+* Mapping entity.
+* Repository truy vấn dữ liệu.
+* EF Core migrations.
+* Seed dữ liệu danh tính.
+
+Nếu có lỗi kiểu:
+* Thiếu cột.
+* Thiếu bảng.
+* Query mapping sai.
+* Foreign key sai.
+
+thì thường nguyên nhân nằm ở Data layer.
+
+### 23.4 Models Layer
+
+`EduChatbot.Models` chứa:
+* Entity.
+* Enum.
+* Identity model.
+* DTO/result model dùng chung.
+
+Lợi ích:
+* Tránh vòng phụ thuộc không cần thiết.
+* Dễ chia sẻ model cho nhiều layer.
+
+---
+
+## 24. Vai trò người dùng trong hệ thống
+
+Hệ thống hiện có 3 role chính:
+* Admin
+* Lecturer
+* Student
+
+### 24.1 Admin
+
+Admin có quyền:
+* Tạo tài khoản.
+* Quản lý role.
+* Quản lý giảng viên.
+* Quản lý sinh viên.
+* Quản lý môn học.
+* Phân công môn học cho giảng viên.
+* Theo dõi dashboard tổng quan.
+
+Admin không phải role dùng trực tiếp tính năng học tập hằng ngày.
+
+### 24.2 Lecturer
+
+Lecturer là người cung cấp tri thức cho hệ thống.
+
+Lecturer có quyền:
+* Đăng nhập.
+* Xem môn học được phân công.
+* Upload tài liệu.
+* Quản lý tài liệu liên quan.
+
+Lecturer không nên upload tài liệu cho môn không được phân công.
+
+### 24.3 Student
+
+Student là người dùng chính của chatbot.
+
+Student có quyền:
+* Đăng nhập.
+* Chọn môn học.
+* Tạo conversation.
+* Gửi câu hỏi cho chatbot.
+* Xem hạn mức.
+* Xem gói dịch vụ.
+* Nâng cấp Premium.
+
+Subscription hiện chủ yếu nhắm vào Student.
+
+---
+
+## 25. Danh sách entity quan trọng
+
+Các entity đáng chú ý:
+* `ApplicationUser`
+* `Document`
+* `DocumentChunk`
+* `Course`
+* `LecturerCourse`
+* `ChatConversation`
+* `ChatMessage`
+* `PaymentTransaction`
+* `EmailQueue`
+
+### 25.1 ApplicationUser
+
+Đây là bảng user chính dựa trên ASP.NET Identity.
+
+Ngoài các field chuẩn của Identity, dự án bổ sung:
+* `FullName`
+* `SubscriptionType`
+* `AccountTitle`
+* `TokenLimit`
+* `UsedTokens`
+
+Ý nghĩa:
+* `SubscriptionType`: xác định Basic/Premium.
+* `AccountTitle`: tên hiển thị gói.
+* `TokenLimit`: hạn mức được phép dùng.
+* `UsedTokens`: mức đã dùng.
+
+### 25.2 Document
+
+Đại diện cho file gốc được tải lên.
+
+Chứa các thông tin như:
+* Tên file.
+* Đường dẫn file.
+* Người upload.
+* Môn học liên quan.
+* Trạng thái.
+* Metadata phục vụ review.
+
+### 25.3 DocumentChunk
+
+Đây là bảng rất quan trọng cho RAG.
+
+Mỗi `DocumentChunk` là:
+* Một đoạn nội dung nhỏ.
+* Có index vị trí trong file.
+* Có vector embedding.
+
+Khi user chat, hệ thống chủ yếu query vào bảng này.
+
+### 25.4 Course
+
+Lưu:
+* Mã môn học.
+* Tên môn học.
+* Mô tả.
+
+Đây là trục phân vùng nghiệp vụ chính.
+
+### 25.5 LecturerCourse
+
+Đây là bảng phân công many-to-many giữa Lecturer và Course.
+
+Business rule chính:
+* Lecturer chỉ được upload cho môn có trong bảng này.
+
+### 25.6 ChatConversation
+
+Đại diện cho một cuộc hội thoại.
+
+Gắn với:
+* `UserId`
+* `CourseId`
+* tiêu đề cuộc trò chuyện
+
+### 25.7 ChatMessage
+
+Lưu:
+* Role: user/ai
+* Nội dung
+* Nguồn tham chiếu nếu có
+
+### 25.8 PaymentTransaction
+
+Đây là entity trung tâm cho phần payment.
+
+Lưu:
+* `OrderCode`
+* `Amount`
+* `Provider`
+* `Status`
+* `CheckoutUrl`
+* `PayOSPaymentLinkId`
+* thời gian tạo và hoàn tất
+
+### 25.9 EmailQueue
+
+Bảng này dùng để tách hành vi gửi mail ra khỏi request tạo account.
+
+Lợi ích:
+* Tạo account nhanh hơn.
+* Gửi mail retry được.
+* Giảm lỗi do SMTP làm hỏng flow chính.
+
+---
+
+## 26. Luồng upload tài liệu chi tiết
+
+Chi tiết hơn, một tài liệu đi qua các bước sau:
+
+1. Lecturer mở form upload.
+2. Lecturer chọn môn học.
+3. Lecturer chọn file.
+4. Server nhận file.
+5. Hệ thống kiểm tra quyền Lecturer với môn học.
+6. Hệ thống kiểm tra extension file.
+7. Hệ thống lưu file vật lý vào `wwwroot/uploads/documents`.
+8. Hệ thống extract text từ file.
+9. Hệ thống chia text thành các chunk nhỏ.
+10. Hệ thống gọi embedding service cho từng chunk.
+11. Hệ thống lưu `Document`.
+12. Hệ thống lưu nhiều `DocumentChunk`.
+13. Tài liệu trở thành dữ liệu tra cứu cho chatbot.
+
+Đây là nơi có thể phát sinh lỗi nhiều nhất khi demo vì phụ thuộc:
+* file đầu vào
+* quyền upload
+* API embedding
+* database vector
+
+---
+
+## 27. Luồng chat chi tiết
+
+Khi Student gửi một câu hỏi:
+
+1. Hệ thống xác thực người dùng.
+2. Hệ thống kiểm tra conversation tồn tại và thuộc về user đó.
+3. Hệ thống kiểm tra hạn mức hiện tại của user.
+4. Hệ thống lưu câu hỏi của user vào DB.
+5. Hệ thống tạo embedding cho câu hỏi.
+6. Hệ thống search chunk gần nhất theo cosine similarity trong phạm vi môn học.
+7. Hệ thống dựng context từ các chunk phù hợp.
+8. Hệ thống gửi prompt sang OpenRouter.
+9. Hệ thống nhận response AI.
+10. Hệ thống lưu response vào DB.
+11. Hệ thống cập nhật `UsedTokens`.
+12. Hệ thống trả kết quả về UI.
+
+Điểm mạnh:
+* Có giới hạn phạm vi theo môn.
+* Có source metadata.
+* Có conversation history.
+
+Điểm cần lưu ý:
+* Nếu API AI chết thì user vẫn thấy message lỗi trả về.
+* Nếu embedding API chết thì chat sẽ không chạy được.
+
+---
+
+## 28. Luồng subscription chi tiết
+
+Subscription hiện dựa trên 2 tầng:
+* tầng dữ liệu người dùng
+* tầng transaction thanh toán
+
+### 28.1 Basic
+
+Basic là gói mặc định.
+
+Đặc điểm:
+* Miễn phí.
+* Hạn mức thấp hơn.
+* Quiz khóa.
+
+### 28.2 Premium
+
+Premium được kích hoạt khi:
+* tạo payment link thành công
+* thanh toán thành công
+* callback hoặc webhook đồng bộ trạng thái thành công
+
+Sau đó user được cập nhật:
+* `SubscriptionType = PREMIUM`
+* `AccountTitle = Premium`
+* `TokenLimit = 100000`
+
+### 28.3 Cách hệ thống quyết định gói hiện tại
+
+Trang `/Subscription/Plans` và `/Subscription/Me` không dựa trên bảng gói riêng.
+
+Thay vào đó:
+* đọc `ApplicationUser.SubscriptionType`
+* suy ra plan hiện hành
+
+Đây là thiết kế đơn giản, phù hợp với số lượng gói ít.
+
+---
+
+## 29. Luồng thanh toán PayOS chi tiết
+
+Luồng lý tưởng:
+
+1. Student bấm `Nâng cấp Premium`.
+2. Server kiểm tra user chưa phải Premium.
+3. Server kiểm tra không có giao dịch pending trùng.
+4. Server tạo `orderCode`.
+5. Server gọi PayOS tạo payment link.
+6. Server lưu `PaymentTransaction` ở trạng thái `PENDING`.
+7. Server redirect user sang PayOS checkout.
+8. User thanh toán hoặc hủy.
+9. PayOS redirect về callback.
+10. Hệ thống query lại trạng thái thật từ PayOS.
+11. Nếu thành công, hệ thống cập nhật transaction `SUCCESS`.
+12. Hệ thống nâng cấp user lên Premium.
+13. Song song, webhook có thể gọi vào endpoint công khai để đồng bộ chắc chắn hơn.
+
+Điểm đáng nhớ:
+* Callback giúp UX cho user.
+* Webhook giúp backend chắc chắn đồng bộ trạng thái.
+
+---
+
+## 30. Vì sao cần cả callback và webhook
+
+Callback chỉ xảy ra khi:
+* người dùng quay trở lại app sau thanh toán
+
+Nhưng thực tế có thể xảy ra:
+* user đóng tab
+* user mất mạng
+* redirect bị lỗi
+* browser chặn
+
+Khi đó webhook mới là nguồn xác nhận server-to-server đáng tin hơn.
+
+Vì vậy:
+* Callback tốt cho giao diện
+* Webhook tốt cho dữ liệu
+
+Với demo local:
+* callback là đủ để trình diễn
+
+Với demo công khai hoặc staging:
+* nên bật webhook
+
+---
+
+## 31. Hướng dẫn cấu hình webhook rõ hơn
+
+Để webhook hoạt động:
+
+1. App phải chạy được.
+2. DB phải chạy được.
+3. App phải reachable từ internet.
+4. `WebhookUrl` phải là URL public.
+5. URL này phải trỏ đúng tới:
+   * `/api/payment/payos/webhook`
+6. `AutoConfirmWebhook` có thể bật để app tự đăng ký lúc startup.
+
+Ví dụ:
+
+```json
+"PayOS": {
+  "ClientId": "YOUR_CLIENT_ID",
+  "ApiKey": "YOUR_API_KEY",
+  "ChecksumKey": "YOUR_CHECKSUM_KEY",
+  "WebhookUrl": "https://abc.ngrok-free.app/api/payment/payos/webhook",
+  "AutoConfirmWebhook": true
+}
+```
+
+Nếu confirm thất bại, hãy kiểm tra:
+* app có chạy chưa
+* ngrok có đúng port không
+* URL public có đổi không
+* endpoint có bị middleware khác chặn không
+
+---
+
+## 32. Tại sao localhost không dùng trực tiếp cho PayOS webhook
+
+`localhost` chỉ có nghĩa trên chính máy của bạn.
+
+Khi PayOS ở ngoài internet muốn gọi:
+* nó không thể tự hiểu `localhost` là máy bạn
+
+Do đó:
+* callback URL public được
+* webhook URL public bắt buộc
+
+`ngrok` hoặc dịch vụ tunnel khác giúp biến:
+* `http://localhost:5287`
+
+thành:
+* `https://abc.ngrok-free.app`
+
+---
+
+## 33. Cách dùng ngrok ổn định hơn cho demo
+
+Đề xuất trình tự:
+
+1. Start Docker DB.
+2. Chạy app local.
+3. Mở ngrok cho cổng app.
+4. Copy URL public.
+5. Cập nhật `WebhookUrl`.
+6. Restart app nếu cần.
+7. Mới bắt đầu test PayOS.
+
+Không nên:
+* mở ngrok trước khi app chạy
+* bật AutoConfirmWebhook khi DB còn chết
+* quên update URL khi ngrok đổi domain
+
+---
+
+## 34. Checklist trước khi demo thanh toán
+
+Trước buổi demo, hãy kiểm tra:
+
+* Docker đang chạy.
+* PostgreSQL container đang `Up`.
+* `dotnet run` không lỗi.
+* Có thể login được.
+* Có tài khoản Student để test.
+* `OpenRouter:ApiKey` hợp lệ nếu cần demo chat.
+* `PayOS` keys hợp lệ nếu cần demo thanh toán thật.
+* `WebhookUrl` đang là URL public mới nhất.
+* `AutoConfirmWebhook` đặt đúng theo mode demo.
+* Ngrok không hết phiên.
+* User đang ở gói Basic trước khi test nâng cấp.
+
+Checklist ngắn:
+
+* DB up
+* App up
+* ngrok up
+* secrets đúng
+* Student account sẵn sàng
+
+---
+
+## 35. Checklist sau khi demo thanh toán
+
+Sau khi demo xong:
+
+* Kiểm tra user đã thành Premium chưa.
+* Kiểm tra `payment_transactions` có record mới chưa.
+* Kiểm tra `Status` là `SUCCESS` hay không.
+* Kiểm tra `TokenLimit` của user có tăng lên chưa.
+* Kiểm tra trang `/Subscription/Me` đã phản ánh đúng chưa.
+
+Nếu có bug:
+* chụp lại log terminal
+* chụp `orderCode`
+* chụp màn hình callback
+* query DB ngay lúc lỗi
+
+---
+
+## 36. Một số câu lệnh SQL hữu ích
+
+Xem tất cả giao dịch:
+
+```sql
+SELECT *
+FROM payment_transactions
+ORDER BY created_at DESC;
+```
+
+Xem user nào đang Premium:
+
+```sql
+SELECT "Id", "Email", subscription_type, account_title, token_limit, used_tokens
+FROM "AspNetUsers"
+ORDER BY "Email";
+```
+
+Reset user về Basic:
+
+```sql
+UPDATE "AspNetUsers"
+SET subscription_type = 'BASIC',
+    account_title = 'Basic',
+    token_limit = 5000,
+    used_tokens = 0
+WHERE "Email" = 'student@educhatbot.local';
+```
+
+Xóa giao dịch pending:
+
+```sql
+DELETE FROM payment_transactions
+WHERE status = 'PENDING';
+```
+
+Đánh dấu giao dịch thành công để demo nội bộ:
+
+```sql
+UPDATE payment_transactions
+SET status = 'SUCCESS',
+    paid_at = NOW(),
+    updated_at = NOW()
+WHERE order_code = 123456789;
+```
+
+---
+
+## 37. Khi nào nên reset dữ liệu local
+
+Bạn nên reset dữ liệu local khi:
+* migration cũ bị lệch nhiều
+* dữ liệu test bị bẩn
+* payment transactions tích tụ gây khó demo
+* thay đổi lớn về schema vector
+
+Cách nhẹ:
+* xóa riêng dữ liệu test bằng SQL
+
+Cách nặng:
+* `docker-compose down -v`
+* chạy lại migration
+
+Chỉ reset nặng khi thật sự cần.
+
+---
+
+## 38. Vì sao nên tránh commit secret
+
+Secret bị commit có thể gây:
+* mất tiền nếu key thanh toán bị lộ
+* bị spam email nếu SMTP bị lộ
+* bị lạm dụng API AI
+* ảnh hưởng cả team nếu repo public hoặc bị rò rỉ
+
+Nguyên tắc:
+* repo chỉ chứa giá trị mẫu
+* giá trị thật nằm ở user-secrets hoặc môi trường deploy
+
+---
+
+## 39. Gợi ý cấu trúc cấu hình an toàn hơn
+
+Nên tách:
+
+* `appsettings.json`
+  * chứa giá trị mặc định an toàn
+* `appsettings.Development.json`
+  * chứa config local không nhạy cảm
+* `user-secrets`
+  * chứa secret local
+* biến môi trường
+  * chứa secret ở staging/production
+
+Các key nên đưa ra secret store:
+* `OpenRouter:ApiKey`
+* `Embedding:ApiKey`
+* `Smtp:Username`
+* `Smtp:Password`
+* `PayOS:ClientId`
+* `PayOS:ApiKey`
+* `PayOS:ChecksumKey`
+
+---
+
+## 40. Cách trình bày dự án khi bảo vệ
+
+Nếu cần thuyết trình, bạn có thể đi theo flow sau:
+
+1. Giới thiệu bài toán.
+2. Giới thiệu vai trò Admin, Lecturer, Student.
+3. Trình bày kiến trúc 3 lớp.
+4. Trình bày pipeline upload tài liệu.
+5. Trình bày cách RAG search chunk theo embedding.
+6. Trình bày subscription và hạn mức.
+7. Trình bày PayOS payment flow.
+8. Demo end-to-end.
+
+Nên tập trung nhấn mạnh:
+* vì sao dùng pgvector
+* vì sao dùng chunking
+* vì sao có payment webhook
+* vì sao có limit usage
+
+---
+
+## 41. Các câu hỏi phản biện thường gặp
+
+### 41.1 Tại sao dùng Razor Pages thay vì React/Vue?
+
+Trả lời gợi ý:
+* Razor Pages phù hợp đồ án backend-centric.
+* Dễ triển khai nhanh.
+* Đủ để chứng minh logic nghiệp vụ.
+
+### 41.2 Tại sao dùng PostgreSQL + pgvector?
+
+* Vì cần lưu embedding.
+* Vì pgvector phổ biến cho bài toán RAG.
+* Vì tận dụng luôn một DB thay vì thêm vector DB riêng.
+
+### 41.3 Tại sao không dùng token thật mà đếm lượt hỏi?
+
+* Dễ giải thích cho demo.
+* Dễ theo dõi trực quan.
+* Phù hợp quy mô đồ án.
+
+### 41.4 Tại sao cần webhook nếu đã có callback?
+
+* Callback phục vụ user flow.
+* Webhook phục vụ đồng bộ server-to-server đáng tin cậy hơn.
+
+### 41.5 Nếu AI trả lời sai thì sao?
+
+* Hệ thống không đảm bảo tuyệt đối.
+* Đã giới hạn context theo tài liệu nội bộ.
+* Có nguồn tham chiếu để user tự kiểm chứng.
+
+---
+
+## 42. Những hạn chế hiện tại
+
+Một tài liệu tốt nên thành thật về giới hạn hiện có.
+
+Hệ thống hiện còn các giới hạn như:
+* Chat context có thể vượt giới hạn nếu tài liệu quá dài.
+* Quyền lợi `Quiz` có thể chưa được enforce ở mọi feature nếu module quiz chưa hoàn chỉnh.
+* Hạn mức hiện dựa trên usage đơn giản, chưa có scheduler reset tinh vi.
+* Payment hiện mới xoay quanh PayOS.
+* Chưa có dashboard vận hành riêng cho payment.
+* Chưa có test tự động đầy đủ cho callback/webhook.
+
+Nêu giới hạn không làm dự án yếu đi.
+Ngược lại, nó cho thấy nhóm hiểu rõ phạm vi và roadmap.
+
+---
+
+## 43. Đề xuất mở rộng sau này
+
+Nếu có thời gian phát triển thêm, có thể làm:
+* quiz generator thật sự dùng tài liệu môn học
+* lecturer review answer quality
+* analytics về câu hỏi phổ biến
+* dashboard payment
+* lịch sử nâng cấp gói
+* giới hạn theo tháng thay vì reset đơn giản
+* role-based audit log
+* soft delete tài liệu
+* background job chuẩn hơn cho xử lý tài liệu nặng
+* cache cho conversation hot
+
+---
+
+## 44. Chuẩn đặt tên trong hệ thống
+
+Một số pattern đang thấy:
+* Bảng PostgreSQL dùng snake_case.
+* C# property dùng PascalCase.
+* Enum viết hoa theo business meaning.
+* Razor PageModel đặt hậu tố `Model`.
+
+Lợi ích:
+* DB dễ đọc ở DBeaver.
+* C# vẫn giữ phong cách .NET.
+
+---
+
+## 45. Quy ước commit gợi ý cho nhóm
+
+Để repo dễ đọc hơn, có thể dùng:
+
+* `feat: add payos webhook confirmation`
+* `fix: prevent duplicate pending premium payment`
+* `docs: expand Vietnamese setup guide`
+* `refactor: simplify chat token usage flow`
+* `chore: update docker compose defaults`
+
+Không bắt buộc, nhưng rất có ích khi review lịch sử thay đổi.
+
+---
+
+## 46. Hướng dẫn đọc source code cho người mới vào nhóm
+
+Thứ tự đọc gợi ý:
+
+1. `README.md`
+2. `README_VI.md`
+3. `EduChatbot.Web/Program.cs`
+4. `EduChatbot.Business/DependencyInjection.cs`
+5. `EduChatbot.Data/ApplicationDbContext.cs`
+6. `EduChatbot.Models/Identity/ApplicationUser.cs`
+7. `ChatService`
+8. `DocumentService`
+9. `PayOSPaymentService`
+10. `Subscription` pages
+
+Nếu đọc theo thứ tự này, bạn sẽ hình dung tổng thể nhanh hơn rất nhiều.
+
+---
+
+## 47. Hướng dẫn đọc phần Payment
+
+Thứ tự nên đọc:
+
+1. `PaymentTransaction` entity
+2. `PaymentStatus` enum
+3. `PaymentProvider` enum
+4. `IPaymentTransactionRepository`
+5. `PaymentTransactionRepository`
+6. `IPayOSPaymentService`
+7. `PayOSPaymentService`
+8. `Plans.cshtml.cs`
+9. `Callback.cshtml.cs`
+10. `Program.cs` phần webhook
+
+Sau khi đọc xong các file này, bạn gần như hiểu hết flow thanh toán.
+
+---
+
+## 48. Hướng dẫn đọc phần Subscription
+
+Nên đọc:
+
+1. `SubscriptionType`
+2. `ApplicationUser`
+3. `SubscriptionPlanViewModel`
+4. `MySubscriptionViewModel`
+5. `ISubscriptionService`
+6. `SubscriptionService`
+7. `Plans.cshtml`
+8. `Me.cshtml`
+
+Điểm quan trọng:
+* Subscription hiện là business logic nhẹ.
+* Chưa tách thành engine gói phức tạp.
+
+---
+
+## 49. Hướng dẫn đọc phần Chat
+
+Nên đọc:
+
+1. `IChatRepository`
+2. `ChatRepository`
+3. `IEmbeddingService`
+4. `OpenRouterEmbeddingService`
+5. `IChatService`
+6. `ChatService`
+7. các Razor Pages chat
+
+Khi đọc `ChatService`, tập trung vào:
+* lưu user message
+* search chunk
+* build context
+* call AI
+* lưu AI message
+* cập nhật usage
+
+---
+
+## 50. Gợi ý test manual tối thiểu
+
+Một vòng test tay tối thiểu nên bao gồm:
+
+### 50.1 Identity
+
+* Login admin thành công
+* Tạo student thành công
+* Tạo lecturer thành công
+
+### 50.2 Course
+
+* Tạo course thành công
+* Phân công lecturer thành công
+
+### 50.3 Upload
+
+* Lecturer upload file đúng định dạng thành công
+* Lecturer upload sai môn bị chặn
+
+### 50.4 Chat
+
+* Student tạo conversation
+* Student gửi câu hỏi
+* AI trả lời có dữ liệu
+* `UsedTokens` tăng
+
+### 50.5 Subscription
+
+* Student thấy Basic
+* Student bấm upgrade
+* Callback thành công
+* Student thành Premium
+
+---
+
+## 51. Kịch bản demo 5 phút
+
+Nếu thời gian demo ngắn, bạn có thể làm:
+
+1. Login admin
+2. Cho xem dashboard
+3. Login lecturer
+4. Upload 1 tài liệu
+5. Login student
+6. Chat 1 câu hỏi
+7. Mở trang subscription
+8. Bấm nâng cấp Premium
+9. Quay về callback
+10. Mở `/Subscription/Me`
+
+Điểm mạnh của flow này:
+* có đầy đủ 3 role
+* có AI
+* có payment
+* có data flow end-to-end
+
+---
+
+## 52. Kịch bản demo 10 phút
+
+Nếu có thêm thời gian:
+
+1. Giải thích architecture 1 phút
+2. Tạo course 1 phút
+3. Tạo lecturer và student 1 phút
+4. Upload tài liệu 2 phút
+5. Chat 2 phút
+6. Nâng cấp Premium 2 phút
+7. Xem DB hoặc trang subscription 1 phút
+
+---
+
+## 53. Kịch bản demo khi internet chập chờn
+
+Nếu mạng không ổn:
+
+* Không phụ thuộc chat nhiều.
+* Chuẩn bị sẵn DB có dữ liệu.
+* Nếu cần, ưu tiên demo upload, quản lý role, payment mock hoặc callback đã chuẩn bị.
+* Mở sẵn trang `/Subscription/Plans` và `/Subscription/Me`.
+
+Nếu API AI hỏng:
+* vẫn có thể demo architecture, upload, auth, payment, subscription.
+
+---
+
+## 54. Tại sao README tiếng Việt quan trọng
+
+README tiếng Việt giúp:
+* nhóm làm đồ án cùng nhau dễ hiểu hơn
+* người chấm trong nước đọc nhanh hơn
+* hỗ trợ onboarding thành viên mới
+* giảm lệ thuộc vào giải thích miệng
+
+Tài liệu càng rõ, thời gian support càng ít.
+
+---
+
+## 55. Gợi ý bổ sung ảnh minh họa sau này
+
+Bạn có thể thêm các ảnh sau để README hấp dẫn hơn:
+
+* sơ đồ flow upload tài liệu
+* sơ đồ flow chat + RAG
+* sơ đồ flow PayOS callback/webhook
+* ảnh dashboard admin
+* ảnh trang chat student
+* ảnh trang subscription plans
+* ảnh callback thành công
+
+Ảnh không bắt buộc, nhưng rất tốt cho tài liệu bàn giao.
+
+---
+
+## 56. Ví dụ flow lỗi Payment và cách hiểu
+
+### Case 1: User bấm upgrade nhiều lần
+
+Hệ thống sẽ:
+* chặn do đang có `PENDING`
+* tránh tạo trùng payment link
+
+### Case 2: User thanh toán nhưng đóng tab
+
+Hệ thống vẫn có thể đồng bộ qua webhook nếu webhook hoạt động.
+
+### Case 3: User quay về callback nhưng PayOS chưa kịp phản ánh
+
+Hệ thống có thể tạm báo đang chờ xử lý.
+
+### Case 4: Key PayOS sai
+
+Tạo payment link sẽ fail ngay.
+
+---
+
+## 57. Ví dụ flow lỗi Chat và cách hiểu
+
+### Case 1: Không có tài liệu nào
+
+AI có thể trả lời từ general knowledge hoặc báo thiếu nguồn, tùy xử lý hiện hành.
+
+### Case 2: Embedding API lỗi
+
+Chat search context không chạy được.
+
+### Case 3: OpenRouter lỗi 401
+
+Key sai hoặc hết hiệu lực.
+
+### Case 4: User vượt hạn mức
+
+Hệ thống nên chặn gửi chat mới.
+
+---
+
+## 58. Ví dụ flow lỗi Upload và cách hiểu
+
+### Case 1: File hỏng
+
+Extract text có thể fail.
+
+### Case 2: File quá lớn
+
+Có thể gây chậm hoặc lỗi bộ nhớ.
+
+### Case 3: Lecturer không được phân công
+
+Bị chặn ở business rule.
+
+### Case 4: Embedding call thất bại giữa chừng
+
+Document có thể lưu dang dở nếu flow chưa có transaction đầy đủ.
+
+---
+
+## 59. Câu hỏi thường gặp nội bộ nhóm
+
+### Hỏi: Có thể bỏ Docker không?
+
+Trả lời:
+* Có thể nếu tự cài PostgreSQL + pgvector.
+* Nhưng Docker vẫn nhanh hơn cho phần demo.
+
+### Hỏi: Có thể đổi AI provider không?
+
+* Có, nếu thay service tương ứng.
+
+### Hỏi: Có thể đổi PayOS sang MoMo không?
+
+* Có, nhưng cần viết lại payment integration.
+
+### Hỏi: Có thể deploy cloud không?
+
+* Có, miễn cấu hình đúng DB, secret và webhook URL.
+
+---
+
+## 60. Mẫu checklist deploy thử nghiệm
+
+Checklist staging:
+
+* Build release thành công
+* DB production/staging tạo schema xong
+* Secret đã inject
+* Connection string đúng
+* OpenRouter key đúng
+* PayOS key đúng
+* Domain public chạy HTTPS
+* Webhook URL public đúng
+* Seed admin thành công
+* Tài khoản test có sẵn
+
+---
+
+## 61. Mẫu checklist bàn giao project
+
+Khi bàn giao cho người khác, nên bàn giao:
+
+* source code
+* file README chính
+* README tiếng Việt
+* sơ đồ kiến trúc
+* danh sách secret cần cấu hình
+* tài khoản demo
+* lệnh run
+* lệnh DB
+* lệnh ngrok
+* flow test subscription/payment
+
+---
+
+## 62. Glossary thuật ngữ
+
+### RAG
+
+Retrieval-Augmented Generation.
+
+Nghĩa là:
+* tìm dữ liệu liên quan trước
+* rồi mới đưa vào LLM để trả lời
+
+### Embedding
+
+Biểu diễn vector của text.
+
+Giúp:
+* so sánh độ gần nghĩa
+* search ngữ nghĩa
+
+### Chunk
+
+Đoạn nhỏ tách ra từ tài liệu lớn.
+
+### Cosine Similarity
+
+Độ đo mức gần nhau giữa 2 vector.
+
+### Webhook
+
+HTTP callback từ server bên ngoài gọi về app của bạn.
+
+### Callback
+
+Redirect hoặc response quay lại flow user sau một hành động.
+
+### pgvector
+
+Extension PostgreSQL cho phép lưu và truy vấn vector.
+
+### EF Core Migration
+
+Cơ chế version schema DB bằng code.
+
+### Identity
+
+Framework quản lý user, role, password, auth của ASP.NET Core.
+
+---
+
+## 63. Kết luận tài liệu
+
+Nếu bạn đọc đến đây, bạn đã có:
+* cái nhìn kiến trúc tổng thể
+* hướng dẫn cài đặt
+* hướng dẫn demo
+* hướng dẫn payment
+* hướng dẫn troubleshoot
+* hướng dẫn bàn giao
+
+Mục tiêu của `README_VI.md` là giúp bất kỳ thành viên nào cũng có thể:
+* chạy được project
+* hiểu được project
+* demo được project
+* sửa được project ở mức cơ bản
+
+Nếu dự án tiếp tục phát triển, hãy duy trì thói quen:
+* cập nhật README sau mỗi thay đổi lớn
+* cập nhật flow demo nếu nghiệp vụ đổi
+* cập nhật phần secret/config khi thêm dịch vụ mới
+
+Tài liệu tốt không làm chậm phát triển.
+Tài liệu tốt làm cho tốc độ của cả nhóm bền vững hơn.
