@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Linq;
 
 namespace EduChatbot.Web.Pages.Account;
 
@@ -39,7 +40,7 @@ public class ProfileModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostProfileAsync()
+    public async Task<IActionResult> OnPostUpdateProfileAsync()
     {
         ClearPasswordModelState();
 
@@ -47,6 +48,11 @@ public class ProfileModel : PageModel
         if (user == null)
         {
             return RedirectToPage("/Account/Login");
+        }
+
+        foreach (var key in ModelState.Keys)
+        {
+            Console.WriteLine($"DEBUG MODELSTATE KEY: {key}");
         }
 
         ProfileInput.Email = user.Email ?? string.Empty;
@@ -61,7 +67,7 @@ public class ProfileModel : PageModel
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                ModelState.AddModelError($"{nameof(ProfileInput)}.{nameof(AccountProfileViewModel.FullName)}", error.Description);
             }
 
             return Page();
@@ -83,6 +89,12 @@ public class ProfileModel : PageModel
         }
 
         LoadProfile(user);
+
+        if (PasswordInput.CurrentPassword == PasswordInput.NewPassword)
+        {
+            ModelState.AddModelError($"{nameof(PasswordInput)}.{nameof(AccountChangePasswordViewModel.NewPassword)}", "Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -97,7 +109,15 @@ public class ProfileModel : PageModel
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, MapIdentityErrorToVietnamese(error));
+                var errorMsg = MapIdentityErrorToVietnamese(error);
+                if (error.Code == "PasswordMismatch")
+                {
+                    ModelState.AddModelError($"{nameof(PasswordInput)}.{nameof(AccountChangePasswordViewModel.CurrentPassword)}", errorMsg);
+                }
+                else
+                {
+                    ModelState.AddModelError($"{nameof(PasswordInput)}.{nameof(AccountChangePasswordViewModel.NewPassword)}", errorMsg);
+                }
             }
 
             return Page();
@@ -121,6 +141,11 @@ public class ProfileModel : PageModel
         if (newPassword != confirmPassword)
         {
             return new JsonResult(new { success = false, message = "Mật khẩu mới và mật khẩu xác nhận không khớp." });
+        }
+
+        if (currentPassword == newPassword)
+        {
+            return new JsonResult(new { success = false, message = "Mật khẩu mới không được trùng với mật khẩu hiện tại." });
         }
 
         var user = await _userManager.GetUserAsync(User);
@@ -169,14 +194,27 @@ public class ProfileModel : PageModel
 
     private void ClearPasswordModelState()
     {
-        ModelState.Remove($"{nameof(PasswordInput)}.{nameof(AccountChangePasswordViewModel.CurrentPassword)}");
-        ModelState.Remove($"{nameof(PasswordInput)}.{nameof(AccountChangePasswordViewModel.NewPassword)}");
-        ModelState.Remove($"{nameof(PasswordInput)}.{nameof(AccountChangePasswordViewModel.ConfirmPassword)}");
+        foreach (var key in ModelState.Keys.ToList())
+        {
+            if (key.StartsWith("PasswordInput", StringComparison.OrdinalIgnoreCase) ||
+                key.Contains("Password", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.Remove(key);
+            }
+        }
     }
 
     private void ClearProfileModelState()
     {
-        ModelState.Remove($"{nameof(ProfileInput)}.{nameof(AccountProfileViewModel.FullName)}");
-        ModelState.Remove($"{nameof(ProfileInput)}.{nameof(AccountProfileViewModel.Email)}");
+        foreach (var key in ModelState.Keys.ToList())
+        {
+            if (key.StartsWith("ProfileInput", StringComparison.OrdinalIgnoreCase) ||
+                key.Contains("Profile", StringComparison.OrdinalIgnoreCase) ||
+                key.Contains("FullName", StringComparison.OrdinalIgnoreCase) ||
+                key.Contains("Email", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.Remove(key);
+            }
+        }
     }
 }

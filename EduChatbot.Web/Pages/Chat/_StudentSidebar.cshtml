@@ -1,8 +1,8 @@
-@model IReadOnlyList<EduChatbot.Models.ChatConversation>
+@model IReadOnlyList<EduChatbot.Models.ChatConversationSummary>
 
 @{
     var activeConversationId = ViewData["ActiveConversationId"] as int?;
-    var conversations = Model ?? Array.Empty<EduChatbot.Models.ChatConversation>();
+    var conversations = Model ?? Array.Empty<EduChatbot.Models.ChatConversationSummary>();
     var userName = User.Identity?.Name ?? "Student";
     var initial = string.IsNullOrWhiteSpace(userName) ? "S" : userName.Trim()[0].ToString().ToUpperInvariant();
     var today = DateTime.Today;
@@ -88,7 +88,7 @@
                                 <a asp-page="/Chat/Conversation"
                                    asp-route-id="@conversation.Id"
                                    class="chat-sidebar-item-link">
-                                    @conversation.Title
+                                    @conversation.DisplayTitle
                                 </a>
                                 <div class="chat-sidebar-item-actions">
                                     <button class="chat-sidebar-action-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Tùy chọn">

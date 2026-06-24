@@ -1,0 +1,82 @@
+@inject Microsoft.AspNetCore.Identity.UserManager<EduChatbot.Models.Identity.ApplicationUser> UserManager
+@{
+    var userNeedsPasswordChange = false;
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        var appUser = await UserManager.GetUserAsync(User);
+        if (appUser != null && !appUser.HasChangedPassword)
+        {
+            userNeedsPasswordChange = true;
+        }
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduChatbot</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@@1.11.3/font/bootstrap-icons.min.css" />
+    
+    <!-- Bootstrap & Site Styles -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/student.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/EduChatbot.Web.styles.css" asp-append-version="true" />
+</head>
+@{
+    var extraBodyClass = ViewData["BodyClass"] as string;
+    var bodyClass = string.IsNullOrWhiteSpace(extraBodyClass) ? "student-shell" : $"student-shell {extraBodyClass}";
+}
+<body class="@bodyClass">
+    @if (userNeedsPasswordChange)
+    {
+        <!-- Password Change banner -->
+        <div id="pwdCornerBanner" class="pwd-corner-banner active">
+            <div class="pwd-corner-banner-content d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <span class="pwd-corner-banner-icon me-2">⚠️</span>
+                    <span class="pwd-corner-banner-text text-white">
+                        <strong data-i18n="pwd.banner.title">Password Change Required</strong>: 
+                        <span data-i18n="pwd.banner.desc">You haven't changed your default password. Click here to change your password now.</span>
+                    </span>
+                </div>
+                <button type="button" class="btn btn-sm btn-light font-label-md pwd-corner-banner-action" data-bs-toggle="modal" data-bs-target="#changePasswordModal" data-i18n="pwd.banner.action">Change Password</button>
+            </div>
+        </div>
+    }
+
+    <div class="student-container">
+        <!-- Sidebar -->
+        <partial name="_StudentSidebar" />
+
+        <!-- Main Workspace -->
+        <div class="student-main-content">
+            <!-- Topbar -->
+            <partial name="_StudentTopbar" />
+
+            <!-- Page Body -->
+            <main class="student-page-body container-fluid p-4">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Password Change Modal (if needed) -->
+    @if (userNeedsPasswordChange)
+    {
+        <partial name="_ChangePasswordModalPartial" />
+    }
+
+    <!-- Core Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/i18n.js" asp-append-version="true"></script>
+    <script src="~/js/student.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

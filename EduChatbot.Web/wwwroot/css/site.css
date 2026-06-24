@@ -3820,23 +3820,51 @@ body.admin-layout textarea::placeholder {
   top: 0;
   z-index: 10001;
   width: 100%;
-  background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 30%, #db2777 65%, #2563eb 100%);
-  background-size: 200% auto;
-  animation: galaxy-flow 6s linear infinite alternate;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding: 0.65rem 1rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  display: none; /* Controlled by active class */
   box-sizing: border-box;
-}
+  display: none; /* Controlled by active class */
+  transition: all 0.3s ease;
 
-@keyframes galaxy-flow {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+  /* Default theme values (Light theme, soft amber alert) */
+  --pwd-banner-bg: #fffbeb;
+  --pwd-banner-border: #fef3c7;
+  --pwd-banner-text: #92400e;
+  --pwd-banner-text-shadow: none;
+  --pwd-banner-strong: #78350f;
+  --pwd-banner-icon: #d97706;
+  --pwd-banner-btn-bg: #d97706;
+  --pwd-banner-btn-text: #ffffff;
+  --pwd-banner-btn-hover-bg: #b45309;
+  --pwd-banner-btn-hover-text: #ffffff;
+  --pwd-banner-btn-shadow: 0 2px 4px rgba(217, 119, 6, 0.2);
+  --pwd-banner-btn-hover-shadow: 0 4px 8px rgba(180, 83, 9, 0.3);
+  --pwd-banner-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  background: var(--pwd-banner-bg);
+  border-bottom: 1px solid var(--pwd-banner-border);
+  box-shadow: var(--pwd-banner-shadow);
 }
 
 .pwd-corner-banner.active {
   display: block;
+}
+
+/* Dark Theme overrides (.chat-layout and .admin-layout) */
+body.chat-layout .pwd-corner-banner,
+body.admin-layout .pwd-corner-banner {
+  --pwd-banner-bg: rgba(15, 23, 42, 0.95);
+  --pwd-banner-border: rgba(245, 158, 11, 0.25);
+  --pwd-banner-text: #e2e8f0;
+  --pwd-banner-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --pwd-banner-strong: #ffffff;
+  --pwd-banner-icon: #f59e0b;
+  --pwd-banner-btn-bg: #3b82f6;
+  --pwd-banner-btn-text: #ffffff;
+  --pwd-banner-btn-hover-bg: #2563eb;
+  --pwd-banner-btn-hover-text: #ffffff;
+  --pwd-banner-btn-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  --pwd-banner-btn-hover-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+  --pwd-banner-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .pwd-corner-banner-content {
@@ -3848,15 +3876,15 @@ body.admin-layout textarea::placeholder {
   margin: 0 auto;
   flex-wrap: wrap;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #ffffff;
+  color: var(--pwd-banner-text);
   font-size: 0.88rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  text-shadow: var(--pwd-banner-text-shadow);
 }
 
 .pwd-corner-banner-icon {
   font-size: 1.1rem;
-  color: #ffd79a;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  color: var(--pwd-banner-icon);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
   animation: pulse-glow 2s infinite alternate;
 }
 
@@ -3868,7 +3896,6 @@ body.admin-layout textarea::placeholder {
   100% {
     transform: scale(1.15);
     opacity: 1;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
   }
 }
 
@@ -3878,21 +3905,21 @@ body.admin-layout textarea::placeholder {
 }
 
 .pwd-corner-banner-text strong {
-  color: #ffffff;
+  color: var(--pwd-banner-strong);
   font-weight: 800;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  text-shadow: var(--pwd-banner-text-shadow);
 }
 
 .pwd-corner-banner-action {
-  background: #ffffff;
+  background: var(--pwd-banner-btn-bg);
   border: none;
   border-radius: 20px;
   padding: 0.35rem 1.25rem;
-  color: #4f46e5;
+  color: var(--pwd-banner-btn-text);
   font-size: 0.8rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--pwd-banner-btn-shadow);
   transition: all 0.25s ease;
   display: inline-flex;
   align-items: center;
@@ -3901,8 +3928,8 @@ body.admin-layout textarea::placeholder {
 }
 
 .pwd-corner-banner-action:hover {
-  background: #f3e8ff;
-  color: #3b0764;
-  box-shadow: 0 6px 16px rgba(255, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.2);
+  background: var(--pwd-banner-btn-hover-bg);
+  color: var(--pwd-banner-btn-hover-text);
+  box-shadow: var(--pwd-banner-btn-hover-shadow);
   transform: translateY(-1px);
 }

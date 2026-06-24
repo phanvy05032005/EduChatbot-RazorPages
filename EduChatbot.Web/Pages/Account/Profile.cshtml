@@ -12,6 +12,10 @@
     if (!isLecturer)
     {
         ViewData["BodyClass"] = "student-profile";
+        if (User.IsInRole(EduChatbot.Models.Identity.ApplicationRoles.Student))
+        {
+            Layout = "_StudentLayout";
+        }
     }
 }
 
@@ -50,7 +54,7 @@
     }
 
     <div class="account-profile-grid">
-        <form method="post" asp-page-handler="Profile" class="account-profile-card">
+        <form method="post" asp-page-handler="UpdateProfile" class="account-profile-card">
             @Html.AntiForgeryToken()
             <div class="account-profile-card-header">
                 <div class="account-profile-card-icon">
@@ -61,8 +65,6 @@
                     <h2 data-i18n="profile.title">Account details</h2>
                 </div>
             </div>
-
-            <div asp-validation-summary="ModelOnly" class="account-profile-errors"></div>
 
             <div class="account-profile-field">
                 <label asp-for="ProfileInput.FullName">

@@ -19,14 +19,14 @@ public class IndexModel : PageModel
         _chatService = chatService;
     }
 
-    public List<ChatConversation> Conversations { get; private set; } = [];
+    public List<ChatConversationSummary> Conversations { get; private set; } = [];
 
     public List<Course> Courses { get; private set; } = [];
 
     public async Task OnGetAsync()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        Conversations = await _chatService.GetConversationsAsync(userId);
+        Conversations = await _chatService.GetConversationSummariesAsync(userId);
         Courses = await _chatService.GetCoursesAsync();
     }
 

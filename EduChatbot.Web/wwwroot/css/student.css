@@ -1,0 +1,871 @@
+/* ========================================================
+   EduChatbot — Refreshed Student UI Stylesheet
+   Scope-protected under .student-shell class.
+   ======================================================== */
+
+.student-shell {
+    /* Refreshed system theme colors (unified Dark theme from site.css) */
+    --student-bg: #0a0f1e;                /* var(--edu-bg) */
+    --student-bg-deep: #050811;           /* var(--edu-bg-deep) */
+    --student-text: #e4f0f6;              /* var(--edu-text) */
+    --student-text-muted: rgba(228, 240, 246, 0.62); /* var(--edu-muted) */
+    --student-text-soft: rgba(228, 240, 246, 0.42);  /* var(--edu-soft) */
+    
+    --student-primary: #6fa8c9;           /* var(--edu-accent) */
+    --student-primary-hover: #8fc2e0;
+    --student-primary-light: rgba(111, 168, 201, 0.12);
+    
+    --student-surface: rgba(228, 240, 246, 0.045);  /* var(--edu-surface) */
+    --student-surface-strong: rgba(228, 240, 246, 0.075); /* var(--edu-surface-strong) */
+    --student-sidebar-bg: rgba(5, 8, 17, 0.72);
+    --student-card-bg: var(--student-surface);
+    --student-border: rgba(228, 240, 246, 0.11);    /* var(--edu-border) */
+    --student-border-strong: rgba(228, 240, 246, 0.2); /* var(--edu-border-strong) */
+    
+    --student-success: #a8e6cf;           /* var(--edu-success) */
+    --student-success-bg: rgba(168, 230, 207, 0.1);
+    --student-warning: #ffd79a;           /* var(--edu-warning) */
+    --student-warning-bg: rgba(255, 215, 154, 0.1);
+    --student-danger: #ff9aa2;            /* var(--edu-danger) */
+    --student-danger-bg: rgba(255, 154, 162, 0.1);
+    
+    --student-shadow: none;
+    --student-shadow-lg: 0 4px 24px rgba(111, 168, 201, 0.08);
+
+    min-height: 100vh;
+    background-color: var(--student-bg) !important;
+    background: linear-gradient(135deg, rgba(20, 32, 54, 0.96), rgba(10, 15, 30, 0.98) 50%, rgba(5, 8, 17, 1)), var(--student-bg) !important;
+    color: var(--student-text);
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden;
+}
+
+/* Base Headings & Typography */
+.student-shell h1,
+.student-shell h2,
+.student-shell h3,
+.student-shell h4,
+.student-shell h5,
+.student-shell h6 {
+    color: var(--student-text) !important;
+}
+
+/* Layout Framework */
+.student-shell .student-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar Styling */
+.student-shell .student-sidebar {
+    width: 260px;
+    height: 100vh;
+    background: var(--student-sidebar-bg) !important;
+    backdrop-filter: blur(18px);
+    border-right: 1px solid var(--student-border) !important;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.student-shell .brand-header {
+    flex-shrink: 0;
+}
+
+.student-shell .brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--student-text), var(--student-primary)) !important;
+    color: #0a0f1e !important;
+}
+
+.student-shell .brand-title {
+    color: var(--student-text);
+}
+
+.student-shell .brand-subtitle {
+    color: var(--student-text-muted) !important;
+}
+
+.student-shell .sidebar-nav {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    overflow-y: auto;
+}
+
+.student-shell .sidebar-nav .nav-item {
+    display: flex;
+    align-items: center;
+    color: var(--student-text-muted) !important;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.65rem 1rem !important;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+}
+
+.student-shell .sidebar-nav .nav-item i {
+    font-size: 1.2rem;
+}
+
+.student-shell .sidebar-nav .nav-item:hover {
+    color: var(--student-text) !important;
+    background-color: rgba(228, 240, 246, 0.08) !important;
+}
+
+.student-shell .sidebar-nav .nav-item.active {
+    color: var(--student-text) !important;
+    background-color: rgba(228, 240, 246, 0.12) !important;
+    font-weight: 600;
+    border-left: 3px solid var(--student-primary) !important;
+    border-radius: 0 8px 8px 0 !important;
+    padding-left: calc(1rem - 3px) !important;
+}
+
+.student-shell .sidebar-footer {
+    flex-shrink: 0;
+    margin-top: auto;
+    background-color: transparent !important;
+    border-top: 1px solid var(--student-border) !important;
+}
+
+.student-shell .user-avatar,
+.student-shell .topbar-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--student-text), var(--student-primary)) !important;
+    color: #0a0f1e !important;
+    font-weight: 700;
+}
+
+.student-shell .user-name {
+    color: var(--student-text);
+}
+
+.student-shell .user-email {
+    color: var(--student-text-muted) !important;
+}
+
+/* Workspace Framework */
+.student-shell .student-main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+/* Topbar Styling */
+.student-shell .student-topbar {
+    height: 64px;
+    background: rgba(5, 8, 17, 0.48) !important;
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--student-border) !important;
+    flex-shrink: 0;
+    z-index: 100;
+    color: var(--student-text);
+}
+
+.student-shell .student-topbar .search-container {
+    background-color: rgba(228, 240, 246, 0.04) !important;
+    border: 1px solid var(--student-border) !important;
+}
+
+.student-shell .student-topbar .search-container input {
+    color: var(--student-text) !important;
+}
+
+.student-shell .student-topbar .search-container input::placeholder {
+    color: var(--student-text-muted) !important;
+}
+
+.student-shell .student-topbar .icon-btn {
+    background-color: rgba(228, 240, 246, 0.04) !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell .student-topbar .icon-btn i {
+    color: var(--student-text) !important;
+}
+
+.student-shell .student-topbar .icon-btn:hover {
+    background-color: rgba(228, 240, 246, 0.08) !important;
+}
+
+.student-shell .student-topbar .lang-toggle-btn {
+    color: var(--student-text) !important;
+    border-color: var(--student-border) !important;
+    background-color: rgba(228, 240, 246, 0.04) !important;
+}
+
+.student-shell .student-topbar .lang-toggle-btn:hover {
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    border-color: var(--student-primary) !important;
+}
+
+.student-shell .topbar-user-name {
+    color: var(--student-text);
+}
+
+/* Page Body Scrollable */
+.student-shell .student-page-body {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 2rem !important;
+    background-color: transparent;
+}
+
+/* Bento Card Style */
+.student-shell .student-card {
+    background: var(--student-card-bg) !important;
+    border: 1px solid var(--student-border) !important;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--student-shadow);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+}
+
+.student-shell .student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--student-shadow-lg);
+    border-color: var(--student-border-strong) !important;
+}
+
+.student-shell .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+}
+
+/* Stats Badges */
+.student-shell .badge-custom {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+}
+
+/* Document & Course Library UI */
+.student-shell .course-banner-img {
+    height: 140px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px;
+}
+
+.student-shell .student-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.student-shell .student-table th {
+    background: rgba(228, 240, 246, 0.035) !important;
+    color: var(--student-text-muted) !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--student-border) !important;
+}
+
+.student-shell .student-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(228, 240, 246, 0.055) !important;
+    font-size: 0.875rem;
+    color: var(--student-text);
+}
+
+.student-shell .student-table tbody tr:hover {
+    background-color: rgba(228, 240, 246, 0.035) !important;
+}
+
+/* AI Chat Screen Layout */
+.student-shell .student-chat-layout {
+    display: flex;
+    height: calc(100vh - 64px - 4rem);
+    gap: 1.5rem;
+}
+
+.student-shell .student-chat-sidebar {
+    width: 300px;
+    background: var(--student-card-bg);
+    border: 1px solid var(--student-border) !important;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.student-shell .student-chat-area {
+    flex-grow: 1;
+    background: var(--student-card-bg);
+    border: 1px solid var(--student-border) !important;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Chat Message Logs */
+.student-shell .chat-history-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.student-shell .chat-message.user {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.student-shell .chat-message.assistant {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.student-shell .chat-bubble {
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    font-size: 0.95rem;
+}
+
+.student-shell .chat-message.user .chat-bubble {
+    max-width: min(680px, 65%);
+    min-width: 120px;
+    width: fit-content;
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    border: 1px solid rgba(228, 240, 246, 0.12) !important;
+    color: var(--student-text) !important;
+    border-bottom-right-radius: 4px;
+    word-break: normal;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.student-shell .chat-message.assistant .chat-bubble {
+    max-width: min(860px, 78%);
+    min-width: 120px;
+    width: fit-content;
+    background-color: rgba(228, 240, 246, 0.045) !important;
+    color: var(--student-text) !important;
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--student-border) !important;
+    word-break: normal;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    line-height: 1.65;
+}
+
+/* Source Citation Card */
+/* Source Citation Cards */
+.student-shell .source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(228, 240, 246, 0.04) !important;
+    border: 1px solid var(--student-border) !important;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--student-text-muted) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-width: 100%;
+    text-align: left;
+}
+
+.student-shell .source-chip:hover {
+    border-color: var(--student-primary) !important;
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    color: var(--student-primary) !important;
+}
+
+.student-shell .source-chip i {
+    color: var(--student-primary);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.student-shell .source-chip .source-file {
+    font-weight: 600;
+    color: var(--student-text);
+    max-width: 220px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.student-shell .source-chip .source-meta,
+.student-shell .source-chip .source-chunk {
+    color: var(--student-text-muted);
+}
+
+.student-shell .source-chip .source-score {
+    font-weight: 700;
+    color: var(--student-success) !important;
+}
+
+/* Suggestion Chips */
+.student-shell .suggestion-chip {
+    background: rgba(228, 240, 246, 0.04) !important;
+    border: 1px solid var(--student-border) !important;
+    color: var(--student-text) !important;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.student-shell .suggestion-chip:hover {
+    background: rgba(228, 240, 246, 0.08) !important;
+    border-color: var(--student-primary) !important;
+    color: var(--student-primary) !important;
+}
+
+/* Chat Input Bar */
+.student-shell .chat-input-wrapper {
+    border-top: 1px solid var(--student-border);
+    padding: 1rem 1.5rem;
+    background-color: transparent;
+}
+
+.student-shell .chat-input-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid var(--student-border) !important;
+    border-radius: 1.25rem;
+    padding: 0.5rem 0.75rem 0.5rem 1.25rem;
+    background-color: rgba(228, 240, 246, 0.04) !important;
+}
+
+.student-shell .chat-input-box textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    min-height: 24px;
+    max-height: 140px;
+    line-height: 1.5;
+    color: var(--student-text) !important;
+}
+
+.student-shell .chat-input-box textarea::placeholder {
+    color: var(--student-text-muted) !important;
+}
+
+/* General Custom Scrollbars */
+.student-shell .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.student-shell .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.student-shell .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(228, 240, 246, 0.2) !important;
+    border-radius: 10px;
+}
+
+.student-shell .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(228, 240, 246, 0.35) !important;
+}
+
+/* Empty States */
+.student-shell .empty-state-panel {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.student-shell .empty-state-mark {
+    width: 64px;
+    height: 64px;
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    color: var(--student-primary) !important;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem auto;
+}
+
+/* Animations and Premium Micro-interactions */
+.student-shell .animate-btn {
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.student-shell .animate-btn:hover {
+    transform: scale(1.02);
+}
+
+.student-shell .animate-btn:active {
+    transform: scale(0.98);
+}
+
+.student-shell .animate-link {
+    transition: color 0.15s ease;
+}
+
+.student-shell .animate-link:hover {
+    color: var(--student-primary-hover) !important;
+}
+
+.student-shell .text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========================================================
+   Scoped Bootstrap Overrides & Responsive Styles
+   ======================================================== */
+
+/* Scoped Bootstrap Button & Color Overrides */
+.student-shell .btn-primary {
+    background: linear-gradient(135deg, var(--student-text), #c9dde7) !important;
+    border: 0 !important;
+    color: #0a0f1e !important;
+}
+
+.student-shell .btn-primary:hover,
+.student-shell .btn-primary:focus,
+.student-shell .btn-primary:active {
+    filter: brightness(1.08) !important;
+    color: #0a0f1e !important;
+    box-shadow: 0 0 0 3px rgba(111, 168, 201, 0.15) !important;
+}
+
+.student-shell .btn-outline-primary {
+    color: var(--student-primary) !important;
+    border-color: var(--student-primary) !important;
+    background-color: transparent !important;
+}
+
+.student-shell .btn-outline-primary:hover,
+.student-shell .btn-outline-primary:focus,
+.student-shell .btn-outline-primary:active {
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    border-color: var(--student-primary) !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell .btn-outline-secondary {
+    color: var(--student-text-muted) !important;
+    border-color: var(--student-border) !important;
+    background-color: transparent !important;
+}
+
+.student-shell .btn-outline-secondary:hover {
+    color: var(--student-text) !important;
+    border-color: var(--student-primary) !important;
+    background-color: rgba(228, 240, 246, 0.08) !important;
+}
+
+.student-shell .btn-secondary {
+    background-color: rgba(228, 240, 246, 0.04) !important;
+    border: 1px solid var(--student-border) !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell .btn-secondary:hover {
+    border-color: var(--student-primary) !important;
+    background-color: rgba(228, 240, 246, 0.08) !important;
+}
+
+.student-shell .btn-primary:disabled,
+.student-shell .btn:disabled {
+    background: rgba(228, 240, 246, 0.12) !important;
+    color: rgba(228, 240, 246, 0.35) !important;
+    border: 0 !important;
+    cursor: not-allowed !important;
+    opacity: 0.65;
+}
+
+.student-shell .bg-primary {
+    background-color: var(--student-primary) !important;
+}
+
+.student-shell .bg-primary-subtle {
+    background-color: var(--student-primary-light) !important;
+}
+
+.student-shell .text-primary {
+    color: var(--student-primary) !important;
+}
+
+.student-shell .border-primary {
+    border-color: var(--student-primary) !important;
+}
+
+/* Forms & Selects Overrides */
+.student-shell select.form-select {
+    background-color: rgba(228, 240, 246, 0.04) !important;
+    border: 1px solid var(--student-border) !important;
+    color: var(--student-text) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e4f0f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+.student-shell select.form-select option {
+    background-color: #0d1527 !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell select.form-select:focus {
+    border-color: var(--student-primary) !important;
+    box-shadow: 0 0 0 3px rgba(111, 168, 201, 0.12) !important;
+}
+
+.student-shell input.form-control,
+.student-shell textarea.form-control {
+    background-color: rgba(228, 240, 246, 0.04) !important;
+    border: 1px solid var(--student-border) !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell input.form-control::placeholder,
+.student-shell textarea.form-control::placeholder {
+    color: var(--student-text-soft) !important;
+}
+
+.student-shell input.form-control:focus,
+.student-shell textarea.form-control:focus {
+    border-color: var(--student-primary) !important;
+    box-shadow: 0 0 0 3px rgba(111, 168, 201, 0.12) !important;
+}
+
+/* Scoped Bootstrap Global Overrides for Dark Theme Compatibility */
+.student-shell .bg-white {
+    background-color: rgba(228, 240, 246, 0.045) !important;
+}
+
+.student-shell .bg-light {
+    background-color: rgba(228, 240, 246, 0.035) !important;
+}
+
+.student-shell .bg-dark {
+    background-color: var(--student-bg-deep) !important;
+}
+
+.student-shell .student-card.bg-dark {
+    background: linear-gradient(135deg, rgba(111, 168, 201, 0.2), rgba(111, 168, 201, 0.05)) !important;
+    border: 1px solid var(--student-border) !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell .text-dark {
+    color: var(--student-text) !important;
+}
+
+.student-shell .text-muted {
+    color: var(--student-text-muted) !important;
+}
+
+.student-shell .border,
+.student-shell .border-top,
+.student-shell .border-bottom,
+.student-shell .border-start,
+.student-shell .border-end {
+    border-color: var(--student-border) !important;
+}
+
+.student-shell .breadcrumb-item a {
+    color: var(--student-primary) !important;
+}
+
+.student-shell .breadcrumb-item.active {
+    color: var(--student-text-soft) !important;
+}
+
+.student-shell .breadcrumb-item + .breadcrumb-item::before {
+    color: var(--student-text-soft) !important;
+}
+
+/* Sidebar transitions & layouts */
+.student-shell .student-container {
+    position: relative;
+    width: 100%;
+}
+
+.student-shell .student-main-content {
+    min-width: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Responsive adjust for topbar search */
+@media (max-width: 480px) {
+    .student-shell .student-topbar .search-container {
+        display: none !important;
+    }
+}
+
+/* Mobile & Tablet Sidebar Collapse (Offcanvas style) */
+@media (max-width: 991.98px) {
+    .student-shell .student-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1040;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .student-shell .student-container.sidebar-open .student-sidebar {
+        transform: translateX(0);
+    }
+    
+    /* Overlay background when sidebar is open */
+    .student-shell .student-container.sidebar-open::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1030;
+    }
+    
+    .student-shell .student-main-content {
+        width: 100%;
+    }
+}
+
+/* Responsive Table Wrapper styling */
+.student-shell .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Chat Responsive Stacking */
+@media (max-width: 767.98px) {
+    .student-shell .student-chat-layout {
+        flex-direction: column;
+        height: calc(100vh - 64px - 2rem);
+        gap: 0.75rem;
+        overflow-y: auto;
+    }
+    
+    .student-shell .student-chat-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 220px;
+        flex-shrink: 0;
+    }
+    
+    .student-shell .student-chat-area {
+        height: 500px;
+        flex-grow: 1;
+    }
+    
+    .student-shell .chat-message.user .chat-bubble,
+    .student-shell .chat-message.assistant .chat-bubble {
+        max-width: 100% !important;
+    }
+}
+
+/* Custom Dropdown Overrides inside .student-shell */
+.student-shell .dropdown-toggle-no-caret::after {
+    display: none !important;
+}
+
+.student-shell .dropdown-menu {
+    background-color: var(--student-bg-deep) !important;
+    border: 1px solid var(--student-border) !important;
+}
+
+.student-shell .dropdown-item {
+    color: var(--student-text) !important;
+    font-weight: 550;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.student-shell .dropdown-item:hover,
+.student-shell .dropdown-item:focus {
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    color: var(--student-text) !important;
+}
+
+.student-shell .dropdown-item.text-danger {
+    color: var(--student-danger) !important;
+}
+
+.student-shell .dropdown-item.text-danger:hover {
+    background-color: rgba(255, 154, 162, 0.1) !important;
+    color: #ff9aa2 !important;
+}
+
+/* ========================================================
+   Badge/Tag Styling Fix for Premium Contrast
+   ======================================================== */
+.student-shell .badge {
+    border-radius: 999px !important;
+    padding: 0.35rem 0.75rem !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    font-size: 0.75rem !important;
+}
+
+.student-shell .badge.bg-primary.bg-opacity-10 {
+    background-color: rgba(111, 168, 201, 0.16) !important;
+    color: #8fc2e0 !important;
+    border: 1px solid rgba(111, 168, 201, 0.35) !important;
+}
+
+.student-shell .badge.bg-secondary.bg-opacity-10 {
+    background-color: rgba(228, 240, 246, 0.08) !important;
+    color: rgba(228, 240, 246, 0.75) !important;
+    border: 1px solid rgba(228, 240, 246, 0.15) !important;
+}
+
+/* ========================================================
+   Recent Chat Item Styling Fix for Premium Contrast
+   ======================================================== */
+.student-shell .student-chat-item {
+    background-color: var(--student-surface-strong) !important;
+    border: 1px solid var(--student-border) !important;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.student-shell .student-chat-item:hover {
+    background-color: rgba(228, 240, 246, 0.09) !important;
+    border-color: var(--student-primary) !important;
+    transform: translateY(-2px);
+}
+
+

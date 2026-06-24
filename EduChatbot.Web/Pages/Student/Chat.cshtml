@@ -1,0 +1,214 @@
+@page
+@model EduChatbot.Web.Pages.Student.ChatModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "AI Chat Assistant";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="student-chat-layout">
+    <!-- Chat Sidebar: Course & Documents -->
+    <div class="student-chat-sidebar p-3 border-end">
+        <!-- Choose Course -->
+        <div class="mb-4">
+            <label class="fw-bold mb-2 text-muted" style="font-size: 0.8rem; text-transform: uppercase;" data-i18n="student.chat.current_course">Current Course</label>
+            <form method="get" id="courseSelectForm">
+                <select name="courseId" class="form-select rounded-3 border-secondary-subtle" style="font-size: 0.9rem;" onchange="this.form.submit()">
+                    <option value="" data-i18n="student.chat.select_course">-- Select Course --</option>
+                    @foreach (var course in Model.Courses)
+                    {
+                        <option value="@course.Id" selected="@(Model.SelectedCourseId == course.Id)">[@course.Code] - @course.Name</option>
+                    }
+                </select>
+            </form>
+        </div>
+
+        <!-- Course Documents -->
+        <div class="flex-grow-1 overflow-y-auto custom-scrollbar">
+            <label class="fw-bold mb-2 text-muted d-block" style="font-size: 0.8rem; text-transform: uppercase;" data-i18n="student.chat.active_docs">Active Documents</label>
+            
+            @if (!Model.SelectedCourseId.HasValue)
+            {
+                <div class="text-center py-4 text-muted" style="font-size: 0.85rem;">
+                    <i class="bi bi-info-circle fs-3 d-block mb-1"></i>
+                    <span data-i18n="student.chat.select_course_hint">Select a course to see documents.</span>
+                </div>
+            }
+            else if (Model.ActiveDocuments.Count == 0)
+            {
+                <div class="text-center py-4 text-muted" style="font-size: 0.85rem;">
+                    <i class="bi bi-folder-x fs-3 d-block mb-1"></i>
+                    <span data-i18n="student.chat.no_docs_approved">No documents approved for this course.</span>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var doc in Model.ActiveDocuments)
+                    {
+                        <div class="p-2 border rounded-3 d-flex align-items-center justify-content-between @(Model.SelectedDocumentId == doc.Id ? "bg-primary-subtle border-primary" : "bg-light")">
+                            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                <i class="bi bi-file-earmark-pdf text-danger flex-shrink-0" style="font-size: 1.25rem;"></i>
+                                <span class="text-truncate fw-semibold" style="font-size: 0.8rem;" title="@doc.FileName">@doc.FileName</span>
+                            </div>
+                            <a class="btn btn-link p-0 text-primary" href="@doc.FilePath" target="_blank" title="View Source">
+                                <i class="bi bi-box-arrow-up-right" style="font-size: 1.1rem;"></i>
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Main Chat Box Workspace -->
+    <div class="student-chat-area">
+        <!-- Top bar of the active conversation -->
+        <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between bg-light bg-opacity-50">
+            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 32px; height: 32px;">
+                    <i class="bi bi-chat-left-dots-fill" style="font-size: 1.2rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-0 text-truncate" style="font-size: 1rem;">@Model.ActiveConversation.Title</h5>
+            </div>
+            
+            <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-1" asp-page="/Student/Chat">
+                <i class="bi bi-plus-lg fs-6"></i>
+                <span data-i18n="student.chat.new_session">New Session</span>
+            </a>
+        </div>
+
+        <!-- Messages Log List -->
+        <div class="chat-history-container custom-scrollbar d-flex flex-column" id="student-chat-messages">
+            @if (Model.ActiveConversation.Messages.Count == 0)
+            {
+                <div class="empty-state-panel my-auto text-center py-5">
+                    <div class="empty-state-mark d-flex align-items-center justify-content-center">
+                        <i class="bi bi-robot fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold" data-i18n="student.chat.welcome_title">Hello! I'm EduBot</h5>
+                    <p class="text-muted" data-i18n="student.chat.welcome_desc">I can answer questions based on approved course materials. Choose a course and ask anything!</p>
+                </div>
+            }
+            else
+            {
+                <div class="chat-message-stack d-flex flex-column gap-3">
+                    @foreach (var msg in Model.ActiveConversationMessages)
+                    {
+                        @if (msg.Role == "user")
+                        {
+                            <div class="chat-message user d-flex align-self-end justify-content-end mb-3 w-100">
+                                <div class="chat-bubble user text-white bg-primary">
+                                    @msg.Content
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="chat-message assistant d-flex align-self-start gap-2 mb-3 align-items-start w-100">
+                                <div class="topbar-user-avatar bg-secondary text-white d-flex align-items-center justify-content-center fw-bold rounded-circle flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                    AI
+                                </div>
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="chat-bubble ai bg-light">
+                                        @msg.Content
+                                    </div>
+                                    <!-- Citations if any -->
+                                    @if (msg.Sources != null && msg.Sources.Count > 0)
+                                    {
+                                        <div class="d-flex flex-wrap gap-2 mt-2">
+                                            <div class="w-100 text-muted" style="font-size: 0.75rem;" data-i18n="student.chat.sources">Sources:</div>
+                                            @foreach (var src in msg.Sources)
+                                            {
+                                                <button type="button" class="source-chip" 
+                                                        data-document-id="@src.DocumentId"
+                                                        data-chunk-index="@(src.ChunkIndex?.ToString() ?? "0")"
+                                                        data-score="@(src.ScorePercent?.ToString() ?? "")"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#sourcePreviewModal"
+                                                        title="@src.ChunkPreview">
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                    <span class="source-file">@src.FileName</span>
+                                                    <span class="source-meta">· <span data-i18n="student.chat.chunk">Chunk</span></span>
+                                                    <span class="source-chunk">@(src.ChunkIndex?.ToString() ?? "0")</span>
+                                                    @if (src.ScorePercent.HasValue && src.ScorePercent.Value > 0)
+                                                    {
+                                                        <span class="source-score">· @src.ScorePercent% <span data-i18n="student.chat.match">match</span></span>
+                                                    }
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Suggestion Chips -->
+        <div class="px-4 py-2 border-top bg-light bg-opacity-25 d-flex gap-2 flex-wrap">
+            <button class="suggestion-chip" data-i18n="student.chat.suggest_summarize">Summarize this document</button>
+            <button class="suggestion-chip" data-i18n="student.chat.suggest_explain">Explain this topic</button>
+            <button class="suggestion-chip" data-i18n="student.chat.suggest_outcomes">List learning outcomes</button>
+        </div>
+
+        <!-- Chat Input Form Area -->
+        <div class="chat-input-wrapper">
+            <form id="student-chat-form" data-stream-url="/Student/Chat?handler=SendMessageStream" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="conversation-id" value="@Model.ActiveConversation.Id" />
+                <div class="chat-input-box">
+                    <textarea id="student-chat-input" placeholder="Ask EduBot a question about courses..." data-i18n-placeholder="student.chat.input_placeholder" rows="1"></textarea>
+                    <button type="submit" id="student-chat-send-btn" class="btn btn-primary d-flex align-items-center justify-content-center rounded-circle text-white shadow-sm flex-shrink-0" style="width: 40px; height: 40px;" disabled>
+                        <i class="bi bi-send-fill" style="font-size: 1.25rem;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Source Preview Modal -->
+<div class="modal fade" id="sourcePreviewModal" tabindex="-1" aria-labelledby="sourcePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="background-color: #0d1527; border: 1px solid var(--student-border) !important; color: var(--student-text);">
+            <div class="modal-header border-bottom border-secondary-subtle">
+                <h5 class="modal-title fw-bold" id="sourcePreviewModalLabel">
+                    <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+                    <span data-i18n="student.chat.sourcePreview">Source Preview</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Document Name</label>
+                    <div id="modal-doc-name" class="fw-semibold text-white fs-6"></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1" data-i18n="student.chat.chunk">Chunk</label>
+                        <div id="modal-chunk-index" class="fw-semibold text-white"></div>
+                    </div>
+                    <div class="col-6" id="modal-score-wrapper">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1"><span data-i18n="student.chat.match">match</span></label>
+                        <div id="modal-score-value" class="fw-semibold text-white"></div>
+                    </div>
+                </div>
+                <hr class="border-secondary-subtle my-3" />
+                <div class="mb-1">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-2">Content Segment</label>
+                    <div class="p-3 rounded bg-light bg-opacity-25 text-white font-monospace custom-scrollbar" id="modal-chunk-text" style="max-height: 250px; overflow-y: auto; font-size: 0.9rem; white-space: pre-wrap; word-break: break-word; line-height: 1.5; border: 1px solid var(--student-border);"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary-subtle">
+                <a id="modal-open-doc-btn" href="#" target="_blank" class="btn btn-primary rounded-pill px-4 me-auto align-items-center gap-1" style="display: none;">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                    <span data-i18n="student.chat.openDocument">Open document</span>
+                </a>
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

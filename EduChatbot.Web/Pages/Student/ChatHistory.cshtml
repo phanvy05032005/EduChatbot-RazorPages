@@ -1,0 +1,277 @@
+@page
+@model EduChatbot.Web.Pages.Student.ChatHistoryModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Chat History";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<style>
+    .check-custom-input {
+        background-color: rgba(228, 240, 246, 0.04) !important;
+        border: 1px solid var(--student-border) !important;
+    }
+    .check-custom-input:checked {
+        background-color: var(--student-primary) !important;
+        border-color: var(--student-primary) !important;
+    }
+    .check-custom-input:focus {
+        box-shadow: 0 0 0 3px rgba(111, 168, 201, 0.15) !important;
+        border-color: var(--student-primary) !important;
+    }
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="fw-bold mb-1" data-i18n="student.chathistory.title">Chat History</h2>
+        <p class="text-muted" data-i18n="student.chathistory.subtitle">Review your previous conversations with AI assistant.</p>
+    </div>
+    <a class="btn btn-primary rounded-pill px-3 fw-semibold text-white d-flex align-items-center gap-1 shadow-sm" asp-page="/Student/Chat">
+        <i class="bi bi-plus-lg fs-6"></i>
+        <span data-i18n="student.chat.new_session">New Session</span>
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    var key = TempData["SuccessKey"] as string ?? "student.chathistory.deleteSuccess";
+    <div class="alert alert-success alert-dismissible fade show rounded-pill px-4 py-2 border-0 shadow-sm mb-4 d-flex align-items-center justify-content-between" role="alert" style="background-color: var(--student-success-bg); color: var(--student-success); border: 1px solid var(--student-border) !important; font-size: 0.875rem;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i>
+            <span data-i18n="@key">@TempData["SuccessMessage"]</span>
+        </div>
+        <button type="button" class="btn-close shadow-none btn-close-white" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem 1rem; font-size: 0.75rem; color: var(--student-success);"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    var key = TempData["ErrorKey"] as string ?? "student.chathistory.deleteFailed";
+    <div class="alert alert-danger alert-dismissible fade show rounded-pill px-4 py-2 border-0 shadow-sm mb-4 d-flex align-items-center justify-content-between" role="alert" style="background-color: var(--student-danger-bg); color: var(--student-danger); border: 1px solid var(--student-border) !important; font-size: 0.875rem;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span data-i18n="@key">@TempData["ErrorMessage"]</span>
+        </div>
+        <button type="button" class="btn-close shadow-none btn-close-white" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.75rem 1rem; font-size: 0.75rem; color: var(--student-danger);"></button>
+    </div>
+}
+
+<!-- Search control -->
+<div class="student-card mb-4 py-3">
+    <div class="row g-3 align-items-center justify-content-between">
+        <div class="col-md-4">
+            <div class="search-container d-flex align-items-center bg-light border px-3 py-1 rounded-pill">
+                <i class="bi bi-search text-muted me-2" style="font-size: 1.1rem;"></i>
+                <input type="text" id="chatSearchInput" class="border-0 bg-transparent text-dark w-100" placeholder="Search conversations by title..." data-i18n-placeholder="student.chathistory.search_placeholder" style="outline: none; font-size: 0.875rem;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Selection Toolbar -->
+<div id="selectionToolbar" class="student-card mb-4 py-3 align-items-center justify-content-between" style="display: none; background: rgba(111, 168, 201, 0.08) !important; border-color: rgba(111, 168, 201, 0.3) !important;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="form-check m-0 d-flex align-items-center gap-2">
+            <input class="form-check-input check-custom-input m-0" type="checkbox" id="selectAllCheckbox" style="cursor: pointer; width: 1.15rem; height: 1.15rem;" />
+            <label class="form-check-label fw-semibold text-white small" for="selectAllCheckbox" data-i18n="student.chathistory.selectAll" style="cursor: pointer; user-select: none;">Select All</label>
+        </div>
+        <span class="text-muted small" style="font-size: 0.85rem;">
+            <span id="selectedCountText">0</span> <span data-i18n="student.chathistory.selectedCountLabel">selected</span>
+        </span>
+    </div>
+    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold d-flex align-items-center gap-1 animate-btn" data-bs-toggle="modal" data-bs-target="#bulkDeleteConfirmModal">
+        <i class="bi bi-trash3-fill"></i>
+        <span data-i18n="student.chathistory.deleteSelected">Delete Selected</span>
+    </button>
+</div>
+
+<!-- Conversations Grid -->
+@if (Model.Conversations.Count == 0)
+{
+    <div class="student-card empty-state-panel text-center py-5">
+        <div class="empty-state-mark d-flex align-items-center justify-content-center">
+            <i class="bi bi-chat-left-dots fs-2"></i>
+        </div>
+        <h5 class="fw-bold" data-i18n="student.chathistory.no_chats_title">No chat history yet</h5>
+        <p class="text-muted" data-i18n="student.chathistory.no_chats_desc">You don't have any previous chat sessions. Let's start one now!</p>
+        <a class="btn btn-primary btn-sm rounded-pill text-white mt-2" asp-page="/Student/Chat" data-i18n="student.dashboard.start_new_chat">Start New Chat</a>
+    </div>
+}
+else
+{
+    <div class="row g-4" id="chatHistoryList">
+        @foreach (var chat in Model.Conversations)
+        {
+            <div class="col-md-6 col-lg-4 chat-history-card" data-title="@chat.DisplayTitle" data-course="@(chat.CourseCode ?? "")">
+                <div class="student-card h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <input class="form-check-input chat-select-checkbox check-custom-input m-0" type="checkbox" data-chat-id="@chat.Id" style="cursor: pointer; width: 1.15rem; height: 1.15rem;" />
+                                @if (!string.IsNullOrEmpty(chat.CourseCode))
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary">@chat.CourseCode</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-muted" data-i18n="student.chathistory.general">General</span>
+                                }
+                            </div>
+                            <span class="text-muted" style="font-size: 0.75rem;">@chat.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <h5 class="fw-bold mb-2 text-truncate" title="@chat.DisplayTitle">@chat.DisplayTitle</h5>
+                        <p class="text-muted text-truncate-2 mb-3" style="font-size: 0.85rem;">
+                            @chat.DisplayPreview
+                        </p>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between border-top pt-2 mt-auto">
+                        <span class="text-muted d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                            <i class="bi bi-chat-left-text fs-6"></i>
+                            @chat.MessageCount <span data-i18n="student.chathistory.messages_count">messages</span>
+                        </span>
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill animate-btn delete-chat-btn" 
+                                    data-chat-id="@chat.Id"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteConfirmModal"
+                                    data-i18n="student.chathistory.delete">
+                                Delete
+                            </button>
+                            <a class="btn btn-outline-primary btn-sm rounded-pill animate-btn" asp-page="/Student/Chat" asp-route-chatId="@chat.Id" data-i18n="student.chathistory.btn_continue">Continue</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg" style="background-color: #0d1527; border: 1px solid var(--student-border) !important; color: var(--student-text); border-radius: 16px;">
+            <div class="modal-body text-center p-4">
+                <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style="width: 60px; height: 60px; background-color: var(--student-danger-bg); color: var(--student-danger);">
+                    <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                </div>
+                <h5 class="fw-bold mb-2 text-white" data-i18n="student.chathistory.deleteModalTitle">Delete Conversation</h5>
+                <p class="text-muted small mb-4" data-i18n="student.chathistory.deleteConfirm">Are you sure you want to delete this chat?</p>
+                <form id="deleteConfirmForm" method="post" asp-page-handler="Delete" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="chatId" id="deleteChatIdInput" value="" />
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal" data-i18n="pwd.modal.cancel">Cancel</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 text-white" style="background: linear-gradient(135deg, var(--student-danger), #ff6b8b) !important; border: 0 !important;" data-i18n="student.chathistory.delete">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulkDeleteConfirmModal" tabindex="-1" aria-labelledby="bulkDeleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg" style="background-color: #0d1527; border: 1px solid var(--student-border) !important; color: var(--student-text); border-radius: 16px;">
+            <div class="modal-body text-center p-4">
+                <div class="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style="width: 60px; height: 60px; background-color: var(--student-danger-bg); color: var(--student-danger);">
+                    <i class="bi bi-trash3-fill fs-2"></i>
+                </div>
+                <h5 class="fw-bold mb-2 text-white" data-i18n="student.chathistory.bulkDeleteModalTitle">Delete Conversations</h5>
+                <p class="text-muted small mb-4" data-i18n="student.chathistory.bulkDeleteConfirm">Are you sure you want to delete all selected chats?</p>
+                <form id="bulkDeleteForm" method="post" asp-page-handler="DeleteMultiple" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <div id="bulkDeleteInputsContainer"></div>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal" data-i18n="pwd.modal.cancel">Cancel</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 text-white" style="background: linear-gradient(135deg, var(--student-danger), #ff6b8b) !important; border: 0 !important;" data-i18n="student.chathistory.delete">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('chatSearchInput')?.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.chat-history-card');
+            cards.forEach(function(card) {
+                const title = card.dataset.title.toLowerCase();
+                const course = card.dataset.course.toLowerCase();
+                if (title.includes(query) || course.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                    // Uncheck hidden cards
+                    const cb = card.querySelector('.chat-select-checkbox');
+                    if (cb) cb.checked = false;
+                }
+            });
+            updateToolbar();
+        });
+
+        // Set the conversation ID to delete into the modal hidden input when clicked
+        document.querySelectorAll('.delete-chat-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const chatId = this.getAttribute('data-chat-id');
+                const input = document.getElementById('deleteChatIdInput');
+                if (input) {
+                    input.value = chatId;
+                }
+            });
+        });
+
+        // Selection toolbar management
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const chatCheckboxes = document.querySelectorAll('.chat-select-checkbox');
+        const selectionToolbar = document.getElementById('selectionToolbar');
+        const selectedCountText = document.getElementById('selectedCountText');
+
+        function updateToolbar() {
+            const checkedCount = document.querySelectorAll('.chat-select-checkbox:checked').length;
+            if (checkedCount > 0) {
+                selectionToolbar.style.display = 'flex';
+                selectedCountText.textContent = checkedCount;
+                selectAllCheckbox.checked = (checkedCount === chatCheckboxes.length);
+            } else {
+                selectionToolbar.style.display = 'none';
+                selectAllCheckbox.checked = false;
+            }
+        }
+
+        selectAllCheckbox?.addEventListener('change', function() {
+            const isChecked = this.checked;
+            chatCheckboxes.forEach(function(cb) {
+                const card = cb.closest('.chat-history-card');
+                if (card && card.style.display !== 'none') {
+                    cb.checked = isChecked;
+                }
+            });
+            updateToolbar();
+        });
+
+        chatCheckboxes.forEach(function(cb) {
+            cb.addEventListener('change', updateToolbar);
+        });
+
+        // Bulk delete hidden inputs injection
+        const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+        if (bulkDeleteForm) {
+            bulkDeleteForm.addEventListener('submit', function() {
+                const container = document.getElementById('bulkDeleteInputsContainer');
+                if (container) {
+                    container.innerHTML = '';
+                    document.querySelectorAll('.chat-select-checkbox:checked').forEach(function(cb) {
+                        const val = cb.getAttribute('data-chat-id');
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'chatIds';
+                        hiddenInput.value = val;
+                        container.appendChild(hiddenInput);
+                    });
+                }
+            });
+        }
+    </script>
+}

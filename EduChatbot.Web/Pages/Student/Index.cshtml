@@ -1,0 +1,204 @@
+@page
+@model EduChatbot.Web.Pages.Student.IndexModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Student Dashboard";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="fw-bold mb-1"><span data-i18n="student.dashboard.welcome">Welcome back</span>, @Model.StudentName</h2>
+        <p class="text-muted" data-i18n="student.dashboard.welcome_subtitle">Here is an overview of your academic status and learning documents.</p>
+    </div>
+</div>
+
+<!-- Stats Bento Grid -->
+<div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-3">
+        <div class="student-card d-flex align-items-center gap-3">
+            <div class="card-icon bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; border-radius: 12px;">
+                <i class="bi bi-book fs-4"></i>
+            </div>
+            <div>
+                <p class="text-muted mb-0" style="font-size: 0.85rem;" data-i18n="student.dashboard.totalcourses">Total Courses</p>
+                <h3 class="fw-bold mb-0">@Model.TotalCourses</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="student-card d-flex align-items-center gap-3">
+            <div class="card-icon bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; border-radius: 12px;">
+                <i class="bi bi-folder2-open fs-4"></i>
+            </div>
+            <div>
+                <p class="text-muted mb-0" style="font-size: 0.85rem;" data-i18n="student.dashboard.docs">Available Docs</p>
+                <h3 class="fw-bold mb-0">@Model.AvailableDocumentsCount</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="student-card d-flex align-items-center gap-3">
+            <div class="card-icon bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; border-radius: 12px;">
+                <i class="bi bi-chat-dots fs-4"></i>
+            </div>
+            <div>
+                <p class="text-muted mb-0" style="font-size: 0.85rem;" data-i18n="student.dashboard.chats">Chat Sessions</p>
+                <h3 class="fw-bold mb-0">@Model.ChatSessionsCount</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="student-card bg-dark text-white d-flex align-items-center justify-content-between position-relative overflow-hidden" style="border: 0; min-height: 82px;">
+            <div style="z-index: 2;">
+                <p class="text-white-50 mb-0" style="font-size: 0.8rem;" data-i18n="student.dashboard.current_plan">Current Plan</p>
+                <h4 class="fw-bold mb-2" style="font-size: 1.25rem;" data-i18n="student.dashboard.free_plan">Free Plan</h4>
+                <button class="btn btn-outline-light btn-sm rounded-pill disabled" style="font-size: 0.7rem; padding: 0.1rem 0.5rem;" data-i18n="student.dashboard.upgrade_disabled">Upgrade disabled</button>
+            </div>
+            <i class="bi bi-patch-check position-absolute text-white-50" style="font-size: 80px; right: -15px; bottom: -20px; opacity: 0.15; z-index: 1;"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Courses Area -->
+<section class="mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h3 class="fw-bold fs-4 mb-0" data-i18n="student.dashboard.my_courses">My Courses</h3>
+        <a class="text-primary fw-semibold text-decoration-none animate-link" asp-page="/Student/Courses" data-i18n="student.dashboard.view_all">View All</a>
+    </div>
+
+    @if (Model.PopularCourses.Count == 0)
+    {
+        <div class="student-card empty-state-panel text-center py-5">
+            <div class="empty-state-mark d-flex align-items-center justify-content-center">
+                <i class="bi bi-book fs-2"></i>
+            </div>
+            <h5 class="fw-bold" data-i18n="student.dashboard.no_courses_title">No courses available</h5>
+            <p class="text-muted" data-i18n="student.dashboard.no_courses_desc">There are no courses assigned or registered in the database yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var course in Model.PopularCourses)
+            {
+                <div class="col-md-6 col-lg-4 course-grid-card" data-code="@course.Code" data-name="@course.Name">
+                    <div class="student-card h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold">@course.Code</span>
+                                <span class="badge bg-secondary bg-opacity-10 text-muted" data-i18n="student.dashboard.required">Required</span>
+                            </div>
+                            <h5 class="fw-bold mb-2">@course.Name</h5>
+                            <p class="text-muted text-truncate-2 mb-3" style="font-size: 0.875rem;">@course.Description</p>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between border-top pt-2">
+                            <span class="text-muted d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                                <i class="bi bi-file-earmark-text fs-6"></i>
+                                @course.Documents.Count <span data-i18n="student.dashboard.docs_count">docs</span>
+                            </span>
+                            <a class="btn btn-outline-primary btn-sm rounded-pill animate-btn" asp-page="/Student/CourseDetail" asp-route-id="@course.Id" data-i18n="student.dashboard.view_course">View Course</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+<!-- Two Column Layout: Documents & History -->
+<div class="row g-4">
+    <!-- Left Column: Recent Documents -->
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="fw-bold fs-4 mb-0" data-i18n="student.dashboard.recent_docs">Recent Documents</h3>
+            <a class="text-primary fw-semibold text-decoration-none animate-link" asp-page="/Student/Documents" data-i18n="student.dashboard.view_all_library">View All Library</a>
+        </div>
+
+        @if (Model.RecentDocuments.Count == 0)
+        {
+            <div class="student-card empty-state-panel text-center py-5">
+                <div class="empty-state-mark d-flex align-items-center justify-content-center">
+                    <i class="bi bi-folder2-open fs-2"></i>
+                </div>
+                <h5 class="fw-bold" data-i18n="student.dashboard.no_docs_title">No documents found</h5>
+                <p class="text-muted" data-i18n="student.dashboard.no_docs_desc">There are no learning documents approved for display yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="student-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="student-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="student.dashboard.table_doc_name">Document Name</th>
+                                <th data-i18n="student.dashboard.table_course">Course</th>
+                                <th class="text-end" data-i18n="student.dashboard.table_action">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in Model.RecentDocuments)
+                            {
+                                <tr class="doc-table-row" data-name="@doc.FileName" data-course="@doc.SubjectCode">
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-filetype-pdf text-danger fs-5"></i>
+                                            <span class="fw-semibold text-truncate d-inline-block" style="max-width: 320px;" title="@doc.FileName">@doc.FileName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-10 text-muted">@doc.SubjectCode</span>
+                                    </td>
+                                    <td class="text-end" style="padding-right: 1.5rem;">
+                                        <a class="btn btn-outline-primary btn-sm rounded-pill me-1 animate-btn" href="@doc.FilePath" target="_blank" data-i18n="student.dashboard.btn_view">View</a>
+                                        <a class="btn btn-primary btn-sm rounded-pill text-white animate-btn" asp-page="/Student/Chat" asp-route-courseId="@doc.CourseId" asp-route-documentId="@doc.Id" data-i18n="student.dashboard.btn_ask_ai">Ask AI</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Right Column: Recent Chats -->
+    <div class="col-lg-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="fw-bold fs-4 mb-0" data-i18n="student.dashboard.recent_chats">Recent Chats</h3>
+            <a class="text-primary fw-semibold text-decoration-none animate-link" asp-page="/Student/ChatHistory" data-i18n="student.dashboard.view_history">View History</a>
+        </div>
+
+        @if (Model.RecentChats.Count == 0)
+        {
+            <div class="student-card empty-state-panel text-center py-5">
+                <div class="empty-state-mark d-flex align-items-center justify-content-center">
+                    <i class="bi bi-chat-dots fs-2"></i>
+                </div>
+                <h5 class="fw-bold" data-i18n="student.dashboard.no_chats_title">No chat history yet</h5>
+                <a class="btn btn-primary btn-sm rounded-pill text-white mt-2" asp-page="/Student/Chat" data-i18n="student.dashboard.start_new_chat">Start New Chat</a>
+            </div>
+        }
+        else
+        {
+            <div class="student-card d-flex flex-column gap-3">
+                @foreach (var chat in Model.RecentChats)
+                {
+                    <div class="student-chat-item hover-shadow-sm d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h6 class="fw-bold text-truncate mb-0" style="max-width: 180px;">@chat.DisplayTitle</h6>
+                            <span class="text-muted" style="font-size: 0.7rem;">@chat.UpdatedAt.ToLocalTime().ToString("HH:mm")</span>
+                        </div>
+                        <p class="text-muted mb-2 text-truncate" style="font-size: 0.8rem;">
+                            @chat.DisplayPreview
+                        </p>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill text-center align-self-start animate-btn" asp-page="/Student/Chat" asp-route-chatId="@chat.Id">
+                            <span data-i18n="student.dashboard.btn_continue">Continue</span> &rarr;
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

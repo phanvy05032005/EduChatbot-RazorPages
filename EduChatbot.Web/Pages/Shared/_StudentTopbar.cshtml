@@ -1,0 +1,90 @@
+@inject Microsoft.AspNetCore.Identity.UserManager<EduChatbot.Models.Identity.ApplicationUser> UserManager
+@{
+    var appUser = await UserManager.GetUserAsync(User);
+    var displayName = !string.IsNullOrWhiteSpace(appUser?.FullName)
+        ? appUser.FullName
+        : appUser?.Email ?? "Student";
+    var email = appUser?.Email ?? "";
+    var avatarInitial = !string.IsNullOrWhiteSpace(displayName)
+        ? displayName.Trim()[0].ToString().ToUpper()
+        : "S";
+}
+<header class="student-topbar d-flex align-items-center justify-content-between px-4 py-2 border-bottom bg-white">
+    <!-- Left Area (Sidebar Toggle & Search Bar) -->
+    <div class="d-flex align-items-center gap-2">
+        <button id="sidebarToggle" class="btn btn-outline-secondary d-lg-none rounded-3 px-2 py-1 me-1" type="button" aria-label="Toggle Sidebar">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+        
+        <!-- Search Bar -->
+        <div class="search-container d-flex align-items-center bg-light border px-3 py-1 rounded-pill">
+            <i class="bi bi-search text-muted me-2" style="font-size: 0.9rem;"></i>
+            <input type="text" id="topbarSearchInput" class="border-0 bg-transparent text-dark" placeholder="Search courses, documents..." data-i18n-placeholder="student.topbar.search_placeholder" style="outline: none; font-size: 0.875rem; width: 280px;" />
+        </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="d-flex align-items-center gap-3">
+        <!-- New Chat Button -->
+        <a class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold text-white d-flex align-items-center gap-1 shadow-sm animate-btn" asp-page="/Student/Chat">
+            <i class="bi bi-plus-lg fs-6"></i>
+            <span class="d-none d-sm-inline" data-i18n="student.topbar.startchat">Start New Chat</span>
+        </a>
+
+        <!-- Notifications -->
+        <button class="icon-btn position-relative bg-light border-0 rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-bell text-dark" style="font-size: 1.1rem;"></i>
+            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" style="margin-left: -8px; margin-top: 8px;"></span>
+        </button>
+
+        <!-- Settings -->
+        <button class="icon-btn bg-light border-0 rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-gear text-dark" style="font-size: 1.1rem;"></i>
+        </button>
+
+        <!-- Language Selector -->
+        <button type="button" class="lang-toggle-btn btn btn-outline-secondary btn-sm rounded-3 px-3 fw-semibold" onclick="window.EduI18n.toggle()">
+            VI
+        </button>
+
+        <!-- User Dropdown Menu -->
+        <div class="dropdown border-start ps-3">
+            <button class="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2 dropdown-toggle-no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; outline: none; background: transparent; box-shadow: none;">
+                <div class="topbar-user-avatar bg-primary text-white d-flex align-items-center justify-content-center fw-bold rounded-circle" style="width: 36px; height: 36px; font-size: 0.875rem;">
+                    @avatarInitial
+                </div>
+                <span class="topbar-user-name fw-semibold d-none d-md-inline text-truncate" style="font-size: 0.875rem; max-width: 120px;">@displayName</span>
+                <i class="bi bi-chevron-down text-muted d-none d-md-inline" style="font-size: 0.75rem;"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border mt-2 rounded-3 bg-dark" style="background-color: var(--student-bg-deep) !important; border-color: var(--student-border) !important;">
+                <li>
+                    <div class="px-3 py-2 border-bottom mb-1">
+                        <div class="fw-bold text-truncate" style="font-size: 0.85rem; color: var(--student-text);">@displayName</div>
+                        <div class="text-truncate text-muted" style="font-size: 0.75rem;">@email</div>
+                    </div>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" asp-page="/Account/Profile" style="font-size: 0.85rem; color: var(--student-text);">
+                        <i class="bi bi-person fs-6 text-muted"></i>
+                        <span data-i18n="student.topbar.profile">My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" asp-page="/Account/Profile" style="font-size: 0.85rem; color: var(--student-text);">
+                        <i class="bi bi-shield-lock fs-6 text-muted"></i>
+                        <span data-i18n="student.topbar.changepassword">Change Password</span>
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider" style="border-color: var(--student-border) !important;"></li>
+                <li class="px-2 pb-1">
+                    <form class="form-inline w-100" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
+                        <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2 rounded-2" style="border: none; outline: none; background: transparent; width: 100%; text-align: left;">
+                            <i class="bi bi-box-arrow-right fs-6"></i>
+                            <span data-i18n="student.sidebar.logout">Sign Out</span>
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

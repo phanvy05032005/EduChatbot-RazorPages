@@ -1,0 +1,116 @@
+@page
+@model EduChatbot.Web.Pages.Student.DocumentsModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Document Library";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1" data-i18n="student.documents.title">Document Library</h2>
+    <p class="text-muted" data-i18n="student.documents.subtitle">Access all approved syllabus files, study guides, and learning resources.</p>
+</div>
+
+<!-- Stats row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="student-card py-3 px-3 d-flex align-items-center gap-3">
+            <div class="card-icon bg-primary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 8px;">
+                <i class="bi bi-file-earmark-text fs-5"></i>
+            </div>
+            <div>
+                <p class="text-muted mb-0" style="font-size: 0.8rem;" data-i18n="student.documents.total_files">Total Files</p>
+                <h4 class="fw-bold mb-0">@Model.Documents.Count</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="student-card py-3 px-3 d-flex align-items-center gap-3">
+            <div class="card-icon bg-success text-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 8px;">
+                <i class="bi bi-database fs-5"></i>
+            </div>
+            <div>
+                <p class="text-muted mb-0" style="font-size: 0.8rem;" data-i18n="student.documents.space_used">Space Used</p>
+                <h4 class="fw-bold mb-0">@((Model.TotalSpaceUsed / 1024.0 / 1024.0).ToString("N2")) MB</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="student-card mb-4 py-3">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <div class="search-container d-flex align-items-center bg-light border px-3 py-1 rounded-pill">
+                <i class="bi bi-search text-muted me-2" style="font-size: 1.1rem;"></i>
+                <input type="text" name="SearchTerm" class="border-0 bg-transparent text-dark w-100" placeholder="Search documents by name..." value="@Model.SearchTerm" data-i18n-placeholder="student.documents.search_placeholder" style="outline: none; font-size: 0.875rem;" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="CourseId" class="form-select rounded-pill border-secondary-subtle" style="font-size: 0.875rem;" onchange="this.form.submit()">
+                <option value="" data-i18n="student.documents.all_courses">-- All Courses --</option>
+                @foreach (var course in Model.Courses)
+                {
+                    <option value="@course.Id" selected="@(Model.CourseId == course.Id)">[@course.Code] - @course.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-secondary btn-sm rounded-pill w-100 py-2 fw-semibold" data-i18n="student.documents.btn_apply">Apply Filters</button>
+        </div>
+    </form>
+</div>
+
+<!-- Documents Table Area -->
+@if (Model.Documents.Count == 0)
+{
+    <div class="student-card empty-state-panel text-center py-5">
+        <div class="empty-state-mark d-flex align-items-center justify-content-center">
+            <i class="bi bi-folder-x fs-2"></i>
+        </div>
+        <h5 class="fw-bold" data-i18n="student.dashboard.no_docs_title">No documents found</h5>
+        <p class="text-muted" data-i18n="student.dashboard.no_docs_desc">Try adjusting your filters or search terms to find what you need.</p>
+    </div>
+}
+else
+{
+    <div class="student-card p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="student-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="student.dashboard.table_doc_name">Document Name</th>
+                        <th data-i18n="student.dashboard.table_course">Course</th>
+                        <th data-i18n="student.coursedetail.table_size">File Size</th>
+                        <th data-i18n="student.coursedetail.table_uploaded_date">Upload Date</th>
+                        <th class="text-end" data-i18n="student.coursedetail.table_actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var doc in Model.Documents)
+                    {
+                        <tr class="doc-table-row" data-name="@doc.FileName" data-course="@doc.SubjectCode">
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+                                    <span class="fw-semibold">@doc.FileName</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-muted">@doc.SubjectCode</span>
+                            </td>
+                            <td class="text-muted">
+                                @((doc.FileSize / 1024.0).ToString("N1")) KB
+                            </td>
+                            <td class="text-muted">@doc.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm rounded-pill me-1 animate-btn" href="@doc.FilePath" target="_blank" data-i18n="student.dashboard.btn_view">View</a>
+                                <a class="btn btn-primary btn-sm rounded-pill text-white animate-btn" asp-page="/Student/Chat" asp-route-courseId="@doc.CourseId" asp-route-documentId="@doc.Id" data-i18n="student.dashboard.btn_ask_ai">Ask AI</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

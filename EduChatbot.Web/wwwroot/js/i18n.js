@@ -271,6 +271,171 @@
         'pwd.banner.title': 'Yêu cầu đổi mật khẩu',
         'pwd.banner.desc': 'Bạn chưa đổi mật khẩu mặc định. Nhấp vào đây để đổi mật khẩu ngay.',
         'pwd.banner.action': 'Đổi ngay',
+
+        /* ---- Student Sidebar & Topbar ---- */
+        'student.sidebar.dashboard': 'Bảng điều khiển',
+        'student.sidebar.newchat': 'Chat mới',
+        'student.sidebar.chathistory': 'Lịch sử Chat',
+        'student.sidebar.courses': 'Môn học',
+        'student.sidebar.documents': 'Tài liệu',
+        'student.sidebar.logout': 'Đăng xuất',
+        'student.sidebar.profile': 'Hồ sơ của tôi',
+        'student.sidebar.changepassword': 'Đổi mật khẩu',
+        'student.topbar.profile': 'Hồ sơ của tôi',
+        'student.topbar.changepassword': 'Đổi mật khẩu',
+        'student.topbar.startchat': 'Bắt đầu Chat mới',
+        'student.topbar.search_placeholder': 'Tìm môn học, tài liệu...',
+
+        /* ---- Student Dashboard ---- */
+        'student.dashboard.welcome': 'Chào mừng quay lại',
+        'student.dashboard.welcome_subtitle': 'Dưới đây là tổng quan về trạng thái học tập và tài liệu của bạn.',
+        'student.dashboard.totalcourses': 'Tổng môn học',
+        'student.dashboard.docs': 'Tài liệu hiện có',
+        'student.dashboard.chats': 'Phiên trò chuyện',
+        'student.dashboard.current_plan': 'Gói hiện tại',
+        'student.dashboard.free_plan': 'Gói miễn phí',
+        'student.dashboard.upgrade_disabled': 'Chức năng nâng cấp đã tắt',
+        'student.dashboard.my_courses': 'Môn học của tôi',
+        'student.dashboard.view_all': 'Xem tất cả',
+        'student.dashboard.no_courses_title': 'Không có môn học nào',
+        'student.dashboard.no_courses_desc': 'Hiện tại chưa có môn học nào được phân công hoặc đăng ký.',
+        'student.dashboard.required': 'Bắt buộc',
+        'student.dashboard.docs_count': 'tài liệu',
+        'student.dashboard.view_course': 'Xem môn học',
+        'student.dashboard.recent_docs': 'Tài liệu gần đây',
+        'student.dashboard.view_all_library': 'Xem toàn bộ thư viện',
+        'student.dashboard.no_docs_title': 'Không tìm thấy tài liệu',
+        'student.dashboard.no_docs_desc': 'Chưa có tài liệu học tập nào được phê duyệt để hiển thị.',
+        'student.dashboard.table_doc_name': 'Tên tài liệu',
+        'student.dashboard.table_course': 'Môn học',
+        'student.dashboard.table_action': 'Thao tác',
+        'student.dashboard.btn_view': 'Xem',
+        'student.dashboard.btn_ask_ai': 'Hỏi AI',
+        'student.dashboard.recent_chats': 'Trò chuyện gần đây',
+        'student.dashboard.view_history': 'Xem lịch sử',
+        'student.dashboard.no_chats_title': 'Chưa có lịch sử trò chuyện',
+        'student.dashboard.start_new_chat': 'Bắt đầu Chat mới',
+        'student.dashboard.no_messages': 'Chưa có tin nhắn trong cuộc hội thoại này.',
+        'student.dashboard.btn_continue': 'Tiếp tục',
+
+        /* ---- Student Chat ---- */
+        'student.chat.current_course': 'Môn học hiện tại',
+        'student.chat.select_course': '-- Chọn môn học --',
+        'student.chat.active_docs': 'Tài liệu hoạt động',
+        'student.chat.select_course_hint': 'Chọn môn học để xem tài liệu tương ứng.',
+        'student.chat.no_docs_approved': 'Không có tài liệu nào được phê duyệt cho môn học này.',
+        'student.chat.new_session': 'Phiên mới',
+        'student.chat.welcome_title': 'Xin chào! Tôi là EduBot',
+        'student.chat.welcome_desc': 'Tôi có thể trả lời câu hỏi dựa trên tài liệu học tập được phê duyệt. Hãy chọn một môn học và đặt câu hỏi!',
+        'student.chat.suggest_summarize': 'Tóm tắt tài liệu này',
+        'student.chat.suggest_explain': 'Giải thích chủ đề này',
+        'student.chat.suggest_outcomes': 'Danh sách kết quả học tập',
+        'student.chat.input_placeholder': 'Hỏi EduBot một câu hỏi về môn học...',
+        'student.chat.sources': 'Nguồn trích dẫn:',
+        'student.chat.chunk': 'Đoạn',
+        'student.chat.thinking': 'EduBot đang suy nghĩ...',
+
+        /* ---- Student Chat History ---- */
+        'student.chathistory.title': 'Lịch sử trò chuyện',
+        'student.chathistory.subtitle': 'Xem lại các cuộc trò chuyện trước đây của bạn với trợ lý AI.',
+        'student.chathistory.search_placeholder': 'Tìm kiếm cuộc trò chuyện...',
+        'student.chathistory.no_chats_title': 'Chưa có lịch sử trò chuyện',
+        'student.chathistory.no_chats_desc': 'Bạn chưa có phiên trò chuyện nào trước đây. Hãy bắt đầu ngay!',
+        'student.chathistory.general': 'Chung',
+        'student.chathistory.messages_count': 'tin nhắn',
+        'student.chathistory.btn_continue': 'Tiếp tục',
+        'student.chathistory.delete': 'Xoá',
+        'student.chathistory.deleteConfirm': 'Bạn có chắc muốn xoá đoạn chat này không?',
+        'student.chathistory.deleteSuccess': 'Đã xoá đoạn chat.',
+        'student.chathistory.deleteFailed': 'Không thể xoá đoạn chat.',
+        'student.chathistory.deleteModalTitle': 'Xoá cuộc trò chuyện',
+        'student.chathistory.selectAll': 'Chọn tất cả',
+        'student.chathistory.selectedCountLabel': 'được chọn',
+        'student.chathistory.deleteSelected': 'Xoá mục đã chọn',
+        'student.chathistory.bulkDeleteModalTitle': 'Xoá các cuộc trò chuyện',
+        'student.chathistory.bulkDeleteConfirm': 'Bạn có chắc muốn xoá tất cả các cuộc trò chuyện đã chọn không?',
+        'student.chathistory.deleteMultipleSuccess': 'Đã xoá thành công các cuộc trò chuyện đã chọn.',
+        'student.chathistory.noChatsSelected': 'Chưa chọn cuộc trò chuyện nào để xoá.',
+
+        /* ---- Student Courses ---- */
+        'student.courses.title': 'Thư viện môn học',
+        'student.courses.subtitle': 'Khám phá môn học và sử dụng trợ lý ảo AI để học tập tốt hơn.',
+        'student.courses.search_placeholder': 'Tìm môn học theo mã hoặc tên...',
+        'student.courses.no_courses_title': 'Không có môn học nào',
+        'student.courses.no_courses_desc': 'Hiện chưa có môn học nào được tạo trong hệ thống.',
+        'student.courses.core': 'Chính khóa',
+        'student.courses.docs_count': 'tài liệu',
+        'student.courses.btn_view': 'Xem chi tiết',
+
+        /* ---- Student Course Detail ---- */
+        'student.coursedetail.breadcrumb_courses': 'Môn học',
+        'student.coursedetail.core_syllabus': 'Đề cương chính',
+        'student.coursedetail.btn_start_chat': 'Bắt đầu Chat với Môn học',
+        'student.coursedetail.section_title': 'Đề cương & Tài liệu',
+        'student.coursedetail.table_file_name': 'Tên tệp',
+        'student.coursedetail.table_uploaded_date': 'Ngày tải lên',
+        'student.coursedetail.table_size': 'Kích thước',
+        'student.coursedetail.table_actions': 'Thao tác',
+        'student.coursedetail.course_not_found': 'Không tìm thấy môn học',
+        'student.coursedetail.course_not_found_desc': 'Môn học yêu cầu không tồn tại hoặc đã bị xóa.',
+        'student.coursedetail.btn_back': 'Quay lại thư viện',
+
+        /* ---- Student Documents ---- */
+        'student.documents.title': 'Thư viện tài liệu',
+        'student.documents.subtitle': 'Truy cập tất cả giáo trình, tài liệu học tập hướng dẫn đã được duyệt.',
+        'student.documents.total_files': 'Tổng số tệp',
+        'student.documents.space_used': 'Dung lượng đã dùng',
+        'student.documents.search_placeholder': 'Tìm tài liệu theo tên...',
+        'student.documents.all_courses': '-- Tất cả môn học --',
+        'student.documents.btn_apply': 'Áp dụng lọc',
+        'student.chat.newConversation': 'Cuộc trò chuyện mới',
+        'student.chat.newSession': 'Phiên mới',
+        'student.chat.summarizeDocument': 'Tóm tắt tài liệu này',
+        'student.chat.explainTopic': 'Giải thích chủ đề này',
+        'student.chat.listLearningOutcomes': 'Danh sách kết quả học tập',
+        'student.chat.typing': 'EduBot đang suy nghĩ...',
+        'student.chat.inputPlaceholder': 'Hỏi EduBot một câu hỏi về môn học...',
+        'student.chat.sources': 'Nguồn trích dẫn:',
+        'student.chat.chunk': 'Đoạn',
+        'student.chat.match': 'độ khớp',
+        'student.chat.sourcePreview': 'Xem nguồn trích dẫn',
+        'student.chat.openDocument': 'Mở tài liệu',
+    };
+
+    /* ---------- English translations for JS-generated text ---------- */
+    const EN = {
+        'student.chat.sources': 'Sources:',
+        'student.chat.chunk': 'Chunk',
+        'student.chat.match': 'match',
+        'student.chat.sourcePreview': 'Source preview',
+        'student.chat.openDocument': 'Open document',
+        'student.chat.newConversation': 'New Conversation',
+        'student.chat.newSession': 'New Session',
+        'student.chat.new_session': 'New Session',
+        'student.chat.summarizeDocument': 'Summarize this document',
+        'student.chat.suggest_summarize': 'Summarize this document',
+        'student.chat.explainTopic': 'Explain this topic',
+        'student.chat.suggest_explain': 'Explain this topic',
+        'student.chat.listLearningOutcomes': 'List learning outcomes',
+        'student.chat.suggest_outcomes': 'List learning outcomes',
+        'student.chat.typing': 'EduBot is thinking...',
+        'student.chat.thinking': 'EduBot is thinking...',
+        'student.chat.inputPlaceholder': 'Ask EduBot a question about courses...',
+        'student.chat.input_placeholder': 'Ask EduBot a question about courses...',
+        'chat.searchingDocs': 'Searching documents...',
+        'chat.errorSending': 'Sorry, an error occurred while sending the message. Please try again.',
+        'student.chathistory.delete': 'Delete',
+        'student.chathistory.deleteConfirm': 'Are you sure you want to delete this chat?',
+        'student.chathistory.deleteSuccess': 'Chat deleted.',
+        'student.chathistory.deleteFailed': 'Unable to delete chat.',
+        'student.chathistory.deleteModalTitle': 'Delete Conversation',
+        'student.chathistory.selectAll': 'Select All',
+        'student.chathistory.selectedCountLabel': 'selected',
+        'student.chathistory.deleteSelected': 'Delete Selected',
+        'student.chathistory.bulkDeleteModalTitle': 'Delete Conversations',
+        'student.chathistory.bulkDeleteConfirm': 'Are you sure you want to delete all selected chats?',
+        'student.chathistory.deleteMultipleSuccess': 'Successfully deleted the selected chat conversations.',
+        'student.chathistory.noChatsSelected': 'No conversations selected for deletion.'
     };
 
     /* ---------- Core logic ---------- */
@@ -355,6 +520,19 @@
         t: function (key) {
             var lang = getLang();
             if (lang === 'vi' && VI[key]) return VI[key];
+            if (lang === 'en' && EN[key]) return EN[key];
+            if (EN[key]) return EN[key];
+            if (VI[key]) return VI[key];
+            
+            // Safe clean fallback
+            if (typeof key === 'string' && key.startsWith('student.chat.')) {
+                var last = key.split('.').pop() || '';
+                return last
+                    .replace(/_/g, ' ')
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, function (str) { return str.toUpperCase(); })
+                    .trim();
+            }
             return key; // fallback
         }
     };

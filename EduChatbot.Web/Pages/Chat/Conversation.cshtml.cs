@@ -23,13 +23,13 @@ public class ConversationModel : PageModel
 
     public ChatConversation Conversation { get; private set; } = new();
 
-    public IReadOnlyList<ChatConversation> Conversations { get; private set; } = [];
+    public IReadOnlyList<ChatConversationSummary> Conversations { get; private set; } = [];
 
     public async Task OnGetAsync(int? id, int? courseId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         Conversation = await _chatService.GetOrCreateConversationAsync(id, userId, courseId);
-        Conversations = await _chatService.GetConversationsAsync(userId);
+        Conversations = await _chatService.GetConversationSummariesAsync(userId);
     }
 
     public async Task<IActionResult> OnPostSendMessageAsync(int conversationId, string message)
@@ -40,7 +40,14 @@ public class ConversationModel : PageModel
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var aiMessage = await _chatService.SendMessageAsync(conversationId, userId, message.Trim());
+
+        var preferredLanguage = HttpContext.Request.Cookies["edu_lang"];
+        if (preferredLanguage != "vi" && preferredLanguage != "en")
+        {
+            preferredLanguage = "vi";
+        }
+
+        var aiMessage = await _chatService.SendMessageAsync(conversationId, userId, message.Trim(), preferredLanguage);
 
         var sources = ParseSources(aiMessage.SourceChunks);
 
@@ -78,7 +85,13 @@ public class ConversationModel : PageModel
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var cancellationToken = HttpContext.RequestAborted;
 
-        await foreach (var data in _chatService.SendMessageStreamAsync(conversationId, userId, message.Trim(), cancellationToken))
+        var preferredLanguage = HttpContext.Request.Cookies["edu_lang"];
+        if (preferredLanguage != "vi" && preferredLanguage != "en")
+        {
+            preferredLanguage = "vi";
+        }
+
+        await foreach (var data in _chatService.SendMessageStreamAsync(conversationId, userId, message.Trim(), preferredLanguage, cancellationToken))
         {
             await WriteSSEAsync(httpResponse, data);
         }

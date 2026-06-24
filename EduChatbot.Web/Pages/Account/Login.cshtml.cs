@@ -69,7 +69,7 @@ public class LoginModel : PageModel
 
         if (user != null && await _userManager.IsInRoleAsync(user, ApplicationRoles.Student))
         {
-            return RedirectToPage("/Chat/Index");
+            return RedirectToPage("/Student/Index");
         }
 
         return Redirect("/");

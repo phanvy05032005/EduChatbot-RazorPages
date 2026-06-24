@@ -1,0 +1,82 @@
+@page
+@model EduChatbot.Web.Pages.Student.CoursesModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Course Library";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1" data-i18n="student.courses.title">Course Library</h2>
+    <p class="text-muted" data-i18n="student.courses.subtitle">Explore and access the documents and virtual AI tutor of your courses.</p>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="student-card mb-4 py-3">
+    <div class="row g-3 align-items-center justify-content-between">
+        <div class="col-md-4">
+            <div class="search-container d-flex align-items-center bg-light border px-3 py-1 rounded-pill">
+                <i class="bi bi-search text-muted me-2" style="font-size: 1.1rem;"></i>
+                <input type="text" id="courseSearchInput" class="border-0 bg-transparent text-dark w-100" placeholder="Search courses by code or name..." data-i18n-placeholder="student.courses.search_placeholder" style="outline: none; font-size: 0.875rem;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Courses Grid List -->
+@if (Model.Courses.Count == 0)
+{
+    <div class="student-card empty-state-panel text-center py-5">
+        <div class="empty-state-mark d-flex align-items-center justify-content-center">
+            <i class="bi bi-journal-bookmark fs-2"></i>
+        </div>
+        <h5 class="fw-bold" data-i18n="student.courses.no_courses_title">No courses available</h5>
+        <p class="text-muted" data-i18n="student.courses.no_courses_desc">There are no courses created in the database yet.</p>
+    </div>
+}
+else
+{
+    <div class="row g-4" id="coursesGrid">
+        @foreach (var course in Model.Courses)
+        {
+            <div class="col-md-6 col-lg-4 course-grid-card" data-code="@course.Code" data-name="@course.Name">
+                <div class="student-card h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold">@course.Code</span>
+                            <span class="badge bg-secondary bg-opacity-10 text-muted" data-i18n="student.courses.core">Core</span>
+                        </div>
+                        <h5 class="fw-bold mb-2">@course.Name</h5>
+                        <p class="text-muted mb-3 text-truncate-2" style="font-size: 0.85rem;">@course.Description</p>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between border-top pt-2">
+                        <span class="text-muted d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                            <i class="bi bi-file-earmark-text fs-6"></i>
+                            @course.Documents.Count <span data-i18n="student.courses.docs_count">documents</span>
+                        </span>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-page="/Student/CourseDetail" asp-route-id="@course.Id" data-i18n="student.courses.btn_view">View Details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('courseSearchInput')?.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.course-grid-card');
+            cards.forEach(card => {
+                const code = card.dataset.code.toLowerCase();
+                const name = card.dataset.name.toLowerCase();
+                if (code.includes(query) || name.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+}
