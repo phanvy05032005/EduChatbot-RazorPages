@@ -1,570 +1,143 @@
-# EduChatbot - Hệ thống Chatbot học thuật
-
-EduChatbot là ứng dụng web ASP.NET Core Razor Pages hỗ trợ quản lý tài liệu học tập và chatbot theo từng môn học. Hệ thống cho phép Admin quản lý tài khoản, môn học và phân công giảng viên; Lecturer upload tài liệu cho môn được phân công; Student đặt câu hỏi dựa trên các tài liệu đã được duyệt.
-
-Dự án sử dụng .NET 9, ASP.NET Core Razor Pages, Entity Framework Core, PostgreSQL, pgvector, OpenRouter AI API và kiến trúc 3 lớp.
-
-## Tính năng chính
-
-- Quản lý tài khoản Student và Lecturer.
-- Quản lý môn học và phân công Lecturer phụ trách môn học.
-- Lecturer chỉ được upload tài liệu cho môn học đã được Admin phân công.
-- Extract text từ file PDF/DOCX.
-- Chunk tài liệu và lưu vector embedding vào PostgreSQL + pgvector ngay sau khi upload.
-- Chatbot trả lời theo phạm vi môn học được chọn.
-- Student và Lecturer có thể chỉnh sửa profile, đổi mật khẩu.
-- Email queue để gửi email thông báo tài khoản.
-- Import tài khoản Student/Lecturer bằng Excel.
-- Hỗ trợ localization đơn giản cho giao diện.
-
-## Kiến trúc dự án
-
-Dự án đi theo kiến trúc 3 lớp:
-
-![Kiến trúc 3 lớp EduChatbot](docs/images/architecture-3-layers.png)
-
-```text
-EduChatbot.Web
-Presentation Layer
-- Razor Pages
-- PageModels
-- ViewModels
-- Authentication / Authorization
-- Nhận request và trả response
-
-        |
-        v
+# EduChatbot - Hệ thống Chatbot học thuật & Luyện đề trắc nghiệm AI
 
-EduChatbot.Business
-Business Layer
-- AdminService
-- DocumentService
-- ChatService
-- OpenRouterEmbeddingService
-- EmailQueueService
-- Business rules
-- Xử lý PDF/DOCX
-- Tích hợp AI / Embedding API
+EduChatbot là một ứng dụng web thông minh xây dựng trên nền tảng **ASP.NET Core Razor Pages (.NET 9)**, tích hợp trí tuệ nhân tạo (LLM thông qua OpenRouter API) và cơ sở dữ liệu Vector để hỗ trợ sinh viên học tập, ôn luyện dựa trên tài liệu môn học chính thức do giảng viên tải lên.
 
-        |
-        v
+Hệ thống được thiết kế theo kiến trúc **3 lớp (3-Tier/3-Layer Architecture)** chặt chẽ và tích hợp cổng thanh toán tự động **PayOS** để nâng cấp gói dịch vụ.
 
-EduChatbot.Data
-Data Access Layer
-- ApplicationDbContext
-- Repositories
-- Entity Framework Core
-- Migrations
-- Truy cập PostgreSQL / pgvector
+---
 
-        |
-        v
+## 1. Sơ đồ kiến trúc 3 lớp (Architecture Diagram)
 
-PostgreSQL + pgvector
-```
+Dự án tuân thủ nghiêm ngặt mô hình kiến trúc 3 lớp để đảm bảo tính dễ bảo trì, mở rộng và kiểm thử:
 
-Các model dùng chung nằm trong:
+![Kiến trúc 3 lớp EduChatbot](docs/images/ThreeLayer.drawio.png)
 
-```text
-EduChatbot.Models
-```
+### Chi tiết các phân lớp:
+1. **Presentation Layer (EduChatbot.Web)**:
+   * Chịu trách nhiệm nhận yêu cầu (HTTP Requests), hiển thị giao diện người dùng (Razor Pages), quản lý session đăng nhập và xử lý chuyển hướng.
+   * Giao diện hỗ trợ song ngữ Anh - Việt linh hoạt và các thông báo được tối ưu bằng thư viện cao cấp SweetAlert2.
+2. **Business Logic Layer (EduChatbot.Business)**:
+   * Trực tiếp thực thi các nghiệp vụ cốt lõi: Tách văn bản tài liệu (text chunking), gọi API Embedding, truy vấn OpenAI/OpenRouter, quản lý gói cước (Basic/Premium) và kết nối cổng thanh toán PayOS.
+3. **Data Access Layer (EduChatbot.Data)**:
+   * Chứa cấu hình kết nối DB (DbContext), định nghĩa các bảng thông qua Entity Framework Core (EF Core) và quản lý các bản nâng cấp cơ sở dữ liệu (Migrations).
+* **Cross-cutting Model Layer (EduChatbot.Models)**: Chứa các thực thực thể (Entities), Enum và lớp Identity dùng chung cho cả 3 lớp trên.
 
-Thư mục này chứa:
+---
 
-- Entities
-- Identity models
-- Status constants
-- Result models
+## 2. Chuẩn bị môi trường cài đặt
 
-## Cấu trúc thư mục
+Trước khi chạy dự án, hãy chắc chắn máy tính của bạn đã cài đặt các công cụ sau:
 
-```text
-EduChatbotSolution/
-├── EduChatbot.Web/          # Dự án ASP.NET Core Razor Pages
-├── EduChatbot.Business/     # Service và business logic
-├── EduChatbot.Data/         # DbContext, Repository, Migration
-├── EduChatbot.Models/       # Entity và model dùng chung
-├── SampleExcels/            # File mẫu import Excel
-├── docker-compose.yml       # PostgreSQL + pgvector
-├── .env.example             # File mẫu biến môi trường
-├── global.json              # Phiên bản .NET SDK
-└── README.md
-```
+1. **.NET 9 SDK**: Phiên bản mới nhất (kiểm tra bằng lệnh `dotnet --version`).
+2. **Docker Desktop**: Cần thiết để khởi chạy nhanh PostgreSQL có hỗ trợ extension `pgvector` (tìm kiếm vector ngữ nghĩa).
+3. **dotnet-ef CLI**: Công cụ dòng lệnh của Entity Framework Core. Nếu chưa có, hãy cài bằng lệnh:
+   ```bash
+   dotnet tool install --global dotnet-ef
+   ```
+4. **ngrok** (Không bắt buộc nhưng cần để test cổng thanh toán PayOS trên máy cá nhân): Dùng tạo đường hầm public webhook.
 
-## Yêu cầu môi trường
+---
 
-Cần cài đặt trước:
+## 3. Các bước khởi chạy hệ thống (Cho người mới bắt đầu)
 
-- .NET 9 SDK
-- Docker Desktop hoặc Docker Engine
-- Git
-- PostgreSQL client hoặc pgAdmin, không bắt buộc nhưng hữu ích
-- OpenRouter API key để chạy AI/chat/embedding
+Hãy thực hiện tuần tự các bước dưới đây từ thư mục gốc của dự án (`EduChatbotSolution/`):
 
-Kiểm tra .NET:
+### Bước 1: Khởi động cơ sở dữ liệu PostgreSQL + pgvector
+Dự án sử dụng tệp Docker Compose để chạy cơ sở dữ liệu trên cổng **5433** nhằm tránh xung đột với PostgreSQL mặc định (cổng 5432) trên máy của bạn.
+1. Tạo một tệp tên `.env` nằm ở thư mục gốc (cạnh tệp `docker-compose.yml`) và điền mật khẩu database:
+   ```env
+   POSTGRES_PASSWORD=123456
+   ```
+2. Khởi chạy Docker container ở chế độ nền (detached mode):
+   ```bash
+   docker compose up -d
+   ```
+3. Kiểm tra xem database đã chạy chưa bằng lệnh: `docker ps`. Bạn sẽ thấy container `educhatbot-postgres` đang lắng nghe cổng `5433`.
 
-```bash
-dotnet --version
-```
+### Bước 2: Thiết lập Cơ sở dữ liệu (Chọn 1 trong 2 cách sau)
 
-Dự án có file `global.json` để ưu tiên .NET 9 SDK:
-
-```json
-{
-  "sdk": {
-    "version": "9.0.305",
-    "rollForward": "latestFeature"
-  }
-}
-```
-
-Nếu máy bạn có .NET 9 SDK mới hơn, `rollForward` cho phép dùng phiên bản tương thích mới hơn.
-
-## Clone hoặc tải dự án
-
-Clone từ GitHub:
-
-```bash
-git clone <repository-url>
-cd EduChatbotSolution
-```
-
-Nếu tải file ZIP, hãy giải nén và mở terminal tại thư mục `EduChatbotSolution`.
-
-## Cấu hình môi trường
-
-Dự án cần cấu hình:
-
-- PostgreSQL password
-- Database connection string
-- OpenRouter API key
-- SMTP settings, nếu muốn gửi email thật
-
-Không commit API key hoặc password thật lên Git.
-
-### 1. Tạo file `.env`
-
-Copy từ file mẫu:
-
-```bash
-cp .env.example .env
-```
-
-Mở `.env` và thay giá trị:
-
-```env
-POSTGRES_PASSWORD=123456
-```
-
-Mặc định `appsettings.json` đang dùng connection string:
-
-```text
-Host=localhost;Port=5433;Database=educhatbot_assignment2;Username=postgres;Password=123456
-```
-
-Nếu bạn đổi `POSTGRES_PASSWORD`, cần cập nhật connection string bằng user-secrets ở bước dưới.
-
-### 2. Cấu hình user-secrets
-
-Khởi tạo user-secrets cho project Web nếu máy chưa có:
-
-```bash
-dotnet user-secrets init --project EduChatbot.Web
-```
-
-Thêm OpenRouter API key:
-
-```bash
-dotnet user-secrets set "OpenRouter:ApiKey" "YOUR_OPENROUTER_API_KEY" --project EduChatbot.Web
-```
-
-Nếu password PostgreSQL không phải `123456`, override connection string:
-
-```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=educhatbot_assignment2;Username=postgres;Password=YOUR_POSTGRES_PASSWORD" --project EduChatbot.Web
-```
-
-Cấu hình SMTP nếu muốn gửi email thật:
-
-```bash
-dotnet user-secrets set "Smtp:Host" "smtp.gmail.com" --project EduChatbot.Web
-dotnet user-secrets set "Smtp:Port" "587" --project EduChatbot.Web
-dotnet user-secrets set "Smtp:EnableSsl" "true" --project EduChatbot.Web
-dotnet user-secrets set "Smtp:Username" "YOUR_EMAIL" --project EduChatbot.Web
-dotnet user-secrets set "Smtp:Password" "YOUR_APP_PASSWORD" --project EduChatbot.Web
-dotnet user-secrets set "Smtp:SenderEmail" "YOUR_EMAIL" --project EduChatbot.Web
-dotnet user-secrets set "Smtp:SenderName" "EduChatbot System" --project EduChatbot.Web
-```
-
-Xem lại user-secrets đã cấu hình:
-
-```bash
-dotnet user-secrets list --project EduChatbot.Web
-```
-
-## Chạy PostgreSQL + pgvector
-
-Chạy tại thư mục gốc của solution, nơi có file `docker-compose.yml`:
-
-```bash
-docker-compose up -d
-```
-
-Thông tin database:
-
-```text
-Container: educhatbot-postgres
-Host port: 5433
-Container port: 5432
-Database: educhatbotdb
-Username: postgres
-Password: lấy từ file .env
-```
-
-Kiểm tra container:
-
-```bash
-docker-compose ps
-```
-
-Tắt database:
-
-```bash
-docker-compose down
-```
-
-Tắt database và xóa volume dữ liệu:
-
-```bash
-docker-compose down -v
-```
-
-Chỉ dùng `down -v` khi bạn muốn xóa toàn bộ dữ liệu local trong database.
-
-## Apply database migration
-
-Nếu chưa có `dotnet ef`, cài bằng lệnh:
-
-```bash
-dotnet tool install --global dotnet-ef
-```
-
-Apply migration:
-
+#### Cách A: Chạy Migration của EF Core (Khuyên dùng - Nhanh nhất)
+Lệnh này sẽ tự động đọc cấu hình code để tạo các bảng trống và tự động nạp dữ liệu mẫu (Seed Data) ban đầu gồm tài khoản Admin, Giảng viên, Sinh viên và các gói Subscription:
 ```bash
 dotnet ef database update --project EduChatbot.Data --startup-project EduChatbot.Web
 ```
 
-Lệnh này tạo các bảng cần thiết:
-
-- Bảng ASP.NET Identity
-- Documents
-- Document chunks
-- Courses
-- Lecturer-course assignments
-- Chat histories/conversations
-- Email queue
-- Các cột embedding dùng pgvector
-
-## Build dự án
-
-```bash
-dotnet build EduChatbot.Web/EduChatbot.Web.csproj
-```
-
-Kết quả mong đợi:
-
-```text
-Build succeeded.
-0 Warning(s)
-0 Error(s)
-```
-
-## Chạy ứng dụng web
-
-```bash
-dotnet run --project EduChatbot.Web/EduChatbot.Web.csproj --launch-profile http
-```
-
-Mở trình duyệt:
-
-```text
-http://localhost:5287
-```
-
-Nếu port `5287` đang bị chiếm:
-
-```bash
-lsof -nP -iTCP:5287 -sTCP:LISTEN
-kill <PID>
-```
-
-Sau đó chạy lại project.
-
-## Tài khoản mặc định
-
-Hệ thống tự seed các tài khoản mặc định khi khởi động:
-
-```text
-Email: admin@educhatbot.local
-Password: Admin@123456
-Role: Admin
-
-Email: student@educhatbot.local
-Password: Student@123456
-Role: Student
-
-Email: lecturer@educhatbot.local
-Password: Lecturer@123456
-Role: Lecturer
-```
-
-Sau khi login bằng Admin, bạn có thể tạo tài khoản Student và Lecturer trong Admin Dashboard.
-
-## Luồng demo cơ bản
-
-### Admin
-
-1. Login bằng tài khoản Admin mặc định.
-2. Tạo môn học.
-3. Tạo tài khoản Lecturer.
-4. Phân công môn học cho Lecturer.
-5. Quản lý tài khoản Student.
-
-### Lecturer
-
-1. Login bằng tài khoản Lecturer do Admin tạo.
-2. Mở trang upload document.
-3. Chọn môn học được phân công.
-4. Upload file PDF/DOCX.
-5. Hệ thống kiểm tra:
-   - Lecturer có được phân công môn đó không.
-   - File có đúng định dạng và extract text được không.
-6. Tài liệu được Approved và index vào vector database ngay sau khi upload thành công.
-
-### Student
-
-1. Login bằng tài khoản Student do Admin tạo.
-2. Chọn môn học.
-3. Đặt câu hỏi.
-4. Chatbot tìm các document chunks đã được duyệt trong môn học đó.
-5. Hệ thống gửi context sang OpenRouter AI API và trả lời cho Student.
-
-## Logic kiểm tra tài liệu upload
-
-Đây là business rule bắt buộc:
-
-```text
-Lecturer chỉ được upload tài liệu cho môn học được Admin phân công.
-```
-
-Hệ thống kiểm tra:
-
-```text
-LecturerId + CourseId
-```
-
-trong bảng:
-
-```text
-lecturer_courses
-```
-
-Nếu Lecturer không được phân công môn học đã chọn, hệ thống từ chối upload.
-
-Sau khi pass kiểm tra phân công, hệ thống extract text, chia chunk, tạo embedding cho từng chunk và lưu vào vector database. Hệ thống không kiểm tra nội dung tài liệu có đúng môn học hay không; trách nhiệm nội dung thuộc về Lecturer.
-
-## Cấu hình AI và Embedding
-
-Dự án dùng OpenRouter cho:
-
-- Chat completion
-- Embedding generation
-
-Cấu hình chính nằm trong:
-
-```text
-EduChatbot.Web/appsettings.json
-```
-
-Các section quan trọng:
-
-```json
-"OpenRouter": {
-  "ApiKey": "",
-  "Model": "nvidia/nemotron-3-super-120b-a12b:free",
-  "BaseUrl": "https://openrouter.ai/api/v1/chat/completions"
-},
-"Embedding": {
-  "Model": "openai/text-embedding-3-small",
-  "BaseUrl": "https://openrouter.ai/api/v1/embeddings",
-  "Dimensions": 1536
-}
-```
-
-Không điền API key thật vào `appsettings.json`. Hãy dùng user-secrets:
-
-```bash
-dotnet user-secrets set "OpenRouter:ApiKey" "YOUR_OPENROUTER_API_KEY" --project EduChatbot.Web
-```
-
-## File mẫu import Excel
-
-File mẫu nằm trong:
-
-```text
-SampleExcels/
-```
-
-Bao gồm:
-
-```text
-SampleExcels/StudentImportTemplate.csv
-SampleExcels/LecturerImportTemplate.csv
-```
-
-Giao diện upload đang nhận file `.xlsx`. Bạn có thể mở file `.csv` bằng Excel hoặc Google Sheets rồi export thành `.xlsx`.
-
-Với Lecturer import, cột `CourseCodes` chỉ nhận một mã môn học cho mỗi lecturer:
-
-```text
-PRN222
-```
-
-## Các lệnh thường dùng
-
-Kiểm tra nhánh hiện tại:
-
-```bash
-git branch --show-current
-```
-
-Kiểm tra trạng thái Git:
-
-```bash
-git status
-```
-
-Build:
-
-```bash
-dotnet build EduChatbot.Web/EduChatbot.Web.csproj
-```
-
-Run:
-
-```bash
-dotnet run --project EduChatbot.Web/EduChatbot.Web.csproj --launch-profile http
-```
-
-Apply migrations:
-
-```bash
-dotnet ef database update --project EduChatbot.Data --startup-project EduChatbot.Web
-```
-
-Xem user-secrets:
-
-```bash
-dotnet user-secrets list --project EduChatbot.Web
-```
-
-Start database:
-
-```bash
-docker-compose up -d
-```
-
-Stop database:
-
-```bash
-docker-compose down
-```
-
-## Xử lý lỗi thường gặp
-
-### Port 5287 đang bị chiếm
-
-```bash
-lsof -nP -iTCP:5287 -sTCP:LISTEN
-kill <PID>
-```
-
-### Docker database không chạy
-
-Kiểm tra Docker đã bật chưa, sau đó chạy:
-
-```bash
-docker-compose ps
-docker-compose logs educhatbot-postgres
-```
-
-### Không kết nối được database
-
-Kiểm tra:
-
-- Container database đang chạy.
-- Port đang dùng là `5433`.
-- Password trong `.env` khớp với connection string.
-- Nếu đã đổi password, user-secret connection string đã đúng chưa.
-
-### Không có lệnh `dotnet ef`
-
-```bash
-dotnet tool install --global dotnet-ef
-```
-
-Sau đó mở lại terminal nếu cần.
-
-### OpenRouter báo lỗi maximum context length
-
-Lỗi này nghĩa là text gửi lên embedding model quá dài.
-
-Cách xử lý khi test:
-
-- Dùng file PDF/DOCX ngắn hơn.
-- Giảm số lượng text dùng để tạo embedding.
-- Giảm kích thước chunk trong logic xử lý document nếu cần.
-
-### No space left on device
-
-Máy bị hết dung lượng ổ đĩa.
-
-Dọn output build:
-
-```bash
-dotnet clean EduChatbot.Web/EduChatbot.Web.csproj
-rm -rf */bin */obj
-```
-
-Dọn Docker cache nếu cần:
-
-```bash
-docker system prune
-```
-
-## Lưu ý trước khi push code
-
-Trước khi push, kiểm tra không có secret bị commit:
-
-```bash
-git status
-git diff --cached
-```
-
-Không commit:
-
-- OpenRouter API key thật
-- SMTP app password thật
-- File `.env`
-- Database dump local
-
-Quy trình khuyến nghị:
-
-```bash
-git status
-dotnet build EduChatbot.Web/EduChatbot.Web.csproj
-git add .
-git commit -m "docs: update project setup guide"
-git push origin main
-```
+#### Cách B: Khôi phục từ file Backup Database `.dump`
+Nếu giảng viên yêu cầu khôi phục trực tiếp từ file dữ liệu có sẵn của bạn (`educhatbotdb_before_pgvector.dump`):
+1. Chạy lệnh khôi phục thông qua PostgreSQL client (hoặc pgAdmin/DBeaver kết nối vào cổng `5433` với mật khẩu `123456`).
+2. Hoặc chạy lệnh restore trực tiếp vào Docker Container:
+   ```bash
+   docker exec -i educhatbot-postgres pg_restore -U postgres -d educhatbotdb < educhatbotdb_before_pgvector.dump
+   ```
+
+### Bước 3: Cấu hình API Key (Secrets)
+Hệ thống sử dụng các khóa API bảo mật cho Chatbot AI, sinh Vector và thanh toán PayOS. Hãy tạo các cấu hình bảo mật này bằng công cụ **User Secrets** (không nên ghi đè trực tiếp vào file cấu hình gốc để tránh lộ thông tin):
+1. Di chuyển vào thư mục Web: `cd EduChatbot.Web`
+2. Khởi tạo secrets:
+   ```bash
+   dotnet user-secrets init
+   ```
+3. Cài đặt các khóa API tương ứng (Thay thế các giá trị mẫu bằng khóa thật của bạn):
+   ```bash
+   # Cấu hình API GPT/Nemotron của OpenRouter
+   dotnet user-secrets set "OpenRouter:ApiKey" "sk-or-v1-..."
+   dotnet user-secrets set "Embedding:ApiKey" "sk-or-v1-..."
+
+   # Cấu hình tài khoản PayOS để test thanh toán
+   dotnet user-secrets set "PayOS:ClientId" "your_client_id"
+   dotnet user-secrets set "PayOS:ApiKey" "your_api_key"
+   dotnet user-secrets set "PayOS:ChecksumKey" "your_checksum_key"
+   ```
+
+### Bước 4: Chạy dự án
+1. Đứng tại thư mục dự án `EduChatbot.Web`, chạy lệnh:
+   ```bash
+   dotnet run
+   ```
+2. Màn hình console sẽ hiển thị cổng lắng nghe mặc định:
+   ```text
+   Now listening on: http://localhost:5287
+   ```
+3. Mở trình duyệt và truy cập: `http://localhost:5287`
+
+---
+
+## 4. Danh sách tài khoản thử nghiệm hệ thống
+
+Hệ thống đã chuẩn bị sẵn các tài khoản thử nghiệm ứng với các vai trò (Roles) khác nhau:
+
+| Vai trò | Email đăng nhập | Mật khẩu mặc định | Quyền hạn chính |
+| --- | --- | --- | --- |
+| **Admin** | `admin@educhatbot.local` | `Admin@123456` | Tạo môn học, kiểm duyệt tài liệu, quản lý và cấp tài khoản. |
+| **Lecturer** | `lecturer@educhatbot.local` | `Lecturer@123456` | Tải lên tài liệu học tập PDF/DOCX cho môn học phụ trách. |
+| **Student** | `student@educhatbot.local` | `Student@123456` | Hỏi đáp AI theo môn học, quản lý gói dịch vụ và ôn luyện làm Quiz. |
+
+---
+
+## 5. Hướng dẫn các Kịch bản Kiểm thử chính (Demo Guide)
+
+Để giúp giảng viên kiểm tra nhanh các tính năng cốt lõi của đồ án, bạn hãy thực hiện theo trình tự sau:
+
+### Kịch bản 1: Giảng viên tải tài liệu và sinh Vector tự động
+1. Đăng nhập bằng tài khoản Giảng viên: `lecturer@educhatbot.local` / `Lecturer@123456`.
+2. Truy cập mục **Upload Document**. Chọn môn học được phân công (ví dụ: *PRN222*) và tải lên một tệp tài liệu PDF hoặc Word ngắn.
+3. **Kết quả**: Hệ thống tự động trích xuất văn bản, cắt đoạn và gọi API tạo Embedding. Sau khi tải lên thành công, trạng thái tài liệu sẽ là `Approved` và sẵn sàng làm nguồn dữ liệu trả lời.
+
+### Kịch bản 2: Sinh viên dùng gói Basic và Kiểm soát giới hạn lượt hỏi (Quota)
+1. Đăng nhập bằng tài khoản Sinh viên: `student@educhatbot.local` / `Student@123456`.
+2. Truy cập trang cá nhân tại `/Subscription/Me`. Bạn sẽ thấy gói hiện tại là **Basic**, hạn mức tối đa **20 lượt hỏi/ngày** và tính năng Luyện đề (Quiz) đang hiển thị trạng thái: `Khóa - Yêu cầu nâng cấp Premium`.
+3. Vào trang Chat, chọn môn học vừa tải tài liệu ở trên và gửi câu hỏi.
+4. **Kiểm tra**:
+   * Hệ thống sẽ trừ đi 1 lượt hỏi khả dụng của bạn (Còn lại 19/20).
+   * Badge hiển thị số lượt hỏi còn lại hiển thị trực quan ở góc màn hình.
+   * Nếu bạn hỏi hết số lượt cho phép, nút gửi và ô nhập liệu sẽ tự động khóa lại (disabled) và hiển thị thông báo yêu cầu nâng cấp gói lên Premium để tiếp tục trò chuyện.
+
+### Kịch bản 3: Nâng cấp gói Premium qua cổng PayOS
+1. Tại giao diện tài khoản Sinh viên, chọn trang gói dịch vụ: `/Subscription/Plans`.
+2. Tại thẻ gói **Premium**, bấm chọn **Upgrade Premium**.
+3. Hệ thống tạo hóa đơn thanh toán trên PayOS và tự động chuyển hướng bạn sang cổng thanh toán Sandbox của PayOS.
+4. Quét mã QR thanh toán giả định của PayOS (chế độ Sandbox). Sau khi hệ thống nhận được giao dịch thành công:
+   * Cổng thanh toán chuyển hướng bạn về trang `/Subscription/Callback` hiển thị giao diện chúc mừng nâng cấp thành công.
+   * Quay lại trang cá nhân `/Subscription/Me`, trạng thái gói chuyển thành **Premium**, hạn mức tự động tăng lên **100 lượt hỏi/ngày**.
+   * Tính năng làm bài trắc nghiệm (Quiz) được mở khóa hoàn toàn.
+   * Toàn bộ các thông báo, popup xác nhận trong quá trình thi cử của sinh viên hay xuất bản đề của giảng viên đều đã được làm đẹp với giao diện SweetAlert2 cao cấp, hỗ trợ song ngữ Việt - Anh thời gian thực.
