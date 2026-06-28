@@ -29,7 +29,7 @@ public class CoursesModel : PageModel
         await LoadAsync();
     }
 
-    public async Task<IActionResult> OnPostCreateCourseAsync(string code, string name, string description)
+    public async Task<IActionResult> OnPostCreateCourseAsync(string code, string name, string description, string? lecturerId)
     {
         if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(description))
         {
@@ -42,6 +42,15 @@ public class CoursesModel : PageModel
 
         if (result.IsSuccess && result.CourseId.HasValue)
         {
+            if (!string.IsNullOrWhiteSpace(lecturerId))
+            {
+                var assignResult = await _adminService.AssignLecturerToCourseAsync(lecturerId, result.CourseId.Value);
+                if (!assignResult.IsSuccess)
+                {
+                    TempData["AdminError"] = $"{result.Message} However, lecturer assignment failed: {assignResult.Message}";
+                }
+            }
+
             await _studentRealtimeNotifier.NotifyCourseCreatedAsync(new StudentCourseCreatedPayload
             {
                 CourseId = result.CourseId.Value,
@@ -62,6 +71,17 @@ public class CoursesModel : PageModel
 
     public async Task<IActionResult> OnPostAssignLecturerAsync(string lecturerId, int courseId)
     {
+        // First check if the course already has any lecturer assigned to perform a clean reassignment
+        var courses = await _adminService.GetCoursesAsync();
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+        if (course != null && course.LecturerCourses.Any())
+        {
+            foreach (var lc in course.LecturerCourses.ToList())
+            {
+                await _adminService.RemoveLecturerFromCourseAsync(lc.LecturerId, courseId);
+            }
+        }
+
         var result = await _adminService.AssignLecturerToCourseAsync(lecturerId, courseId);
         TempData[result.IsSuccess ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToPage();

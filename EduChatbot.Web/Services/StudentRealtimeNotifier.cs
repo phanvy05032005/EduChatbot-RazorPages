@@ -22,4 +22,9 @@ public class StudentRealtimeNotifier : IStudentRealtimeNotifier
     {
         await _hubContext.Clients.Group("Students").SendAsync("DocumentAvailable", payload);
     }
+
+    public async Task NotifyQuizPublishedAsync(StudentQuizPublishedPayload payload)
+    {
+        await _hubContext.Clients.Group("Students").SendAsync("QuizPublished", payload);
+    }
 }

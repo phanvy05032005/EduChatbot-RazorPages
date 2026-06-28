@@ -5,125 +5,505 @@
     var availableLecturers = Model.Lecturers;
 }
 
-<div class="admin-page">
+<div class="admin-page text-start">
+    <!-- Hidden excel upload form -->
+    <form id="ImportCoursesForm" method="post" asp-page-handler="ImportCourses" enctype="multipart/form-data" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="file" id="ImportCoursesInput" name="excelFile" accept=".xlsx" required onchange="document.getElementById('ImportCoursesForm').submit();" />
+    </form>
+
+    <!-- Page Header Section -->
     <div class="admin-page-header">
         <div>
-            <div class="admin-kicker" data-i18n="admin.courses.kicker">Courses</div>
-            <h1><span data-i18n="admin.courses.title">Manage</span> <span class="admin-serif" data-i18n="admin.courses.titleSerif">Courses & Assignments</span></h1>
-            <p data-i18n="admin.courses.subtitle">Create new courses and assign document upload permissions to lecturers.</p>
+            <div class="admin-kicker">
+                <span>EDUCHATBOT</span> &middot; 
+                <span>ADMIN</span> &middot; 
+                <span data-i18n="admin.courses.kicker">COURSES</span>
+            </div>
+            <h1 data-i18n="admin.courses.titleSerif">Courses & Assignments</h1>
+            <p data-i18n="admin.courses.subtitle">Create courses, assign one lecturer per course, and manage course ownership for EduChatbot.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-nowrap" style="white-space: nowrap; flex-shrink: 0;">
+            <button type="button" onclick="document.getElementById('ImportCoursesInput').click();" class="admin-secondary-btn flex items-center gap-2" style="border-radius: 8px;">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+                <span data-i18n="admin.courses.importExcel">Import Excel</span>
+            </button>
+            <a asp-page-handler="DownloadTemplate" class="admin-secondary-btn flex items-center gap-2 text-decoration-none" style="border-radius: 8px;">
+                <i class="bi bi-download"></i>
+                <span data-i18n="admin.courses.downloadTemplate">Download Template</span>
+            </a>
+            <button type="button" data-bs-toggle="modal" data-bs-target="#CreateCourseModal" class="admin-primary-btn flex items-center gap-2" style="border-radius: 8px;">
+                <i class="bi bi-plus-circle"></i>
+                <span data-i18n="admin.courses.createNew">Create Course</span>
+            </button>
         </div>
     </div>
 
+    <!-- Alerts -->
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="admin-alert success">@TempData["AdminMessage"]</div>
+        <div class="admin-alert success" style="border: 1px solid rgba(52, 211, 153, 0.28); border-radius: 8px; padding: 0.8rem 1rem; background: rgba(52, 211, 153, 0.08); color: #34d399; margin-bottom: 1.5rem;">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["AdminMessage"]
+        </div>
     }
     @if (TempData["AdminError"] != null)
     {
-        <div class="admin-alert danger">@TempData["AdminError"]</div>
+        <div class="admin-alert danger" style="border: 1px solid rgba(251, 113, 133, 0.28); border-radius: 8px; padding: 0.8rem 1rem; background: rgba(251, 113, 133, 0.08); color: #fb7185; margin-bottom: 1.5rem;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["AdminError"]
+        </div>
     }
 
-    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-top: 1rem;">
-        <div>
-            <section class="admin-card">
-                <div class="admin-card-header"><h2 data-i18n="admin.courses.createNew">Create New Course</h2></div>
-                <div style="padding: 1.5rem;">
-                    <form method="post" asp-page-handler="CreateCourse">
-                        @Html.AntiForgeryToken()
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="admin.courses.courseCode">Course Code</label>
-                            <input type="text" name="code" placeholder="e.g. PRN222" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--admin-border); border-radius: 4px; background: var(--admin-bg); color: var(--admin-text);" />
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="admin.courses.courseName">Course Name</label>
-                            <input type="text" name="name" placeholder="e.g. C# &amp; .NET Cloud" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--admin-border); border-radius: 4px; background: var(--admin-bg); color: var(--admin-text);" />
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="admin.courses.courseDesc">Course Description</label>
-                            <textarea name="description" rows="6" required placeholder="e.g. ASP.NET Core, Razor Pages, Entity Framework Core" style="width: 100%; padding: 0.5rem; border: 1px solid var(--admin-border); border-radius: 4px; background: var(--admin-bg); color: var(--admin-text);"></textarea>
-                        </div>
-                        <button type="submit" class="admin-primary-btn" style="width: 100%;" data-i18n="admin.courses.createCourse">Create Course</button>
-                    </form>
+    <!-- Summary Statistics Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1: Total Courses -->
+        <div class="col-12 col-md-4">
+            <div class="admin-card p-4 rounded-xl d-flex justify-content-between align-items-center h-100">
+                <div>
+                    <p class="text-label-caps font-label-caps text-on-surface-variant uppercase mb-1" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.courses.totalSummary">Total Courses</p>
+                    <h3 class="text-3xl font-bold text-primary mb-0" style="font-size: 2rem; line-height: 1;">@Model.Courses.Count.ToString("N0")</h3>
                 </div>
-            </section>
+                <div class="w-12 h-12 rounded-circle bg-primary/10 border border-primary/20 d-flex align-items-center justify-content-center text-primary" style="width: 48px; height: 48px;">
+                    <i class="bi bi-journal-bookmark-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <!-- Card 2: Assigned Courses -->
+        <div class="col-12 col-md-4">
+            <div class="admin-card p-4 rounded-xl d-flex justify-content-between align-items-center h-100">
+                <div>
+                    <p class="text-label-caps font-label-caps text-on-surface-variant uppercase mb-1" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.courses.assignedSummary">Assigned Courses</p>
+                    <h3 class="text-3xl font-bold text-success mb-0" style="font-size: 2rem; line-height: 1;">@Model.Courses.Count(c => c.LecturerCourses.Any()).ToString("N0")</h3>
+                </div>
+                <div class="w-12 h-12 rounded-circle bg-success/10 border border-success/20 d-flex align-items-center justify-content-center text-success" style="width: 48px; height: 48px;">
+                    <i class="bi bi-person-check-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+        <!-- Card 3: Unassigned Courses -->
+        <div class="col-12 col-md-4">
+            <div class="admin-card p-4 rounded-xl d-flex justify-content-between align-items-center h-100">
+                <div>
+                    <p class="text-label-caps font-label-caps text-on-surface-variant uppercase mb-1" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.courses.unassignedSummary">Unassigned Courses</p>
+                    <h3 class="text-3xl font-bold text-warning mb-0" style="font-size: 2rem; line-height: 1;">@Model.Courses.Count(c => !c.LecturerCourses.Any()).ToString("N0")</h3>
+                </div>
+                <div class="w-12 h-12 rounded-circle bg-warning/10 border border-warning/20 d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px;">
+                    <i class="bi bi-person-x-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <section class="admin-card" style="margin-top: 2rem;">
-                <div class="admin-card-header"><h2 data-i18n="admin.courses.importExcel">Import Courses via Excel</h2></div>
-                <div style="padding: 1.5rem;">
-                    <form method="post" asp-page-handler="ImportCourses" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1rem;">
-                        @Html.AntiForgeryToken()
-                        <input type="file" name="excelFile" accept=".xlsx" required style="padding: 0.5rem; border: 1px solid var(--admin-border); border-radius: 4px; background: var(--admin-bg); color: var(--admin-text);" />
-                        <div style="display: flex; gap: 0.5rem; width: 100%;">
-                            <button type="submit" class="admin-primary-btn" style="flex: 1; height: auto;" data-i18n="admin.courses.importCourses">Import Courses</button>
-                            <a asp-page-handler="DownloadTemplate" class="admin-primary-btn" style="background: rgba(228, 240, 246, 0.1); color: var(--admin-text); border: 1px solid var(--admin-border); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 0.9rem; height: auto; text-align: center;">Download Template</a>
-                        </div>
-                    </form>
+    <!-- Tabs Navigation -->
+    <div class="admin-users-tabs mb-4">
+        <button type="button" class="admin-users-tab-btn active" id="TabBtn-courses">
+            <span data-i18n="admin.courses.courseList">Course List</span>
+            <span class="admin-tab-count-badge">@Model.Courses.Count</span>
+        </button>
+        <button type="button" class="admin-users-tab-btn" id="TabBtn-workload">
+            <span>Lecturer Workload</span>
+            <span class="admin-tab-count-badge">@availableLecturers.Count</span>
+        </button>
+    </div>
+
+    <!-- Panel 1: Courses Management List -->
+    <div id="Panel-courses">
+        <!-- Toolbar Filters & Search -->
+        <div class="admin-toolbar-flex mb-3">
+            <div class="w-100 w-md-auto">
+                <div class="admin-search-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="CourseSearchInput" placeholder="Search by code, name, or lecturer..." />
                 </div>
-            </section>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1.5 active filter-btn" data-filter="all" style="border-radius: 6px; font-size: 0.8rem; font-weight: 500; border: 1px solid rgba(255,255,255,0.08); color: #fff;">All</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1.5 filter-btn" data-filter="assigned" style="border-radius: 6px; font-size: 0.8rem; font-weight: 500; border: 1px solid rgba(255,255,255,0.08); color: #fff;">Assigned</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1.5 filter-btn" data-filter="unassigned" style="border-radius: 6px; font-size: 0.8rem; font-weight: 500; border: 1px solid rgba(255,255,255,0.08); color: #fff;">Unassigned</button>
+            </div>
         </div>
 
-        <div>
-            <section id="courses-table-card" class="admin-card admin-table-card">
-                <div class="admin-card-header"><h2 data-i18n="admin.courses.courseList">Course List</h2><span>@Model.Courses.Count course(s)</span></div>
-                <div class="table-responsive">
-                    <table class="table admin-table mb-0">
-                        <thead><tr><th>Code</th><th>Course Name</th><th>Assigned Lecturers</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            @foreach (var course in Model.Courses)
-                            {
-                                <tr>
-                                    <td><code>@course.Code</code></td>
-                                    <td><strong>@course.Name</strong><div style="margin-top:0.35rem; color:rgba(228, 240, 246, 0.68); font-size:0.82rem; line-height:1.4;">@(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)</div></td>
-                                    <td>
-                                        @if (course.LecturerCourses.Count == 0)
+        <div class="admin-card rounded-xl overflow-hidden mb-5">
+            <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr class="bg-surface-container">
+                            <th class="px-4 py-3" data-i18n="admin.courses.name">Course</th>
+                            <th class="px-4 py-3" data-i18n="admin.courses.assignedLecturers">Assigned Lecturer</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.status">Status</th>
+                            <th class="px-4 py-3 text-end" data-i18n="admin.courses.actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="CoursesTableBody">
+                        @foreach (var course in Model.Courses)
+                        {
+                            var hasLecturer = course.LecturerCourses.Any();
+                            var assignedLecturer = course.LecturerCourses.FirstOrDefault()?.Lecturer;
+                            var displayName = assignedLecturer?.FullName ?? "N/A";
+                            var avatarInitial = !string.IsNullOrWhiteSpace(displayName) ? displayName.Trim()[0].ToString().ToUpper() : "L";
+
+                            <tr class="hover:bg-surface-container-highest/20 transition-colors" data-assigned="@(hasLecturer ? "true" : "false")">
+                                <!-- Course Detail cell -->
+                                <td class="px-4 py-3 align-middle" style="max-width: 320px;">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded text-xs font-bold" style="font-size: 10px;">@course.Code</span>
+                                        <span class="font-semibold text-on-surface" style="font-size: 0.95rem;">@course.Name</span>
+                                    </div>
+                                    <div class="text-body-sm text-on-surface-variant truncate" style="font-size: 0.8rem; max-width: 300px;" title="@course.Description">
+                                        @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
+                                    </div>
+                                </td>
+
+                                <!-- Lecturer detail cell -->
+                                <td class="px-4 py-3 align-middle">
+                                     @if (hasLecturer && assignedLecturer != null)
+                                     {
+                                         <div class="d-flex align-items-center gap-2">
+                                             <div class="d-flex align-items-center gap-2 hover:opacity-80" data-bs-toggle="modal" data-bs-target="#AssignLecturerModal" data-course-id="@course.Id" data-course-code="@course.Code" data-course-name="@course.Name" data-current-lecturer-id="@assignedLecturer.Id" data-current-lecturer-name="@displayName" title="Change/Reassign Lecturer" style="cursor: pointer;">
+                                                 <div class="rounded-circle text-primary d-flex align-items-center justify-content-center text-xs font-bold" style="width: 28px; height: 28px; border-radius: 50%; background-color: rgba(137, 206, 255, 0.15) !important; border: 1px solid rgba(137, 206, 255, 0.3) !important; flex-shrink: 0;">@avatarInitial</div>
+                                                 <div>
+                                                     <div class="font-semibold text-on-surface text-start" style="font-size: 0.85rem; line-height: 1.2;">@displayName</div>
+                                                     <div class="text-on-surface-variant text-start" style="font-size: 11px; opacity: 0.85;">@assignedLecturer.Email</div>
+                                                 </div>
+                                             </div>
+                                             <!-- Remove/Unassign button -->
+                                             <form method="post" asp-page-handler="RemoveLecturer" class="ms-3 mb-0 d-inline">
+                                                 @Html.AntiForgeryToken()
+                                                 <input type="hidden" name="lecturerId" value="@assignedLecturer.Id" />
+                                                 <input type="hidden" name="courseId" value="@course.Id" />
+                                                 <button type="submit" class="border-0 p-0 bg-transparent text-danger hover:text-danger/80" style="cursor: pointer; line-height: 1;" title="Unassign Lecturer">
+                                                     <i class="bi bi-x-circle" style="font-size: 13px;"></i>
+                                                 </button>
+                                             </form>
+                                         </div>
+                                     }
+                                    else
+                                    {
+                                        <div class="d-flex align-items-center gap-1.5 text-warning" style="font-size: 0.85rem; font-weight: 500;">
+                                            <i class="bi bi-exclamation-circle-fill"></i>
+                                            <span data-i18n="admin.courses.unassignedBadge">Unassigned</span>
+                                            <button type="button" data-bs-toggle="modal" data-bs-target="#AssignLecturerModal" data-course-id="@course.Id" data-course-code="@course.Code" data-course-name="@course.Name" class="btn btn-sm btn-link text-primary p-0 ms-2 text-decoration-none font-bold" style="font-size: 0.75rem;">Assign Lecturer</button>
+                                        </div>
+                                    }
+                                </td>
+
+                                <!-- Status Badge -->
+                                <td class="px-4 py-3 align-middle" style="width: 130px;">
+                                    @if (hasLecturer)
+                                    {
+                                        <span class="px-2.5 py-1 rounded bg-success/15 text-success font-bold" style="font-size: 10px; border: 1px solid rgba(16, 185, 129, 0.25);">Assigned</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-2.5 py-1 rounded bg-warning/15 text-warning font-bold" style="font-size: 10px; border: 1px solid rgba(245, 158, 11, 0.25);">Unassigned</span>
+                                    }
+                                </td>
+
+                                <!-- Actions dropdown modal links -->
+                                <td class="px-4 py-3 align-middle text-end" style="width: 150px;">
+                                    <div class="d-flex justify-content-end align-items-center gap-2">
+                                        @if (hasLecturer && assignedLecturer != null)
                                         {
-                                            <em style="color: rgba(228, 240, 246, 0.65);">No lecturer assigned</em>
-                                            <form method="post" asp-page-handler="AssignLecturer" style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="courseId" value="@course.Id" />
-                                                <select name="lecturerId" required style="padding: 0.3rem; border: 1px solid var(--admin-border); border-radius: 4px; background: var(--admin-bg); color: var(--admin-text); font-size: 0.85rem;">
-                                                    <option value="">-- Select lecturer --</option>
-                                                    @if (availableLecturers.Count == 0)
-                                                    {
-                                                        <option value="" disabled>No unassigned lecturers available</option>
-                                                    }
-                                                    @foreach (var lecturer in availableLecturers)
-                                                    {
-                                                        <option value="@lecturer.Id">@lecturer.FullName (@lecturer.Email)</option>
-                                                    }
-                                                </select>
-                                                <button type="submit" disabled="@(availableLecturers.Count == 0)" style="background: var(--admin-primary); color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Assign</button>
-                                            </form>
+                                            <button type="button" data-bs-toggle="modal" data-bs-target="#AssignLecturerModal" data-course-id="@course.Id" data-course-code="@course.Code" data-course-name="@course.Name" data-current-lecturer-id="@assignedLecturer.Id" data-current-lecturer-name="@displayName" class="admin-action-btn edit-btn" style="padding: 0.35rem; border-radius: 6px;" title="Change/Reassign Lecturer">
+                                                <i class="bi bi-person-gear"></i>
+                                            </button>
                                         }
                                         else
                                         {
-                                            @foreach (var lc in course.LecturerCourses)
-                                            {
-                                                <div style="display: inline-flex; align-items: center; background: rgba(228, 240, 246, 0.08); padding: 0.2rem 0.5rem; border-radius: 4px; margin-right: 0.5rem; margin-bottom: 0.2rem; font-size: 0.85rem;">
-                                                    <span style="margin-right: 0.3rem;">@(lc.Lecturer?.FullName ?? "N/A")</span>
-                                                    <form method="post" asp-page-handler="RemoveLecturer" style="display:inline;">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="lecturerId" value="@lc.LecturerId" />
-                                                        <input type="hidden" name="courseId" value="@course.Id" />
-                                                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; font-size: 0.75rem; padding: 0 0.2rem;">x</button>
-                                                    </form>
-                                                </div>
-                                            }
+                                            <button type="button" data-bs-toggle="modal" data-bs-target="#AssignLecturerModal" data-course-id="@course.Id" data-course-code="@course.Code" data-course-name="@course.Name" class="admin-action-btn edit-btn" style="padding: 0.35rem; border-radius: 6px;" title="Assign Lecturer">
+                                                <i class="bi bi-person-plus"></i>
+                                            </button>
                                         }
-                                    </td>
-                                    <td>
-                                        <form method="post" asp-page-handler="DeleteCourse">
+                                        
+                                        <form method="post" asp-page-handler="DeleteCourse" class="mb-0 d-inline-block">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@course.Id" />
-                                            <button type="submit" class="danger" style="background:none; border:none; color:var(--admin-danger); cursor:pointer; font-size: 0.9rem;">Delete</button>
+                                            <button type="submit" class="admin-action-btn delete-btn" onclick="return confirm('Delete this course? All uploaded course documents will lose connection.');" style="padding: 0.35rem; border-radius: 6px;" title="Delete Course">
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
                                         </form>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @if (Model.Courses.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+                                    <span>No courses created yet. Click 'Create Course' to start.</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel 2: Lecturer Workload Overview -->
+    <div id="Panel-workload" class="d-none">
+        <div class="admin-card rounded-xl overflow-hidden mb-5">
+            <div class="p-4 border-b border-outline-variant bg-surface-container-low" style="background: rgba(255, 255, 255, 0.01);">
+                <h3 class="font-card-title text-on-surface mb-0" style="font-size: 1.1rem;">Lecturer Workload Overview</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr class="bg-surface-container">
+                            <th class="px-4 py-3">Lecturer</th>
+                            <th class="px-4 py-3">Email</th>
+                            <th class="px-4 py-3 text-center">Assigned Courses</th>
+                            <th class="px-4 py-3">Assigned Courses Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var lecturer in availableLecturers)
+                        {
+                            var assignedCourses = Model.Courses.Where(c => c.LecturerCourses.Any(lc => lc.LecturerId == lecturer.Id)).ToList();
+                            var avatarInitial = !string.IsNullOrWhiteSpace(lecturer.FullName) ? lecturer.FullName.Trim()[0].ToString().ToUpper() : "L";
+
+                            <tr class="hover:bg-surface-container-highest/20 transition-colors">
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="admin-user-avatar-lecturer" style="width: 32px; height: 32px; font-size: 12px; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(191, 198, 223, 0.2); color: #bfc6df;">@avatarInitial</div>
+                                        <div class="font-semibold text-on-surface">@lecturer.FullName</div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-middle">@lecturer.Email</td>
+                                <td class="px-4 py-3 align-middle text-center">
+                                    <span class="badge @(assignedCourses.Count > 0 ? "bg-success/15 text-success border border-success/25" : "bg-surface-variant text-on-surface-variant") px-2.5 py-1 rounded">@assignedCourses.Count</span>
+                                </td>
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="d-flex flex-wrap gap-1.5">
+                                        @foreach (var c in assignedCourses)
+                                        {
+                                            <span class="bg-primary/10 text-primary border border-primary/25 px-2 py-0.5 rounded text-xs">@c.Code</span>
+                                        }
+                                        @if (assignedCourses.Count == 0)
+                                        {
+                                            <span class="text-muted italic" style="font-size: 0.8rem;">No courses assigned</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Assign/Reassign Lecturer Bootstrap Modal -->
+<div class="modal fade" id="AssignLecturerModal" tabindex="-1" aria-labelledby="AssignLecturerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-card" style="border: 1px solid rgba(255, 255, 255, 0.08); background: #0d1c2d;">
+            <div class="modal-header border-bottom border-outline-variant/30 px-4 py-3">
+                <h5 class="modal-title font-section-title text-on-surface mb-0" id="AssignLecturerModalLabel" style="font-size: 1.1rem;">Assign Lecturer</h5>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="AssignLecturer" class="mb-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="courseId" id="modal-course-id" />
+                <div class="modal-body px-4 py-4 space-y-3">
+                    <!-- Course details in modal -->
+                    <div class="mb-3 text-start">
+                        <label class="block text-label-caps font-label-caps text-on-surface-variant mb-1" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;">Selected Course</label>
+                        <div id="modal-course-title" class="font-semibold text-white" style="font-size: 1rem;">Course Code - Course Name</div>
+                    </div>
+                    <!-- Current Lecturer Status -->
+                    <div class="mb-3 text-start">
+                        <label class="block text-label-caps font-label-caps text-on-surface-variant mb-1" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;">Current Lecturer</label>
+                        <div id="modal-current-lecturer">Unassigned</div>
+                    </div>
+                    <!-- Select New Lecturer dropdown -->
+                    <div class="mb-3 text-start">
+                        <label class="block text-label-caps font-label-caps text-on-surface-variant mb-1" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;">Select Lecturer</label>
+                        <select name="lecturerId" id="modal-lecturer-select" required class="form-select admin-form-select" style="border: 1px solid rgba(255, 255, 255, 0.08); background-color: rgba(255, 255, 255, 0.02); color: #ffffff;">
+                            <option value="">-- Select Lecturer --</option>
+                            @foreach (var lecturer in availableLecturers)
+                            {
+                                <option value="@lecturer.Id">@lecturer.FullName (@lecturer.Email)</option>
+                            }
+                        </select>
+                    </div>
+                    <!-- Workload warning hint -->
+                    <div class="alert alert-info py-2 px-3 mb-0" id="modal-workload-hint" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.15); color: #89ceff; font-size: 0.8rem; display: none;">
+                        This lecturer is currently assigned to 0 course(s).
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-outline-variant/30 px-4 py-3">
+                    <button type="button" class="admin-secondary-btn" style="border-radius: 8px; padding: 0.5rem 1rem;" data-bs-dismiss="modal" data-i18n="admin.form.cancel">Cancel</button>
+                    <button type="submit" id="modal-submit-btn" class="admin-primary-btn" style="border-radius: 8px; padding: 0.5rem 1rem;">Assign Lecturer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Create Course Bootstrap Modal -->
+<div class="modal fade" id="CreateCourseModal" tabindex="-1" aria-labelledby="CreateCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+        <div class="modal-content admin-course-create-modal">
+            <div class="admin-course-create-modal__header">
+                <div class="admin-course-create-modal__title-wrap">
+                    <h5 class="admin-course-create-modal__title" id="CreateCourseModalLabel" data-i18n="admin.courses.createNew">Create New Course</h5>
+                    <p class="admin-course-create-modal__subtitle" data-i18n="admin.courses.createSubtitle">Add a new course and optionally assign a lecturer later.</p>
+                </div>
+                <button type="button" class="admin-course-create-modal__close-btn" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form method="post" asp-page-handler="CreateCourse" class="mb-0">
+                @Html.AntiForgeryToken()
+                <div class="admin-course-create-modal__body">
+                    <div class="admin-course-create-modal__field">
+                        <label class="admin-course-create-modal__label" data-i18n="admin.courses.courseCode">Course Code</label>
+                        <input type="text" name="code" placeholder="e.g. PRN222" data-i18n-placeholder="admin.courses.courseCodePlaceholder" required class="admin-course-create-modal__input" />
+                        <div class="admin-course-create-modal__helper" data-i18n="admin.courses.courseCodeHelper">Use a short unique course code.</div>
+                    </div>
+                    <div class="admin-course-create-modal__field">
+                        <label class="admin-course-create-modal__label" data-i18n="admin.courses.courseName">Course Name</label>
+                        <input type="text" name="name" placeholder="e.g. C# &amp; .NET Cloud" data-i18n-placeholder="admin.courses.courseNamePlaceholder" required class="admin-course-create-modal__input" />
+                    </div>
+                    <div class="admin-course-create-modal__field">
+                        <label class="admin-course-create-modal__label" data-i18n="admin.courses.courseDesc">Course Description</label>
+                        <textarea name="description" required placeholder="e.g. ASP.NET Core, Razor Pages, Entity Framework Core..." data-i18n-placeholder="admin.courses.courseDescPlaceholder" class="admin-course-create-modal__textarea"></textarea>
+                    </div>
+                    <div class="admin-course-create-modal__field">
+                        <label class="admin-course-create-modal__label" data-i18n="admin.courses.assignedLecturer">Assigned Lecturer</label>
+                        <select name="lecturerId" class="admin-course-create-modal__input" style="background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\' fill=\'%23bec8d2\'%3e%3cpath fill-rule=\'evenodd\' d=\'M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z\'/%3e%3c/svg%3e'); background-position: right 0.75rem center; background-size: 16px 12px; background-repeat: no-repeat; padding-right: 2rem; appearance: none; -webkit-appearance: none;">
+                            <option value="" data-i18n="admin.courses.assignLater" style="background: #0d1c2d; color: #bec8d2;">-- Assign Later --</option>
+                            @foreach (var lecturer in availableLecturers)
+                            {
+                                <option value="@lecturer.Id" style="background: #0d1c2d; color: #ffffff;">@lecturer.FullName (@lecturer.Email)</option>
+                            }
+                        </select>
+                        <div class="admin-course-create-modal__helper" data-i18n="admin.courses.assignedLecturerHelper">Each course can have one main lecturer. A lecturer can teach multiple courses.</div>
+                    </div>
+                </div>
+                <div class="admin-course-create-modal__footer">
+                    <button type="button" class="admin-course-create-modal__btn-cancel" data-bs-dismiss="modal" data-i18n="admin.form.cancel">Cancel</button>
+                    <button type="submit" class="admin-course-create-modal__btn-submit" data-i18n="admin.courses.createCourse">Create Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JSON mapping of lecturer workloads
+    const lecturerWorkloads = {
+        @foreach (var lecturer in availableLecturers)
+        {
+            var count = Model.Courses.Count(c => c.LecturerCourses.Any(lc => lc.LecturerId == lecturer.Id));
+            <text>"@lecturer.Id": @count,</text>
+        }
+    };
+
+    // Client-side search and filters for Course List
+    const searchInput = document.getElementById('CourseSearchInput');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const rows = document.querySelectorAll('#CoursesTableBody tr');
+
+    function filterCourses() {
+        const query = searchInput.value.toLowerCase().trim();
+        let filter = 'all';
+        filterBtns.forEach(btn => {
+            if (btn.classList.contains('active')) {
+                filter = btn.getAttribute('data-filter');
+            }
+        });
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const matchesSearch = text.includes(query);
+            
+            const isAssigned = row.getAttribute('data-assigned') === 'true';
+            let matchesFilter = true;
+            if (filter === 'assigned') matchesFilter = isAssigned;
+            else if (filter === 'unassigned') matchesFilter = !isAssigned;
+
+            if (matchesSearch && matchesFilter) {
+                row.classList.remove('d-none');
+            } else {
+                row.classList.add('d-none');
+            }
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterCourses);
+    }
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            filterCourses();
+        });
+    });
+
+    // Toggle Tab Panels
+    document.getElementById('TabBtn-courses').addEventListener('click', function() {
+        this.classList.add('active');
+        document.getElementById('TabBtn-workload').classList.remove('active');
+        document.getElementById('Panel-courses').classList.remove('d-none');
+        document.getElementById('Panel-workload').classList.add('d-none');
+    });
+    
+    document.getElementById('TabBtn-workload').addEventListener('click', function() {
+        this.classList.add('active');
+        document.getElementById('TabBtn-courses').classList.remove('active');
+        document.getElementById('Panel-workload').classList.remove('d-none');
+        document.getElementById('Panel-courses').classList.add('d-none');
+    });
+
+    // Populate AssignLecturer Modal details dynamically
+    var assignModal = document.getElementById('AssignLecturerModal');
+    if (assignModal) {
+        assignModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var courseId = button.getAttribute('data-course-id');
+            var courseCode = button.getAttribute('data-course-code');
+            var courseName = button.getAttribute('data-course-name');
+            var currentLecturerId = button.getAttribute('data-current-lecturer-id');
+            var currentLecturerName = button.getAttribute('data-current-lecturer-name');
+
+            // Populate course title & hidden ID inputs
+            assignModal.querySelector('#modal-course-id').value = courseId;
+            assignModal.querySelector('#modal-course-title').textContent = courseCode + ' - ' + courseName;
+            
+            // Set current lecturer text status
+            var currentLecturerContainer = assignModal.querySelector('#modal-current-lecturer');
+            if (currentLecturerId) {
+                currentLecturerContainer.innerHTML = `<span class="badge bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded" style="font-size: 11px;">${currentLecturerName}</span>`;
+                assignModal.querySelector('#AssignLecturerModalLabel').textContent = 'Change Lecturer';
+                assignModal.querySelector('#modal-submit-btn').textContent = 'Change Lecturer';
+            } else {
+                currentLecturerContainer.innerHTML = `<span class="badge bg-warning/10 text-warning border border-warning/20 px-2.5 py-1 rounded" style="font-size: 11px;">Unassigned</span>`;
+                assignModal.querySelector('#AssignLecturerModalLabel').textContent = 'Assign Lecturer';
+                assignModal.querySelector('#modal-submit-btn').textContent = 'Assign Lecturer';
+            }
+
+            // Reset selection and workload alert
+            var selectEl = assignModal.querySelector('#modal-lecturer-select');
+            selectEl.value = '';
+            var hintEl = assignModal.querySelector('#modal-workload-hint');
+            hintEl.style.display = 'none';
+        });
+    }
+
+    // Workload dropdown change hint indicator
+    document.getElementById('modal-lecturer-select').addEventListener('change', function() {
+        var val = this.value;
+        var hintEl = document.getElementById('modal-workload-hint');
+        if (val && lecturerWorkloads[val] !== undefined) {
+            var count = lecturerWorkloads[val];
+            hintEl.textContent = `This lecturer is currently assigned to ${count} course(s).`;
+            hintEl.style.display = 'block';
+        } else {
+            hintEl.style.display = 'none';
+        }
+    });
+</script>

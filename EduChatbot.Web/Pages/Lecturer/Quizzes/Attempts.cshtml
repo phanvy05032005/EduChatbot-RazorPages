@@ -1,0 +1,76 @@
+@page "{id:int}"
+@model EduChatbot.Web.Pages.Lecturer.Quizzes.AttemptsModel
+@{
+    ViewData["Title"] = "Attempts: " + Model.Quiz.Title;
+}
+
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker" data-i18n="quizzes.lecturer.att.title">Quiz Report</div>
+            <h1>Attempts for: @Model.Quiz.Title</h1>
+            <p><span data-i18n="quizzes.course">Course</span>: <strong>@(Model.Quiz.Course?.Code)</strong> | <span data-i18n="quizzes.lecturer.att.totalCount">Total Attempts</span>: <strong>@Model.Attempts.Count</strong></p>
+        </div>
+    </header>
+
+    <div style="margin-bottom: 1.5rem;">
+        <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn">← Back to Quizzes</a>
+    </div>
+
+    @if (!Model.Attempts.Any())
+    {
+        <div class="role-empty-panel">
+            <strong data-i18n="quizzes.lecturer.att.noAttempts">No students have attempted this quiz yet.</strong>
+        </div>
+    }
+    else
+    {
+        <div class="role-table-card">
+            <div class="table-responsive">
+                <table class="table role-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th data-i18n="quizzes.lecturer.att.student">Student</th>
+                            <th data-i18n="quizzes.status">Status</th>
+                            <th data-i18n="quizzes.lecturer.att.startedAt">Started at</th>
+                            <th data-i18n="quizzes.lecturer.att.submittedAt">Submitted at</th>
+                            <th data-i18n="quizzes.lecturer.att.correctCount">Correct / Total</th>
+                            <th data-i18n="quizzes.lecturer.att.score">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var attempt in Model.Attempts)
+                        {
+                            var statusClass = attempt.Status == "Submitted" ? "completed" : "pending";
+                            <tr>
+                                <td>
+                                    <strong>@(attempt.Student?.FullName ?? attempt.Student?.Email ?? attempt.StudentId)</strong>
+                                    <br />
+                                    <small style="color: var(--edu-text-muted);">@attempt.Student?.Email</small>
+                                </td>
+                                <td>
+                                    <span class="role-status-badge @statusClass" data-i18n="quizzes.student.his.@(attempt.Status.ToLower())">@attempt.Status</span>
+                                </td>
+                                <td>@attempt.StartedAt.ToString("g")</td>
+                                <td>@(attempt.SubmittedAt?.ToString("g") ?? "N/A")</td>
+                                <td>
+                                    @(attempt.Status == "Submitted" ? $"{attempt.CorrectCount} / {attempt.TotalQuestions}" : "-")
+                                </td>
+                                <td>
+                                    @if (attempt.Status == "Submitted")
+                                    {
+                                        <strong style="color: @(attempt.Score >= 50 ? "var(--edu-success)" : "#dc3545");">@attempt.Score?.ToString("0.00")%</strong>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

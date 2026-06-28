@@ -1,0 +1,423 @@
+@page
+@model EduChatbot.Web.Pages.Lecturer.Quizzes.IndexModel
+@{
+    ViewData["Title"] = "Quizzes Management";
+    var totalQuizzes = Model.Quizzes.Count;
+    var draftQuizzes = Model.Quizzes.Count(q => q.Status == QuizStatuses.Draft);
+    var publishedQuizzes = Model.Quizzes.Count(q => q.Status == QuizStatuses.Published);
+    var archivedQuizzes = Model.Quizzes.Count(q => q.Status == QuizStatuses.Archived);
+}
+
+<style>
+    /* Premium Lecturer Dashboard layout styles */
+    .lecturer-dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .lecturer-stat-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease;
+    }
+
+    .lecturer-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .lecturer-stat-card-icon {
+        position: absolute;
+        top: 1rem;
+        right: 1.25rem;
+        font-size: 2.25rem;
+        opacity: 0.08;
+        color: var(--edu-primary);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .lecturer-stat-card:hover .lecturer-stat-card-icon {
+        opacity: 0.22;
+        transform: scale(1.05);
+    }
+
+    .lecturer-stat-card-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--edu-text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .lecturer-stat-card-value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--edu-text);
+        line-height: 1.1;
+    }
+
+    .lecturer-stat-card-progress {
+        margin-top: 1rem;
+        width: 100%;
+        height: 5px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+    }
+
+    .lecturer-stat-card-progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
+
+    .progress-draft {
+        background: #f59e0b; /* Amber */
+    }
+
+    .progress-published {
+        background: #10b981; /* Emerald */
+    }
+
+    .progress-archived {
+        background: #94a3b8; /* Slate/Gray */
+    }
+
+    /* Inventory Table Styles */
+    .lecturer-inventory-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .lecturer-inventory-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.015);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .lecturer-inventory-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--edu-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .lecturer-inventory-title i {
+        color: var(--edu-primary);
+    }
+
+    .lecturer-inventory-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .lecturer-inventory-table th {
+        background: rgba(255, 255, 255, 0.025);
+        color: var(--edu-text-muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .lecturer-inventory-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: middle;
+        color: var(--edu-text);
+    }
+
+    .lecturer-inventory-row {
+        transition: background-color 0.2s ease;
+    }
+
+    .lecturer-inventory-row:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Status Badges */
+    .quiz-status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 9999px;
+        text-align: center;
+    }
+
+    .quiz-status-badge.status-draft {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .quiz-status-badge.status-published {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .quiz-status-badge.status-archived {
+        background: rgba(148, 163, 184, 0.1);
+        color: #94a3b8;
+    }
+
+    /* Action Buttons styling */
+    .quiz-action-group {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .quiz-action-btn {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--edu-text-muted);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .quiz-action-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--edu-primary);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .quiz-action-btn.btn-archive:hover {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        border-color: rgba(220, 53, 69, 0.3);
+    }
+
+    .quiz-action-btn.btn-edit:hover {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .document-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--edu-text-muted);
+    }
+
+    .document-badge i {
+        font-size: 1rem;
+    }
+</style>
+
+@functions {
+    string GetDocIconClass(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return "bi-file-earmark-text text-muted";
+        var ext = System.IO.Path.GetExtension(fileName).ToLower();
+        if (ext == ".pdf") return "bi-file-earmark-pdf text-danger";
+        if (ext == ".doc" || ext == ".docx") return "bi-file-earmark-word text-primary";
+        if (ext == ".xls" || ext == ".xlsx") return "bi-file-earmark-excel text-success";
+        if (ext == ".ppt" || ext == ".pptx") return "bi-file-earmark-ppt text-warning";
+        return "bi-file-earmark-text text-muted";
+    }
+}
+
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker" data-i18n="quizzes.lecturer.kicker">Assessment</div>
+            <h1 data-i18n="quizzes.title">AI Generated Quizzes</h1>
+            <p data-i18n="quizzes.lecturer.desc">Generate quizzes from approved course materials, review questions, and analyze student attempts.</p>
+        </div>
+        <a asp-page="/Lecturer/Quizzes/Generate" class="role-primary-btn" style="text-decoration: none;" data-i18n="quizzes.lecturer.generateBtn">Generate Quiz with AI</a>
+    </header>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="role-alert success">
+            <strong>@TempData["SuccessMessage"]</strong>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="role-alert danger">
+            <strong>@TempData["ErrorMessage"]</strong>
+        </div>
+    }
+
+    <!-- Bento Stats Grid -->
+    <div class="lecturer-dashboard-grid">
+        <div class="lecturer-stat-card">
+            <i class="bi bi-collection-play lecturer-stat-card-icon"></i>
+            <div class="lecturer-stat-card-label" data-i18n="quizzes.lecturer.totalQuizzes">Total Quizzes</div>
+            <div class="lecturer-stat-card-value">@totalQuizzes</div>
+            <div class="lecturer-stat-card-footer" style="color: #10b981;">
+                <i class="bi bi-graph-up"></i> Active tracking
+            </div>
+        </div>
+        <div class="lecturer-stat-card">
+            <i class="bi bi-pencil-square lecturer-stat-card-icon" style="color: #f59e0b;"></i>
+            <div class="lecturer-stat-card-label" style="color: #f59e0b;" data-i18n="quizzes.lecturer.draftQuizzes">Draft Quizzes</div>
+            <div class="lecturer-stat-card-value">@draftQuizzes</div>
+            <div class="lecturer-stat-card-progress">
+                <div class="lecturer-stat-card-progress-bar progress-draft" style="width: @(totalQuizzes > 0 ? (draftQuizzes * 100 / totalQuizzes) : 0)%"></div>
+            </div>
+        </div>
+        <div class="lecturer-stat-card">
+            <i class="bi bi-cloud-check lecturer-stat-card-icon" style="color: #10b981;"></i>
+            <div class="lecturer-stat-card-label" style="color: #10b981;" data-i18n="quizzes.lecturer.publishedQuizzes">Published Quizzes</div>
+            <div class="lecturer-stat-card-value">@publishedQuizzes</div>
+            <div class="lecturer-stat-card-progress">
+                <div class="lecturer-stat-card-progress-bar progress-published" style="width: @(totalQuizzes > 0 ? (publishedQuizzes * 100 / totalQuizzes) : 0)%"></div>
+            </div>
+        </div>
+        <div class="lecturer-stat-card">
+            <i class="bi bi-archive lecturer-stat-card-icon" style="color: #94a3b8;"></i>
+            <div class="lecturer-stat-card-label" style="color: #94a3b8;" data-i18n="quizzes.lecturer.archivedQuizzes">Archived Quizzes</div>
+            <div class="lecturer-stat-card-value">@archivedQuizzes</div>
+            <div class="lecturer-stat-card-progress">
+                <div class="lecturer-stat-card-progress-bar progress-archived" style="width: @(totalQuizzes > 0 ? (archivedQuizzes * 100 / totalQuizzes) : 0)%"></div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Quizzes.Any())
+    {
+        <div class="lecturer-inventory-card text-center" style="padding: 4rem 2rem;">
+            <div style="font-size: 3.5rem; color: rgba(255, 255, 255, 0.1); margin-bottom: 1.5rem;">
+                <i class="bi bi-journal-check"></i>
+            </div>
+            <h4 class="fw-bold text-white mb-2" data-i18n="quizzes.lecturer.noQuizzes">No quizzes created yet.</h4>
+            <p class="text-muted mb-4" data-i18n="quizzes.lecturer.noQuizzesDesc" style="max-width: 450px; margin-left: auto; margin-right: auto;">
+                Create a quiz using AI from one of your course documents.
+            </p>
+            <a asp-page="/Lecturer/Quizzes/Generate" class="role-primary-btn" style="text-decoration: none;" data-i18n="quizzes.lecturer.generateBtn">Generate Quiz with AI</a>
+        </div>
+    }
+    else
+    {
+        <div class="lecturer-inventory-card">
+            <div class="lecturer-inventory-header">
+                <h3 class="lecturer-inventory-title">
+                    <i class="bi bi-card-checklist"></i>
+                    <span data-i18n="quizzes.title">AI Generated Quizzes</span>
+                </h3>
+                <div style="font-size: 0.85rem; color: var(--edu-text-muted);">
+                    <span data-i18n="quizzes.lecturer.showing">Showing</span> @Model.Quizzes.Count <span data-i18n="quizzes.lecturer.quizzesCount">quiz(zes)</span>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="lecturer-inventory-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th data-i18n="quizzes.lecturer.quizTitle" style="width: 25%;">Quiz Title</th>
+                            <th data-i18n="quizzes.course" style="width: 15%;">Course</th>
+                            <th data-i18n="quizzes.documentSource" style="width: 20%;">Document Source</th>
+                            <th data-i18n="quizzes.questions" style="width: 10%;">Questions</th>
+                            <th data-i18n="quizzes.timeLimit" style="width: 10%;">Time Limit</th>
+                            <th data-i18n="quizzes.status" style="width: 10%;">Status</th>
+                            <th data-i18n="quizzes.actions" style="width: 10%; text-align: right; padding-right: 1.5rem;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var quiz in Model.Quizzes)
+                        {
+                            var statusClass = quiz.Status == QuizStatuses.Draft ? "status-draft" : (quiz.Status == QuizStatuses.Published ? "status-published" : "status-archived");
+                            <tr class="lecturer-inventory-row">
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-patch-question-fill text-primary" style="font-size: 1.15rem;"></i>
+                                        <strong class="text-white">@quiz.Title</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.8rem; font-weight: 500; background: rgba(228, 240, 246, 0.06); border: 1px solid rgba(228, 240, 246, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--edu-text);">
+                                        @(quiz.Course != null ? quiz.Course.Code : "N/A")
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (quiz.Document != null)
+                                    {
+                                        <div class="document-badge">
+                                            <i class="bi @GetDocIconClass(quiz.Document.FileName)"></i>
+                                            <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;" title="@quiz.Document.FileName">
+                                                @quiz.Document.FileName
+                                            </span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>@quiz.NumberOfQuestions Qs</td>
+                                <td>@quiz.TimeLimitMinutes <span data-i18n="quizzes.minutes">mins</span></td>
+                                <td>
+                                    <span class="quiz-status-badge @statusClass" data-i18n="quizzes.status.@(quiz.Status.ToLower())">@quiz.Status</span>
+                                </td>
+                                <td style="text-align: right; padding-right: 1.5rem;">
+                                    <div class="quiz-action-group">
+                                        @if (quiz.Status == QuizStatuses.Draft)
+                                        {
+                                            <a asp-page="/Lecturer/Quizzes/Review" asp-route-id="@quiz.Id" class="quiz-action-btn btn-edit" title="Review & Edit" data-i18n-title="quizzes.lecturer.reviewEdit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-page="/Lecturer/Quizzes/Review" asp-route-id="@quiz.Id" class="quiz-action-btn" title="View Details" data-i18n-title="quizzes.lecturer.viewDetails">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        }
+                                        <a asp-page="/Lecturer/Quizzes/Attempts" asp-route-id="@quiz.Id" class="quiz-action-btn" title="Attempts" data-i18n-title="quizzes.lecturer.attempts">
+                                            <i class="bi bi-bar-chart-line"></i>
+                                        </a>
+                                        @if (quiz.Status == QuizStatuses.Published)
+                                        {
+                                            <form method="post" asp-page-handler="Archive" asp-route-id="@quiz.Id" style="display: inline;" onsubmit="return confirm('Are you sure you want to archive this quiz?\nStudents will no longer see this quiz for new attempts, but existing attempts and results will be kept.');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="quiz-action-btn btn-archive" title="Archive" data-i18n-title="quizzes.lecturer.rev.archiveBtn">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

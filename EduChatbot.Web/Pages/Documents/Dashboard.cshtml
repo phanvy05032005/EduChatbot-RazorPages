@@ -1,91 +1,505 @@
 @page
 @model EduChatbot.Web.Pages.Documents.DashboardModel
-
 @{
     ViewData["Title"] = "Dashboard";
 }
 
+<style>
+    /* Premium Lecturer Dashboard Layout styles */
+    .dashboard-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-stat-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease;
+    }
+
+    .dashboard-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+        border-color: rgba(14, 165, 233, 0.3);
+    }
+
+    .dashboard-stat-card-icon-wrapper {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .icon-primary {
+        background: rgba(14, 165, 233, 0.1);
+        color: #0ea5e9;
+    }
+
+    .icon-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .icon-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .icon-secondary {
+        background: rgba(148, 163, 184, 0.1);
+        color: #94a3b8;
+    }
+
+    .dashboard-stat-card-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--edu-text-muted);
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+
+    .dashboard-stat-card-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--edu-text);
+        line-height: 1.1;
+    }
+
+    /* Main Dashboard Panels Grid */
+    .dashboard-content-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    @@media (min-width: 992px) {
+        .dashboard-content-layout {
+            grid-template-columns: 8fr 4fr;
+        }
+    }
+
+    .dashboard-panel-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--edu-text);
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dashboard-panel-title-link {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--edu-primary);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .dashboard-panel-title-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Courses Grid */
+    .courses-grid-layout {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .course-display-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 200px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .course-display-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(14, 165, 233, 0.3);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .course-display-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .course-display-card-code {
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(14, 165, 233, 0.15);
+        color: #0ea5e9;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .course-display-card-arrow {
+        color: var(--edu-text-muted);
+        opacity: 0.4;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .course-display-card:hover .course-display-card-arrow {
+        opacity: 1;
+        transform: translate(2px, -2px);
+    }
+
+    .course-display-card-name {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--edu-text);
+        margin: 0 0 1rem 0;
+        line-height: 1.4;
+    }
+
+    .course-display-card-desc {
+        font-size: 0.85rem;
+        color: var(--edu-text-muted);
+        margin-bottom: 1.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+    }
+
+    .course-display-card-stats {
+        display: flex;
+        gap: 1.25rem;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1rem;
+    }
+
+    .course-display-card-stats span {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .doc-stats-detailed-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .doc-stats-bar-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.25rem;
+        position: relative;
+    }
+
+    .doc-stats-bar-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 12px 0 0 12px;
+    }
+
+    .border-left-primary::before {
+        background: #0ea5e9;
+    }
+
+    .border-left-success::before {
+        background: #10b981;
+    }
+
+    .border-left-danger::before {
+        background: #ef4444;
+    }
+
+    .border-left-secondary::before {
+        background: #94a3b8;
+    }
+
+    .doc-stats-bar-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--edu-text-muted);
+        margin-bottom: 0.25rem;
+    }
+
+    .doc-stats-bar-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--edu-text);
+        margin-bottom: 0.5rem;
+        line-height: 1.1;
+    }
+
+    .doc-stats-bar-trend {
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    /* Quick Actions panel */
+    .quick-actions-panel {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 1.5rem;
+    }
+
+    .quick-actions-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--edu-text);
+        margin-bottom: 1.25rem;
+    }
+
+    .quick-action-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--edu-text);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin-bottom: 0.75rem;
+    }
+
+    .quick-action-link:last-child {
+        margin-bottom: 0;
+    }
+
+    .quick-action-link:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(14, 165, 233, 0.2);
+        color: var(--edu-primary);
+    }
+
+    .quick-action-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .quick-action-content i {
+        font-size: 1.15rem;
+    }
+
+    .quick-action-arrow {
+        font-size: 1rem;
+        opacity: 0;
+        transition: all 0.2s ease;
+    }
+
+    .quick-action-link:hover .quick-action-arrow {
+        opacity: 1;
+        transform: translateX(3px);
+    }
+</style>
+
 <section class="role-page">
+    <!-- Page Header Section -->
     <header class="role-hero">
         <div>
-            <div class="role-kicker">Lecturer workspace</div>
-            <h1>Dashboard</h1>
-            <p>Manage your assigned courses and academic documents.</p>
+            <div class="role-kicker" data-i18n="docs.dashboard.kicker">Lecturer workspace</div>
+            <h1 data-i18n="nav.dashboard">Dashboard</h1>
+            <p data-i18n="docs.dashboard.desc">Manage your assigned courses and academic documents.</p>
         </div>
-        <a asp-page="/Documents/Upload" class="role-primary-btn">Upload document</a>
+        <a asp-page="/Documents/Upload" style="text-decoration: none;" class="role-primary-btn" data-i18n="nav.uploadDocument">Upload document</a>
     </header>
 
-    <!-- ===== Assigned Courses ===== -->
-    <div class="role-section-header">
-        <h2>My Assigned Courses</h2>
-        <span>@Model.AssignedCourses.Count course(s)</span>
+    <!-- Top Bento Grid Stats -->
+    <div class="dashboard-stats-grid">
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-card-icon-wrapper icon-primary">
+                <i class="bi bi-journals"></i>
+            </div>
+            <div>
+                <div class="dashboard-stat-card-label" data-i18n="docs.dashboard.assignedCourses">Assigned Courses</div>
+                <div class="dashboard-stat-card-value">@Model.AssignedCourses.Count</div>
+            </div>
+        </div>
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-card-icon-wrapper icon-success">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div>
+                <div class="dashboard-stat-card-label" data-i18n="docs.dashboard.totalDocs">Total Documents</div>
+                <div class="dashboard-stat-card-value">@Model.Summary.TotalDocuments</div>
+            </div>
+        </div>
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-card-icon-wrapper icon-warning">
+                <i class="bi bi-patch-check"></i>
+            </div>
+            <div>
+                <div class="dashboard-stat-card-label" data-i18n="docs.dashboard.indexedDocs">Indexed Documents</div>
+                <div class="dashboard-stat-card-value">@Model.Summary.ReadyDocuments</div>
+            </div>
+        </div>
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-card-icon-wrapper icon-secondary">
+                <i class="bi bi-patch-question"></i>
+            </div>
+            <div>
+                <div class="dashboard-stat-card-label" data-i18n="quizzes.lecturer.totalQuizzes">Total Quizzes</div>
+                <div class="dashboard-stat-card-value">@Model.TotalQuizzes</div>
+            </div>
+        </div>
     </div>
 
-    @if (Model.AssignedCourses.Count == 0)
-    {
-        <div class="role-empty-panel">
-            <strong>No courses assigned yet.</strong>
-            <span>Contact an administrator to be assigned to courses.</span>
-        </div>
-    }
-    else
-    {
-        <div class="role-course-grid">
-            @foreach (var course in Model.AssignedCourses)
+    <!-- Main Dashboard Split Layout -->
+    <div class="dashboard-content-layout">
+        <!-- Left Side: Courses & Detailed Document Stats (8 cols) -->
+        <div>
+            <!-- Course Section Title -->
+            <div class="dashboard-panel-title">
+                <span data-i18n="docs.dashboard.assignedCourses">Assigned Courses</span>
+                <a asp-page="/Documents/Courses" class="dashboard-panel-title-link" data-i18n="quizzes.lecturer.viewDetails">View All</a>
+            </div>
+
+            @if (Model.AssignedCourses.Count == 0)
             {
-                <article class="role-course-card">
-                    <div class="role-course-header">
-                        <span class="role-course-code">@course.Code</span>
-                    </div>
-                    <h3 class="role-course-name">@course.Name</h3>
-                    <p class="role-course-desc">
-                        @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
-                    </p>
-                    <a asp-page="/Documents/Index" asp-route-courseId="@course.Id" class="role-course-link">
-                        View Details <span aria-hidden="true">→</span>
-                    </a>
-                </article>
+                <div class="role-empty-panel mb-4" style="background: #111827; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 3rem 2rem;">
+                    <strong class="text-white mb-2" data-i18n="docs.dashboard.noAssignedCourses" style="font-size: 1.1rem; display: block;">No courses assigned yet.</strong>
+                    <span class="text-muted" data-i18n="docs.dashboard.noAssignedCoursesDesc">Contact an administrator to be assigned to courses.</span>
+                </div>
             }
+            else
+            {
+                <div class="courses-grid-layout">
+                    @foreach (var course in Model.AssignedCourses)
+                    {
+                        var quizCount = Model.Quizzes.Count(q => q.CourseId == course.Id);
+                        <a asp-page="/Documents/Index" asp-route-courseId="@course.Id" class="course-display-card">
+                            <div>
+                                <div class="course-display-card-header">
+                                    <span class="course-display-card-code">@course.Code</span>
+                                    <i class="bi bi-arrow-up-right course-display-card-arrow"></i>
+                                </div>
+                                <h4 class="course-display-card-name">@course.Name</h4>
+                                <p class="course-display-card-desc">
+                                    @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
+                                </p>
+                            </div>
+                            <div class="course-display-card-stats">
+                                <span>
+                                    <i class="bi bi-file-earmark-text text-primary"></i>
+                                    @(course.Documents?.Count ?? 0) Docs
+                                </span>
+                                <span>
+                                    <i class="bi bi-patch-question text-secondary"></i>
+                                    @quizCount Quizzes
+                                </span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+
+            <!-- Document Statistics Section Title -->
+            <div class="dashboard-panel-title" style="margin-top: 2.5rem;">
+                <span data-i18n="docs.dashboard.docStats">Document Statistics</span>
+            </div>
+
+            <div class="doc-stats-detailed-grid">
+                <div class="doc-stats-bar-card border-left-primary">
+                    <div class="doc-stats-bar-label" data-i18n="docs.dashboard.total">Total</div>
+                    <div class="doc-stats-bar-value">@Model.Summary.TotalDocuments</div>
+                    <div class="doc-stats-bar-trend text-primary">
+                        <i class="bi bi-activity"></i> System total
+                    </div>
+                </div>
+                <div class="doc-stats-bar-card border-left-success">
+                    <div class="doc-stats-bar-label" data-i18n="docs.dashboard.indexed">Indexed</div>
+                    <div class="doc-stats-bar-value">@Model.Summary.ReadyDocuments</div>
+                    <div class="doc-stats-bar-trend text-success">
+                        <i class="bi bi-check-circle"></i> Healthy status
+                    </div>
+                </div>
+                <div class="doc-stats-bar-card border-left-danger">
+                    <div class="doc-stats-bar-label" data-i18n="docs.dashboard.rejected">Rejected</div>
+                    <div class="doc-stats-bar-value">@Model.Summary.FailedDocuments</div>
+                    <div class="doc-stats-bar-trend text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Requires action
+                    </div>
+                </div>
+                <div class="doc-stats-bar-card border-left-secondary">
+                    <div class="doc-stats-bar-label" data-i18n="docs.dashboard.totalChunks">Total Chunks</div>
+                    <div class="doc-stats-bar-value">@Model.Summary.TotalChunks</div>
+                    <div class="doc-stats-bar-trend text-muted">
+                        <i class="bi bi-segment"></i> Active vectors
+                    </div>
+                </div>
+            </div>
         </div>
-    }
 
-    <!-- ===== Document Statistics ===== -->
-    <div class="role-section-header" style="margin-top: 3rem;">
-        <h2>Document Statistics</h2>
-    </div>
-
-    <div class="role-stat-grid">
-        <article class="role-stat-card">
-            <span>Total documents</span>
-            <strong>@Model.Summary.TotalDocuments</strong>
-        </article>
-        <article class="role-stat-card success">
-            <span>Indexed documents</span>
-            <strong>@Model.Summary.ReadyDocuments</strong>
-        </article>
-        <article class="role-stat-card danger">
-            <span>Rejected/Failed</span>
-            <strong>@Model.Summary.FailedDocuments</strong>
-        </article>
-        <article class="role-stat-card accent">
-            <span>Total chunks</span>
-            <strong>@Model.Summary.TotalChunks</strong>
-        </article>
-    </div>
-
-    <div class="role-action-grid">
-        <article class="role-panel role-panel-large">
-            <div class="role-panel-label">Management</div>
-            <h2>Review indexed materials</h2>
-            <p data-i18n="docs.dashboard.viewFull">View complete list, check chunk data, and manage uploaded academic materials.</p>
-            <a asp-page="/Documents/Index" class="role-secondary-btn">View documents</a>
-        </article>
-
-        <a asp-page="/Documents/Upload" class="role-upload-callout">
-            <span>Upload</span>
-            <strong data-i18n="docs.dashboard.addNew">Add new document</strong>
-            <small data-i18n="docs.dashboard.fileFormats">PDF, DOCX, maximum 10 MB</small>
-        </a>
+        <!-- Right Side: Quick Actions Panel (4 cols) -->
+        <div>
+            <div class="quick-actions-panel">
+                <h3 class="quick-actions-title" data-i18n="docs.dashboard.quickActions">Quick Actions</h3>
+                <div class="d-flex flex-column">
+                    <a asp-page="/Documents/Index" class="quick-action-link">
+                        <div class="quick-action-content">
+                            <i class="bi bi-collection text-primary"></i>
+                            <span data-i18n="docs.dashboard.reviewIndexed">Review indexed materials</span>
+                        </div>
+                        <i class="bi bi-chevron-right quick-action-arrow"></i>
+                    </a>
+                    <a asp-page="/Documents/Upload" class="quick-action-link">
+                        <div class="quick-action-content">
+                            <i class="bi bi-cloud-upload text-warning"></i>
+                            <span data-i18n="docs.dashboard.uploadNew">Upload new material</span>
+                        </div>
+                        <i class="bi bi-chevron-right quick-action-arrow"></i>
+                    </a>
+                    <a asp-page="/Lecturer/Quizzes/Index" class="quick-action-link">
+                        <div class="quick-action-content">
+                            <i class="bi bi-stars text-success"></i>
+                            <span data-i18n="quizzes.lecturer.generateBtn">Generate quiz with AI</span>
+                        </div>
+                        <i class="bi bi-chevron-right quick-action-arrow"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
-

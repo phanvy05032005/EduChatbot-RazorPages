@@ -1,0 +1,348 @@
+@page "{id:int}"
+@model EduChatbot.Web.Pages.Lecturer.Quizzes.ReviewModel
+@{
+    ViewData["Title"] = "Review Quiz: " + Model.Quiz.Title;
+    var isDraft = Model.Quiz.Status == QuizStatuses.Draft;
+    var isPublished = Model.Quiz.Status == QuizStatuses.Published;
+    var isArchived = Model.Quiz.Status == QuizStatuses.Archived;
+    var statusClass = isDraft ? "pending" : (isPublished ? "completed" : "cancelled");
+}
+
+<section class="role-page">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker" data-i18n="quizzes.lecturer.kicker">Review Quiz</div>
+            <h1>@Model.Quiz.Title</h1>
+            <p>
+                <span data-i18n="quizzes.status">Status</span>: <span class="role-status-badge @statusClass" data-i18n="quizzes.status.@(Model.Quiz.Status.ToLower())">@Model.Quiz.Status</span>
+                | <span data-i18n="quizzes.course">Course</span>: <strong>@(Model.Quiz.Course?.Code)</strong>
+                | <span data-i18n="quizzes.timeLimit">Time limit</span>: <strong>@Model.Quiz.TimeLimitMinutes <span data-i18n="quizzes.minutes">mins</span></strong>
+                | <span data-i18n="quizzes.maxAttempts">Max attempts</span>: <strong>@Model.Quiz.MaxAttempts</strong>
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            @if (isDraft)
+            {
+                <form method="post" asp-page-handler="Publish" asp-route-id="@Model.Quiz.Id">
+                    <button type="submit" class="role-primary-btn" data-i18n="quizzes.lecturer.rev.publishBtn" data-i18n-confirm="quizzes.lecturer.rev.publishConfirm" data-i18n-confirm-en="Are you sure you want to publish this quiz? Once published, you cannot edit or delete questions.">Publish Quiz</button>
+                </form>
+            }
+            @if (isPublished)
+            {
+                <form method="post" asp-page-handler="Archive" asp-route-id="@Model.Quiz.Id" style="display: inline;">
+                    <button type="submit" class="role-primary-btn" style="background: #dc3545; border-color: #dc3545;" data-i18n="quizzes.lecturer.rev.archiveBtn" data-i18n-confirm="quizzes.lecturer.rev.archiveConfirm" data-i18n-confirm-en="Are you sure you want to archive this quiz? Students will no longer see this quiz for new attempts, but existing attempts and results will be kept.">Archive Quiz</button>
+                </form>
+            }
+            @if (isPublished || isArchived)
+            {
+                <a asp-page="/Lecturer/Quizzes/Attempts" asp-route-id="@Model.Quiz.Id" class="role-secondary-btn" data-i18n="quizzes.lecturer.rev.viewAttempts">View Attempts</a>
+            }
+        </div>
+    </header>
+
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn">← Back to Quizzes</a>
+        @if (isDraft)
+        {
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="role-primary-btn" style="background: #28a745; border-color: #28a745;" data-bs-toggle="modal" data-bs-target="#addQuestionModal" data-i18n="quizzes.lecturer.rev.addQuestion">
+                    + Add Question Manually
+                </button>
+                <button type="button" class="role-primary-btn" style="background: var(--edu-primary);" data-bs-toggle="collapse" data-bs-target="#generateMoreCollapse" aria-expanded="false" aria-controls="generateMoreCollapse" data-i18n="quizzes.lecturer.rev.generateMore">
+                    ⚡ Generate More with AI
+                </button>
+            </div>
+        }
+    </div>
+
+    @if (isDraft)
+    {
+        <div class="collapse mb-4" id="generateMoreCollapse">
+            <div class="role-form-card" style="background: rgba(228, 240, 246, 0.03); border: 1px solid var(--edu-border); border-radius: 12px; padding: 1.5rem;">
+                <h5 class="fw-bold text-white mb-3" data-i18n="quizzes.lecturer.rev.genMoreTitle">Generate More Questions with AI</h5>
+                <form method="post" asp-page-handler="GenerateMore" asp-route-id="@Model.Quiz.Id" id="generateMoreForm">
+                    @Html.AntiForgeryToken()
+                    <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="moreCountSelect" style="display: block; margin-bottom: 0.5rem; color: var(--edu-text); font-weight: 500;" data-i18n="quizzes.lecturer.rev.genMoreCount">Additional Count</label>
+                            <select id="moreCountSelect" asp-for="GenerateMoreInput.AdditionalQuestionCount" style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: #fff; font-family: inherit;">
+                                <option value="1" style="background: var(--edu-bg); color: #fff;" data-i18n="quizzes.lecturer.rev.genMore1">1 Question</option>
+                                <option value="3" style="background: var(--edu-bg); color: #fff;" data-i18n="quizzes.lecturer.rev.genMore3">3 Questions</option>
+                                <option value="5" selected style="background: var(--edu-bg); color: #fff;" data-i18n="quizzes.lecturer.rev.genMore5">5 Questions</option>
+                                <option value="10" style="background: var(--edu-bg); color: #fff;" data-i18n="quizzes.lecturer.rev.genMore10">10 Questions</option>
+                            </select>
+                        </div>
+                        <div style="flex: 3; min-width: 300px;">
+                            <label for="moreInstructions" style="display: block; margin-bottom: 0.5rem; color: var(--edu-text); font-weight: 500;" data-i18n="quizzes.lecturer.rev.genMoreInstructions">Additional Instructions (Optional)</label>
+                            <input type="text" id="moreInstructions" asp-for="GenerateMoreInput.AdditionalInstruction" placeholder="e.g. Focus on definitions in chapter 3, use Vietnamese terminology..." style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: #fff; font-family: inherit;" />
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="submit" class="role-primary-btn" data-i18n="quizzes.lecturer.rev.genMoreBtn">Generate More</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="role-alert success">
+            <strong>@TempData["SuccessMessage"]</strong>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="role-alert danger">
+            <strong>@TempData["ErrorMessage"]</strong>
+        </div>
+    }
+
+    <div class="row g-4" style="margin-top: 1rem;">
+        <div class="col-md-12">
+            <h3 class="fw-bold mb-3" style="font-size: 1.25rem; border-bottom: 2px solid var(--edu-border); padding-bottom: 0.5rem; color: var(--edu-text);">
+                <span data-i18n="quizzes.lecturer.rev.questionsList">Questions List</span> (@Model.Quiz.Questions.Count)
+            </h3>
+
+            @if (!Model.Quiz.Questions.Any())
+            {
+                <div class="role-empty-panel">
+                    <strong data-i18n="quizzes.lecturer.rev.noQuestions">No questions in this quiz.</strong>
+                </div>
+            }
+            else
+            {
+                @foreach (var q in Model.Quiz.Questions)
+                {
+                    <div class="role-table-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 12px; background: rgba(228, 240, 246, 0.02); border: 1px solid var(--edu-border);">
+                        <div class="d-flex justify-content-between align-items-start mb-3" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <span style="font-weight: bold; color: var(--edu-primary); font-size: 1.1rem; margin-right: 0.5rem;">Q@(q.QuestionOrder).</span>
+                                <span style="font-size: 1.1rem; font-weight: 500; color: var(--edu-text);">@q.QuestionText</span>
+                            </div>
+                            @if (isDraft)
+                            {
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="role-secondary-btn btn-sm edit-q-btn" 
+                                            data-id="@q.Id" 
+                                            data-text="@q.QuestionText" 
+                                            data-explanation="@q.Explanation"
+                                            @for (int i = 0; i < q.Options.Count; i++)
+                                            {
+                                                var opt = q.Options[i];
+                                                @:data-opt-id-@i="@opt.Id"
+                                                @:data-opt-text-@i="@opt.OptionText"
+                                                @:data-opt-correct-@i="@(opt.IsCorrect ? "true" : "false")"
+                                            }
+                                            data-bs-toggle="modal" data-bs-target="#editQuestionModal"
+                                            data-i18n="admin.accounts.edit">
+                                        Edit
+                                    </button>
+                                    <form method="post" asp-page-handler="DeleteQuestion" asp-route-id="@Model.Quiz.Id" asp-route-questionId="@q.Id" style="display: inline;">
+                                        <button type="submit" class="role-secondary-btn btn-sm" style="border-color: rgba(220, 53, 69, 0.5); color: #dc3545;" data-i18n="admin.accounts.delete" data-i18n-confirm="quizzes.lecturer.rev.deleteConfirm" data-i18n-confirm-en="Are you sure you want to delete this question?">Delete</button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="options-list" style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                            @foreach (var opt in q.Options)
+                            {
+                                <div class="option-item" style="padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; background: @(opt.IsCorrect ? "rgba(40, 167, 69, 0.1)" : "rgba(228, 240, 246, 0.02)"); border: 1px solid @(opt.IsCorrect ? "rgba(40, 167, 69, 0.3)" : "var(--edu-border)"); display: flex; align-items: center;">
+                                    <span style="font-weight: bold; margin-right: 0.8rem; background: @(opt.IsCorrect ? "var(--edu-success)" : "rgba(228, 240, 246, 0.1)"); color: @(opt.IsCorrect ? "#fff" : "var(--edu-text)"); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85rem;">
+                                        @opt.Label
+                                    </span>
+                                    <span style="color: var(--edu-text);">@opt.OptionText</span>
+                                    @if (opt.IsCorrect)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success" style="margin-left: auto; color: #28a745;"></i>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(q.Explanation))
+                        {
+                            <div class="explanation-box" style="margin-left: 1.5rem; padding: 0.8rem 1rem; background: rgba(0, 123, 255, 0.05); border-left: 4px solid var(--edu-primary); border-radius: 0 8px 8px 0; font-size: 0.9rem; color: var(--edu-text-muted);">
+                                <strong data-i18n="quizzes.lecturer.rev.explanation">Explanation: </strong>@q.Explanation
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Edit Question Modal (Bootstrap) -->
+@if (isDraft)
+{
+    <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; color: #fff;">
+                <div class="modal-header" style="border-bottom: 1px solid var(--edu-border);">
+                    <h5 class="modal-title fw-bold" id="editQuestionModalLabel" style="color: #fff;" data-i18n="quizzes.lecturer.rev.editModalTitle">Edit Question</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="UpdateQuestion" asp-route-id="@Model.Quiz.Id">
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <input type="hidden" id="modalQuestionId" asp-for="SaveInput.QuestionId" />
+                        
+                        <div class="role-field" style="margin-bottom: 1rem;">
+                            <label for="modalQuestionText" style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="quizzes.lecturer.rev.questionText">Question Text</label>
+                            <textarea id="modalQuestionText" asp-for="SaveInput.QuestionText" required style="width: 100%; min-height: 80px; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="quizzes.lecturer.rev.optionsLabel">Options (Select exactly one correct option)</label>
+                        
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            var optionLabels = new[] { "A", "B", "C", "D" };
+                            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;">
+                                <span style="font-weight: bold; background: rgba(228, 240, 246, 0.1); color: #fff; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+                                    @optionLabels[i]
+                                </span>
+                                <input type="text" id="modalOptText_@i" name="SaveInput.Options[@i].OptionText" required style="flex: 1; padding: 0.6rem 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff;" />
+                                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none;">
+                                    <input type="radio" id="modalOptCorrect_@i" name="correctRadio" value="@i" style="width: 18px; height: 18px; cursor: pointer;" />
+                                    <span style="font-size: 0.85rem;" data-i18n="quizzes.lecturer.rev.correctLabel">Correct</span>
+                                </label>
+                                <input type="hidden" id="modalOptCorrectHidden_@i" name="SaveInput.Options[@i].IsCorrect" value="false" />
+                            </div>
+                        }
+
+                        <div class="role-field" style="margin-top: 1.2rem;">
+                            <label for="modalExplanation" style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="quizzes.lecturer.rev.explanation">Explanation</label>
+                            <textarea id="modalExplanation" asp-for="SaveInput.Explanation" style="width: 100%; min-height: 60px; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--edu-border); justify-content: flex-end; display: flex; gap: 0.5rem; padding: 1rem 1.5rem;">
+                        <button type="button" class="role-secondary-btn" data-bs-dismiss="modal" data-i18n="quizzes.lecturer.rev.closeBtn">Close</button>
+                        <button type="submit" class="role-primary-btn" data-i18n="quizzes.lecturer.rev.saveChanges">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Edit button click handler
+            const editButtons = document.querySelectorAll('.edit-q-btn');
+            editButtons.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const qId = btn.getAttribute('data-id');
+                    const qText = btn.getAttribute('data-text');
+                    const qExpl = btn.getAttribute('data-explanation');
+
+                    document.getElementById('modalQuestionId').value = qId;
+                    document.getElementById('modalQuestionText').value = qText;
+                    document.getElementById('modalExplanation').value = qExpl;
+
+                    for (let i = 0; i < 4; i++) {
+                        const optId = btn.getAttribute('data-opt-id-' + i);
+                        const optText = btn.getAttribute('data-opt-text-' + i);
+                        const isCorrect = btn.getAttribute('data-opt-correct-' + i) === 'true';
+
+                        document.getElementById('modalOptId_' + i).value = optId;
+                        document.getElementById('modalOptText_' + i).value = optText;
+                        
+                        const radio = document.getElementById('modalOptCorrect_' + i);
+                        radio.checked = isCorrect;
+
+                        const hidden = document.getElementById('modalOptCorrectHidden_' + i);
+                        hidden.value = isCorrect ? 'true' : 'false';
+                    }
+                });
+            });
+
+            // Radio button change handler to update the hidden inputs for IsCorrect
+            for (let i = 0; i < 4; i++) {
+                const radio = document.getElementById('modalOptCorrect_' + i);
+                if (radio) {
+                    radio.addEventListener('change', function () {
+                        for (let j = 0; j < 4; j++) {
+                            const hidden = document.getElementById('modalOptCorrectHidden_' + j);
+                            hidden.value = (j === Number(radio.value)) ? 'true' : 'false';
+                        }
+                    });
+                }
+            }
+
+            // Add Modal Radio button change handler
+            for (let i = 0; i < 4; i++) {
+                const radio = document.getElementById('addOptCorrectRadio_' + i);
+                if (radio) {
+                    radio.addEventListener('change', function () {
+                        for (let j = 0; j < 4; j++) {
+                            const hidden = document.getElementById('addOptCorrectHidden_' + j);
+                            hidden.value = (j === Number(radio.value)) ? 'true' : 'false';
+                        }
+                    });
+                }
+            }
+
+            // Generate More overlay loader
+            const genMoreForm = document.getElementById('generateMoreForm');
+            if (genMoreForm) {
+                const overlay = document.getElementById('loadingOverlay');
+                genMoreForm.addEventListener('submit', function (e) {
+                    overlay.style.display = 'flex';
+                });
+            }
+        });
+    </script>
+}
+
+<!-- Add Question Modal (Bootstrap) -->
+@if (isDraft)
+{
+    <div class="modal fade" id="addQuestionModal" tabindex="-1" aria-labelledby="addQuestionModalLabel" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; color: #fff;">
+                <div class="modal-header" style="border-bottom: 1px solid var(--edu-border);">
+                    <h5 class="modal-title fw-bold" id="addQuestionModalLabel" style="color: #fff;" data-i18n="quizzes.lecturer.rev.addModalTitle">Add Manual Question</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="AddQuestion" asp-route-id="@Model.Quiz.Id">
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <div class="role-field" style="margin-bottom: 1rem;">
+                            <label for="addQuestionText" style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="quizzes.lecturer.rev.questionText">Question Text</label>
+                            <textarea id="addQuestionText" asp-for="AddInput.QuestionText" required style="width: 100%; min-height: 80px; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="quizzes.lecturer.rev.optionsLabel">Options (Select exactly one correct option)</label>
+                        
+                        @for (int i = 0; i < 4; i++)
+                        {
+                            var optionLabels = new[] { "A", "B", "C", "D" };
+                            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.8rem;">
+                                <span style="font-weight: bold; background: rgba(228, 240, 246, 0.1); color: #fff; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+                                    @optionLabels[i]
+                                </span>
+                                <input type="text" id="addOptText_@i" name="AddInput.Options[@i].OptionText" required style="flex: 1; padding: 0.6rem 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff;" />
+                                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none;">
+                                    <input type="radio" id="addOptCorrectRadio_@i" name="addCorrectRadio" value="@i" @(i == 0 ? "checked" : "") style="width: 18px; height: 18px; cursor: pointer;" />
+                                    <span style="font-size: 0.85rem;" data-i18n="quizzes.lecturer.rev.correctLabel">Correct</span>
+                                </label>
+                                <input type="hidden" id="addOptCorrectHidden_@i" name="AddInput.Options[@i].IsCorrect" value="@(i == 0 ? "true" : "false")" />
+                            </div>
+                        }
+
+                        <div class="role-field" style="margin-top: 1.2rem;">
+                            <label for="addExplanation" style="display: block; margin-bottom: 0.5rem; font-weight: 500;" data-i18n="quizzes.lecturer.rev.explanation">Explanation</label>
+                            <textarea id="addExplanation" asp-for="AddInput.Explanation" style="width: 100%; min-height: 60px; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(255,255,255,0.03); color: #fff; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid var(--edu-border); justify-content: flex-end; display: flex; gap: 0.5rem; padding: 1rem 1.5rem;">
+                        <button type="button" class="role-secondary-btn" data-bs-dismiss="modal" data-i18n="quizzes.lecturer.rev.closeBtn">Close</button>
+                        <button type="submit" class="role-primary-btn" data-i18n="quizzes.lecturer.rev.addQuestion">Add Question</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

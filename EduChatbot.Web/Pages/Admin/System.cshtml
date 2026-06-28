@@ -2,21 +2,152 @@
 @model EduChatbot.Web.Pages.Admin.SystemModel
 @{
     ViewData["Title"] = "System Management";
+    var dbConnected = Model.DatabaseStatus.Equals("Connected", StringComparison.OrdinalIgnoreCase);
 }
 
-<div class="admin-page">
-    <div class="admin-page-header">
+<div class="admin-page admin-system-page text-start">
+    <!-- Page Header Section -->
+    <div class="admin-page-header mb-5">
         <div>
-            <div class="admin-kicker"><span data-i18n="admin.sidebar.systemManagement">System</span> · <span data-i18n="admin.dashboard.live">Health</span></div>
-            <h1><span data-i18n="admin.system.title">System</span> <span class="admin-serif" data-i18n="admin.system.titleSerif">Management</span></h1>
-            <p data-i18n="admin.system.subtitle">Service status and system configuration overview.</p>
+            <div class="admin-kicker">
+                <span>EDUCHATBOT</span> &middot; 
+                <span>ADMIN</span> &middot; 
+                <span data-i18n="admin.system.kicker">System Health</span>
+            </div>
+            <h1 class="font-display-md text-display-md text-on-surface mb-2">
+                <span data-i18n="admin.system.title">System</span> 
+                <span data-i18n="admin.system.titleSerif">Management</span>
+            </h1>
+            <p data-i18n="admin.system.subtitle">Monitor service status and system configuration overview.</p>
         </div>
-        <a asp-page="/Admin/System" class="admin-secondary-btn" data-i18n="admin.system.refreshStatus">Refresh Status</a>
+        <div class="d-flex align-items-center gap-2 flex-nowrap" style="white-space: nowrap; flex-shrink: 0;">
+            <a asp-page="/Admin/System" class="admin-secondary-btn flex items-center gap-2 text-decoration-none" style="border-radius: 8px;">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span data-i18n="admin.system.refreshStatus">Refresh Status</span>
+            </a>
+        </div>
     </div>
-    <div class="system-grid">
-        <article class="admin-card system-card success"><span>Database Status</span><strong>@Model.DatabaseStatus</strong><small>PostgreSQL connection</small></article>
-        <article class="admin-card system-card success"><span>Application Status</span><strong>@Model.ApplicationStatus</strong><small>ASP.NET Core</small></article>
-        <article class="admin-card system-card accent"><span>Storage Usage</span><strong>@Model.StorageUsage</strong><small>Uploaded documents</small></article>
-        <article class="admin-card system-card light"><span>System Version</span><strong>@Model.SystemVersion</strong><small>Current assembly</small></article>
+
+    <!-- Bento Grid Layout for System Status Cards -->
+    <div class="row g-4 mb-5">
+        <!-- Database Status -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column justify-content-between h-100" style="border-radius: 12px; min-height: 160px;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="text-label-caps text-on-surface-variant" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.system.dbStatus">Database Status</span>
+                    <div class="w-9 h-9 rounded-circle bg-primary/10 border border-primary/20 d-flex align-items-center justify-content-center text-primary" style="width: 36px; height: 36px; border-radius: 50%;">
+                        <i class="bi bi-database-fill"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="system-health-dot" style="background-color: @(dbConnected ? "#10b981" : "#fb7185"); box-shadow: 0 0 8px @(dbConnected ? "rgba(16, 185, 129, 0.6)" : "rgba(251, 113, 133, 0.6)");"></span>
+                        <h3 class="text-2xl font-bold text-on-surface mb-0" style="font-size: 1.45rem; line-height: 1.2;">
+                            <span data-i18n="@(dbConnected ? "admin.system.connected" : "admin.system.disconnected")">@Model.DatabaseStatus</span>
+                        </h3>
+                    </div>
+                    <p class="text-body-sm text-on-surface-variant mb-0" style="font-size: 0.8rem;" data-i18n="admin.system.dbDetail">PostgreSQL Connection</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Status -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column justify-content-between h-100" style="border-radius: 12px; min-height: 160px;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="text-label-caps text-on-surface-variant" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.system.appStatus">Application Status</span>
+                    <div class="w-9 h-9 rounded-circle bg-success/10 border border-success/20 d-flex align-items-center justify-content-center text-success" style="width: 36px; height: 36px; border-radius: 50%;">
+                        <i class="bi bi-cpu-fill"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="system-health-dot"></span>
+                        <h3 class="text-2xl font-bold text-success mb-0" style="font-size: 1.45rem; line-height: 1.2;" data-i18n="admin.dashboard.running">Running</h3>
+                    </div>
+                    <p class="text-body-sm text-on-surface-variant mb-0" style="font-size: 0.8rem;" data-i18n="admin.system.appDetail">ASP.NET Core Razor Pages</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Storage Usage -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column justify-content-between h-100" style="border-radius: 12px; min-height: 160px;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="text-label-caps text-on-surface-variant" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.system.storageUsage">Storage Usage</span>
+                    <div class="w-9 h-9 rounded-circle bg-warning/10 border border-warning/20 d-flex align-items-center justify-content-center text-warning" style="width: 36px; height: 36px; border-radius: 50%;">
+                        <i class="bi bi-hdd-fill"></i>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-on-surface mb-1" style="font-size: 1.45rem; line-height: 1.2;">@Model.StorageUsage</h3>
+                    <p class="text-body-sm text-on-surface-variant mb-0" style="font-size: 0.8rem;" data-i18n="admin.system.storageDetail">Uploaded Documents</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Version -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column justify-content-between h-100" style="border-radius: 12px; min-height: 160px;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="text-label-caps text-on-surface-variant" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;" data-i18n="admin.system.sysVersion">System Version</span>
+                    <div class="w-9 h-9 rounded-circle bg-info/10 border border-info/20 d-flex align-items-center justify-content-center text-info" style="width: 36px; height: 36px; border-radius: 50%;">
+                        <i class="bi bi-git"></i>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-on-surface mb-1" style="font-size: 1.45rem; line-height: 1.2;">v@Model.SystemVersion</h3>
+                    <p class="text-body-sm text-on-surface-variant mb-0" style="font-size: 0.8rem;" data-i18n="admin.system.versionDetail">Current Assembly</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Configuration and Notes -->
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-md-6">
+            <div class="admin-card p-4 rounded-xl h-100" style="border-radius: 12px;">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-gear-fill text-primary"></i>
+                    <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1rem; font-weight: 600;" data-i18n="admin.system.aiConfig">AI Model Configuration</h4>
+                </div>
+                <ul class="list-unstyled space-y-2 mb-0" style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+                    <li class="d-flex justify-content-between pb-2 border-bottom border-outline-variant/30">
+                        <span class="text-on-surface-variant" data-i18n="admin.system.model">AI Model</span>
+                        <strong class="text-on-surface">gemini-1.5-flash</strong>
+                    </li>
+                    <li class="d-flex justify-content-between pb-2 border-bottom border-outline-variant/30">
+                        <span class="text-on-surface-variant" data-i18n="admin.system.temp">Creativity (Temp)</span>
+                        <strong class="text-on-surface">0.2</strong>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-on-surface-variant" data-i18n="admin.system.maxTokens">Max Tokens</span>
+                        <strong class="text-on-surface">2,048</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="admin-card p-4 rounded-xl h-100" style="border-radius: 12px;">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="bi bi-hdd-network-fill text-success"></i>
+                    <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1rem; font-weight: 600;" data-i18n="admin.system.docPipeline">Document Processing Pipeline</h4>
+                </div>
+                <ul class="list-unstyled space-y-2 mb-0" style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+                    <li class="d-flex justify-content-between pb-2 border-bottom border-outline-variant/30">
+                        <span class="text-on-surface-variant" data-i18n="admin.system.chunkSize">Chunk Size</span>
+                        <strong class="text-on-surface" data-i18n="admin.system.chunkSizeDetail">512 tokens</strong>
+                    </li>
+                    <li class="d-flex justify-content-between pb-2 border-bottom border-outline-variant/30">
+                        <span class="text-on-surface-variant" data-i18n="admin.system.overlap">Overlap Size</span>
+                        <strong class="text-on-surface" data-i18n="admin.system.overlapDetail">64 tokens</strong>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-on-surface-variant" data-i18n="admin.system.formats">Supported Formats</span>
+                        <strong class="text-on-surface" data-i18n="admin.system.formatsDetail">PDF, DOCX</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>

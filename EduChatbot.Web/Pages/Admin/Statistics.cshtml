@@ -4,28 +4,49 @@
     ViewData["Title"] = "Statistics";
     var items = new[]
     {
-        new { Label = "Total Students", Value = Model.TotalStudents, Tone = "success" },
-        new { Label = "Total Lecturers", Value = Model.TotalLecturers, Tone = "accent" },
-        new { Label = "Total Documents", Value = Model.TotalDocuments, Tone = "light" },
-        new { Label = "Total Questions Asked", Value = Model.TotalQuestionsAsked, Tone = "warning" }
+        new { Label = "Total Students", Key = "admin.stats.totalStudents", Value = Model.TotalStudents, Tone = "success" },
+        new { Label = "Total Lecturers", Key = "admin.stats.totalLecturers", Value = Model.TotalLecturers, Tone = "accent" },
+        new { Label = "Total Documents", Key = "admin.stats.totalDocuments", Value = Model.TotalDocuments, Tone = "light" },
+        new { Label = "Total Questions Asked", Key = "admin.stats.totalQuestionsAsked", Value = Model.TotalQuestionsAsked, Tone = "warning" }
     };
 }
 
-<div class="admin-page">
-    <div class="admin-page-header">
+<div class="admin-page admin-stats-page text-start">
+    <!-- Page Header Section -->
+    <div class="admin-page-header mb-5">
         <div>
-            <div class="admin-kicker" data-i18n="admin.sidebar.statistics">Analytics</div>
-            <h1><span data-i18n="admin.stats.title">System</span> <span class="admin-serif" data-i18n="admin.stats.titleSerif">Statistics</span></h1>
-            <p data-i18n="admin.stats.subtitle">Usage activity and overall data trends.</p>
+            <div class="admin-kicker">
+                <span>EDUCHATBOT</span> &middot; 
+                <span>ADMIN</span> &middot; 
+                <span data-i18n="admin.stats.kicker">Analytics</span>
+            </div>
+            <h1 class="font-display-md text-display-md text-on-surface mb-2">
+                <span data-i18n="admin.stats.title">System</span> 
+                <span data-i18n="admin.stats.titleSerif">Statistics</span>
+            </h1>
+            <p data-i18n="admin.stats.subtitle">Track usage activity and overall data trends.</p>
         </div>
     </div>
-    <section class="admin-card admin-stat-chart">
-        <div class="admin-card-header"><h2 data-i18n="admin.stats.totals">System Totals</h2><span data-i18n="admin.stats.snapshot">Current snapshot</span></div>
-        <div class="simple-chart">
+
+    <!-- Chart Totals Block -->
+    <section class="admin-card admin-stat-chart p-4 rounded-xl mb-5" style="border-radius: 12px;">
+        <div class="admin-card-header mb-4 d-flex justify-content-between align-items-center">
+            <h2 class="font-section-title text-on-surface mb-0" style="font-size: 1.15rem; font-weight: 700;" data-i18n="admin.stats.totals">System Totals</h2>
+            <span class="text-xs text-on-surface-variant" style="font-size: 0.78rem;" data-i18n="admin.stats.snapshot">Current Snapshot</span>
+        </div>
+        <div class="simple-chart d-flex flex-column gap-4">
             @foreach (var item in items)
             {
                 var width = Math.Max(8, item.Value * 100 / Model.MaxValue);
-                <div class="chart-row @item.Tone"><label>@item.Label</label><div class="chart-track"><div class="chart-bar" style="width: @(width)%"></div></div><strong>@item.Value.ToString("N0")</strong></div>
+                <div class="chart-row @item.Tone d-flex flex-column gap-1.5">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="text-label-caps text-on-surface mb-0" style="font-size: 0.8rem; font-weight: 600;" data-i18n="@item.Key">@item.Label</label>
+                        <strong class="text-on-surface" style="font-size: 1rem; font-weight: 700;">@item.Value.ToString("N0")</strong>
+                    </div>
+                    <div class="chart-track" style="background: rgba(255, 255, 255, 0.05); height: 10px; border-radius: 9999px; overflow: hidden; width: 100%;">
+                        <div class="chart-bar" style="width: @(width)%; height: 100%; border-radius: 9999px; transition: width 0.6s ease;"></div>
+                    </div>
+                </div>
             }
         </div>
     </section>

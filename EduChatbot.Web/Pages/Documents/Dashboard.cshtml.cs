@@ -13,15 +13,19 @@ namespace EduChatbot.Web.Pages.Documents;
 public class DashboardModel : PageModel
 {
     private readonly IDocumentService _documentService;
+    private readonly ILecturerQuizService _lecturerQuizService;
 
-    public DashboardModel(IDocumentService documentService)
+    public DashboardModel(IDocumentService documentService, ILecturerQuizService lecturerQuizService)
     {
         _documentService = documentService;
+        _lecturerQuizService = lecturerQuizService;
     }
 
     public DocumentDashboardSummary Summary { get; private set; } = new();
 
     public List<Course> AssignedCourses { get; private set; } = [];
+    public List<Quiz> Quizzes { get; private set; } = [];
+    public int TotalQuizzes { get; private set; }
 
     public async Task OnGetAsync()
     {
@@ -32,6 +36,9 @@ public class DashboardModel : PageModel
         {
             AssignedCourses = await _documentService.GetAvailableCoursesForUserAsync(
                 lecturerId, User.IsInRole(ApplicationRoles.Admin));
+                
+            Quizzes = await _lecturerQuizService.GetLecturerQuizzesAsync(lecturerId);
+            TotalQuizzes = Quizzes.Count;
         }
     }
 }

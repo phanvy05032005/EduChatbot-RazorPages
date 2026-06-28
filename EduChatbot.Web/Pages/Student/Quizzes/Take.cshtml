@@ -1,0 +1,110 @@
+@page
+@model EduChatbot.Web.Pages.Student.Quizzes.TakeModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Taking Quiz: " + Model.QuizData.QuizTitle;
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="row position-relative" style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;">
+    <!-- Quiz Content Column -->
+    <div style="flex: 3; min-width: 320px;">
+        <div class="student-card mb-4" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="fw-bold mb-1 text-white" style="font-size: 1.5rem;">@Model.QuizData.QuizTitle</h2>
+                    <p class="text-muted mb-0" data-i18n="quizzes.student.take.desc">Please answer all questions carefully before submitting.</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" id="quizForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Input.AttemptId" />
+
+            @for (int i = 0; i < Model.QuizData.Questions.Count; i++)
+            {
+                var q = Model.QuizData.Questions[i];
+                <div class="student-card mb-4" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <input type="hidden" name="Input.Answers[@i].QuestionId" value="@q.QuestionId" />
+                    
+                    <h5 class="fw-bold mb-3 text-white" style="font-size: 1.1rem; line-height: 1.5;">
+                        <span class="text-primary me-2" style="color: var(--edu-primary);">Q@(q.QuestionOrder).</span> @q.QuestionText
+                    </h5>
+
+                    <div style="margin-left: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                        @foreach (var opt in q.Options)
+                        {
+                            <label style="display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1.2rem; border-radius: 10px; background: rgba(228, 240, 246, 0.02); border: 1px solid var(--edu-border); cursor: pointer; transition: all 0.2s ease;">
+                                <input type="radio" name="Input.Answers[@i].SelectedOptionId" value="@opt.OptionId" style="width: 18px; height: 18px; cursor: pointer;" />
+                                <span style="font-weight: bold; background: rgba(228, 240, 246, 0.08); color: #fff; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 0.85rem;">
+                                    @opt.Label
+                                </span>
+                                <span style="color: var(--edu-text); font-size: 0.95rem;">@opt.OptionText</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="d-flex justify-content-end" style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-semibold" style="padding: 0.6rem 2.5rem; background: var(--edu-primary); border: none; border-radius: 50px; color: #fff; font-weight: 600; font-size: 1rem; cursor: pointer;" data-i18n="quizzes.student.take.submitBtn" data-i18n-confirm="quizzes.student.take.confirmSubmit" data-i18n-confirm-en="Are you sure you want to submit this quiz?">
+                    Submit Quiz
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sticky Timer Sidebar -->
+    <div style="flex: 1; min-width: 250px; position: sticky; top: 1.5rem; height: fit-content;">
+        <div class="student-card text-center" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 1.5rem;">
+            <h6 class="text-muted fw-semibold mb-2" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="quizzes.student.take.remaining">Time Remaining</h6>
+            <div id="countdownTimer" style="font-size: 2.25rem; font-weight: bold; color: var(--edu-primary); font-family: monospace; margin-bottom: 0.5rem;">
+                00:00
+            </div>
+            <p class="text-muted mb-0" style="font-size: 0.8rem;" data-i18n="quizzes.student.take.autoSubmitWarning">Quiz will automatically submit when the timer hits zero.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Deadline ISO String parsed in JS
+            const deadlineTime = new Date("@Model.QuizData.DeadlineAt.ToString("o")").getTime();
+            const timerDisplay = document.getElementById('countdownTimer');
+            const form = document.getElementById('quizForm');
+
+            const timerInterval = setInterval(function () {
+                const now = new Date().getTime();
+                const distance = deadlineTime - now;
+
+                if (distance <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.textContent = "00:00";
+                    timerDisplay.style.color = "#dc3545";
+                    
+                    // Auto submit form
+                    alert("Time is up! Your quiz is being submitted automatically.");
+                    form.submit();
+                    return;
+                }
+
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                const minStr = String(minutes).padStart(2, '0');
+                const secStr = String(seconds).padStart(2, '0');
+
+                timerDisplay.textContent = minStr + ":" + secStr;
+
+                // Turn timer red when under 1 minute
+                if (distance < 60000) {
+                    timerDisplay.style.color = "#dc3545";
+                } else if (distance < 180000) {
+                    timerDisplay.style.color = "#ffc107";
+                }
+            }, 1000);
+        });
+    </script>
+}

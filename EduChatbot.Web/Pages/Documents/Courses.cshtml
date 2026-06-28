@@ -3,30 +3,527 @@
 @{
     ViewData["Title"] = "Courses";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var totalCourses = Model.Courses.Count;
+    var assignedCourses = Model.Courses.Count(c => c.LecturerCourses.Any(lc => lc.LecturerId == currentUserId));
+    var totalDocs = Model.Documents.Count;
+    var totalQuizzes = Model.Quizzes.Count;
 }
 
+<style>
+    /* Premium Lecturer Courses page custom styles */
+    .courses-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .courses-stat-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease;
+    }
+
+    .courses-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+        border-color: rgba(14, 165, 233, 0.3);
+    }
+
+    .courses-stat-card-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .icon-courses {
+        background: rgba(14, 165, 233, 0.1);
+        color: #0ea5e9;
+    }
+
+    .icon-assigned {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .icon-docs {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .icon-quizzes {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+
+    .courses-stat-card-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--edu-text-muted);
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+
+    .courses-stat-card-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--edu-text);
+        line-height: 1.1;
+    }
+
+    /* Course Cards Grid */
+    .courses-cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3.5rem;
+    }
+
+    .course-card-premium {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 380px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .course-card-premium:hover {
+        border-color: rgba(14, 165, 233, 0.4);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Abstract gradient pattern for course card header */
+    .course-card-banner {
+        height: 120px;
+        position: relative;
+        background: linear-gradient(135deg, #070B16 0%, #111827 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        padding: 0 1.5rem;
+        overflow: hidden;
+    }
+
+    .course-card-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0.15;
+        background-image: radial-gradient(circle at 20% 30%, #0ea5e9 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, #8b5cf6 0%, transparent 50%);
+        transition: opacity 0.3s ease;
+    }
+
+    .course-card-premium:hover .course-card-banner::before {
+        opacity: 0.3;
+    }
+
+    .course-card-code-badge {
+        position: relative;
+        z-index: 1;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(14, 165, 233, 0.2);
+        color: #0ea5e9;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+        padding: 0.35rem 0.75rem;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .course-card-code-badge.assigned {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .course-card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .course-card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--edu-text);
+        margin: 0 0 0.75rem 0;
+        line-height: 1.4;
+    }
+
+    .course-card-desc {
+        font-size: 0.85rem;
+        color: var(--edu-text-muted);
+        margin-bottom: 1.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.6;
+    }
+
+    .course-card-faculty {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.25rem;
+    }
+
+    .course-card-faculty-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(14, 165, 233, 0.15);
+        color: #0ea5e9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.8rem;
+        border: 1px solid rgba(14, 165, 233, 0.25);
+    }
+
+    .course-card-faculty-info {
+        font-size: 0.8rem;
+        line-height: 1.3;
+    }
+
+    .course-card-faculty-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--edu-text-muted);
+        letter-spacing: 0.05em;
+    }
+
+    .course-card-faculty-name {
+        color: var(--edu-text);
+        font-weight: 600;
+    }
+
+    .course-card-stats {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .course-card-stats span {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .course-card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .course-card-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.6rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-view-docs {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--edu-text);
+    }
+
+    .btn-view-docs:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--edu-primary);
+    }
+
+    .btn-upload {
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        color: #0ea5e9;
+    }
+
+    .btn-upload:hover {
+        background: rgba(14, 165, 233, 0.18);
+        color: #ffffff;
+        border-color: rgba(14, 165, 233, 0.4);
+    }
+
+    .btn-disabled {
+        background: rgba(255, 255, 255, 0.01) !important;
+        border: 1px solid rgba(255, 255, 255, 0.03) !important;
+        color: rgba(255, 255, 255, 0.2) !important;
+        cursor: not-allowed !important;
+    }
+
+    /* Administrative Overview Table card */
+    .courses-table-container-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .courses-table-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    .courses-table-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--edu-text);
+        margin: 0;
+    }
+
+    .courses-table-markup {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .courses-table-markup th {
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--edu-text-muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .courses-table-markup td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: middle;
+        color: var(--edu-text);
+    }
+
+    .courses-table-row {
+        transition: background-color 0.2s ease;
+    }
+
+    .courses-table-row:hover {
+        background-color: rgba(255, 255, 255, 0.015);
+    }
+
+    .table-code-tag {
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        color: var(--edu-primary);
+        font-family: monospace;
+    }
+
+    .table-code-tag.assigned {
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.05);
+        border-color: rgba(245, 158, 11, 0.15);
+    }
+
+    .courses-table-badge {
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #ffffff !important;
+    }
+</style>
+
 <section class="role-page">
+    <!-- Page Header Section -->
     <header class="role-hero compact">
         <div>
-            <div class="role-kicker" data-i18n="admin.courses.kicker">Courses</div>
-            <h1 data-i18n="admin.sidebar.coursesAssignments">Courses &amp; Assignments</h1>
-            <p data-i18n="docs.courses.subtitle">View all academic courses and assignments in the system.</p>
+            <div class="role-kicker" data-i18n="docs.courses.kicker">Courses</div>
+            <h1 data-i18n="docs.courses.title">Courses &amp; Assignments</h1>
+            <p data-i18n="docs.courses.desc">View assigned courses, uploaded documents, and academic responsibilities across the AI Curriculum Lab ecosystem.</p>
         </div>
     </header>
 
-    <div class="role-table-card" id="courses-table-card">
-        <div class="role-table-toolbar">
-            <span data-i18n="admin.courses.courseList">List Courses</span> · @Model.Courses.Count <span data-i18n="admin.courses.courses">course(s)</span>
+    <!-- Stats Overview (Bento Grid Style) -->
+    <div class="courses-stats-grid">
+        <div class="courses-stat-card">
+            <div class="courses-stat-card-icon-wrapper icon-courses">
+                <i class="bi bi-journal-album"></i>
+            </div>
+            <div>
+                <div class="courses-stat-card-label" data-i18n="docs.courses.totalCourses">Total Courses</div>
+                <div class="courses-stat-card-value">@totalCourses</div>
+            </div>
+        </div>
+        <div class="courses-stat-card">
+            <div class="courses-stat-card-icon-wrapper icon-assigned">
+                <i class="bi bi-person-workspace"></i>
+            </div>
+            <div>
+                <div class="courses-stat-card-label" data-i18n="docs.courses.assignedCourses">Assigned Courses</div>
+                <div class="courses-stat-card-value">@assignedCourses</div>
+            </div>
+        </div>
+        <div class="courses-stat-card">
+            <div class="courses-stat-card-icon-wrapper icon-docs">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div>
+                <div class="courses-stat-card-label" data-i18n="docs.courses.documentsUploaded">Documents Uploaded</div>
+                <div class="courses-stat-card-value">@totalDocs</div>
+            </div>
+        </div>
+        <div class="courses-stat-card">
+            <div class="courses-stat-card-icon-wrapper icon-quizzes">
+                <i class="bi bi-patch-question"></i>
+            </div>
+            <div>
+                <div class="courses-stat-card-label" data-i18n="docs.courses.totalQuizzes">Total Quizzes</div>
+                <div class="courses-stat-card-value">@totalQuizzes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Cards Grid -->
+    <div class="courses-cards-container">
+        @foreach (var course in Model.Courses)
+        {
+            var isAssignedToMe = course.LecturerCourses.Any(lc => lc.LecturerId == currentUserId);
+            var lecturersList = course.LecturerCourses.Select(lc => lc.Lecturer?.FullName ?? lc.Lecturer?.Email ?? "Unknown").ToList();
+            var docCount = Model.Documents.Count(d => d.CourseId == course.Id);
+            var quizCount = Model.Quizzes.Count(q => q.CourseId == course.Id);
+
+            // Get initials for avatar display
+            var leadInitials = "N/A";
+            var leadName = "No lecturer assigned";
+            if (lecturersList.Count > 0)
+            {
+                leadName = lecturersList.First();
+                var parts = leadName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0)
+                {
+                    leadInitials = parts.Length > 1 
+                        ? (parts[0][0].ToString() + parts[parts.Length - 1][0].ToString()).ToUpper()
+                        : parts[0][0].ToString().ToUpper();
+                }
+            }
+
+            <div class="course-card-premium">
+                <div class="course-card-banner">
+                    <span class="course-card-code-badge @(isAssignedToMe ? "assigned" : "")">
+                        @course.Code
+                    </span>
+                </div>
+                <div class="course-card-body">
+                    <div>
+                        <h3 class="course-card-title">@course.Name</h3>
+                        <p class="course-card-desc">
+                            @(string.IsNullOrWhiteSpace(course.Description) ? "No description available for this academic subject." : course.Description)
+                        </p>
+                    </div>
+
+                    <div>
+                        <div class="course-card-faculty">
+                            <div class="course-card-faculty-avatar">
+                                @leadInitials
+                            </div>
+                            <div class="course-card-faculty-info">
+                                <div class="course-card-faculty-label" data-i18n="admin.courses.assignedLecturers">Lecturer in Charge</div>
+                                <div class="course-card-faculty-name">
+                                    @leadName @(isAssignedToMe ? " (You)" : "")
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="course-card-stats">
+                            <span>
+                                <i class="bi bi-file-earmark-text text-primary"></i>
+                                @docCount Docs
+                            </span>
+                            <span>
+                                <i class="bi bi-patch-question text-secondary"></i>
+                                @quizCount Quizzes
+                            </span>
+                        </div>
+
+                        <div class="course-card-actions">
+                            <a asp-page="/Documents/Index" asp-route-courseId="@course.Id" class="course-card-btn btn-view-docs">
+                                <i class="bi bi-eye"></i> <span data-i18n="nav.documents">Documents</span>
+                            </a>
+                            @if (isAssignedToMe)
+                            {
+                                <a asp-page="/Documents/Upload" asp-route-courseId="@course.Id" class="course-card-btn btn-upload">
+                                    <i class="bi bi-cloud-upload"></i> <span data-i18n="nav.upload">Upload</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="course-card-btn btn-disabled" disabled>
+                                    <i class="bi bi-lock"></i> <span data-i18n="nav.upload">Upload</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Administrative Overview Section (Table layout) -->
+    <div class="courses-table-container-card">
+        <div class="courses-table-header">
+            <h3 class="courses-table-title" data-i18n="docs.courses.adminOverview">Administrative Overview</h3>
         </div>
         <div class="table-responsive">
-            <table class="table role-table align-middle mb-0">
+            <table class="courses-table-markup align-middle mb-0">
                 <thead>
                     <tr>
-                        <th data-i18n="admin.courses.code">Course Code</th>
-                        <th data-i18n="admin.courses.name">Course Name</th>
-                        <th data-i18n="admin.system.storageDetail">Description</th>
-                        <th data-i18n="admin.courses.assignedLecturers">Assigned Lecturers</th>
-                        <th data-i18n="admin.accounts.actions">Actions</th>
+                        <th data-i18n="admin.courses.code" style="width: 15%;">Course Code</th>
+                        <th data-i18n="admin.courses.name" style="width: 30%;">Course Name</th>
+                        <th data-i18n="admin.courses.assignedLecturers" style="width: 25%;">Primary Faculty</th>
+                        <th data-i18n="nav.documents" style="width: 15%; text-align: center;">Materials</th>
+                        <th data-i18n="nav.quizzes" style="width: 15%; text-align: center;">Quizzes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,43 +531,39 @@
                     {
                         var isAssignedToMe = course.LecturerCourses.Any(lc => lc.LecturerId == currentUserId);
                         var lecturersList = course.LecturerCourses.Select(lc => lc.Lecturer?.FullName ?? lc.Lecturer?.Email ?? "Unknown").ToList();
+                        var docCount = Model.Documents.Count(d => d.CourseId == course.Id);
+                        var quizCount = Model.Quizzes.Count(q => q.CourseId == course.Id);
+                        var leadName = lecturersList.Count > 0 ? lecturersList.First() : "No lecturer assigned";
 
-                        <tr class="@(isAssignedToMe ? "realtime-highlight" : "")" style="@(isAssignedToMe ? "border-left: 4px solid var(--edu-primary);" : "")">
+                        <tr class="courses-table-row">
                             <td>
-                                <code style="font-size: 0.9rem; font-weight: 700; color: var(--edu-primary);">@course.Code</code>
+                                <span class="table-code-tag @(isAssignedToMe ? "assigned" : "")">@course.Code</span>
                             </td>
                             <td>
-                                <strong>@course.Name</strong>
-                            </td>
-                            <td class="text-muted" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
-                            </td>
-                            <td>
-                                @if (lecturersList.Count > 0)
-                                {
-                                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                                        @foreach (var lecturer in lecturersList)
-                                        {
-                                            var isMe = course.LecturerCourses.Any(lc => (lc.Lecturer?.FullName == lecturer || lc.Lecturer?.Email == lecturer) && lc.LecturerId == currentUserId);
-                                            <span style="font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 6px; background: @(isMe ? "rgba(0, 102, 204, 0.15)" : "rgba(228, 240, 246, 0.08)"); border: 1px solid @(isMe ? "rgba(0, 102, 204, 0.3)" : "rgba(228, 240, 246, 0.15)"); color: @(isMe ? "var(--edu-primary)" : "var(--edu-text)");">
-                                                @lecturer @(isMe ? " (You)" : "")
-                                            </span>
-                                        }
-                                    </div>
-                                }
-                                else
-                                {
-                                    <span class="text-muted" style="font-style: italic;" data-i18n="admin.courses.noLecturer">No lecturer assigned</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="role-row-actions">
-                                    <a asp-page="/Documents/Index" asp-route-courseId="@course.Id" data-i18n="nav.documents">Documents</a>
-                                    @if (isAssignedToMe)
-                                    {
-                                        <a asp-page="/Documents/Upload" asp-route-courseId="@course.Id" data-i18n="nav.upload">Upload</a>
-                                    }
+                                <strong class="text-white">@course.Name</strong>
+                                <div style="font-size: 0.8rem; color: var(--edu-text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;" title="@course.Description">
+                                    @(string.IsNullOrWhiteSpace(course.Description) ? "No description available." : course.Description)
                                 </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 text-primary d-flex align-items-center justify-center font-bold" style="font-size: 0.68rem; border: 1px solid rgba(14, 165, 233, 0.25);">
+                                        @(leadName != "No lecturer assigned" && leadName.Length > 0 ? leadName[0].ToString().ToUpper() : "N")
+                                    </div>
+                                    <span style="font-size: 0.85rem;">
+                                        @leadName @(isAssignedToMe ? " (You)" : "")
+                                    </span>
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="courses-table-badge">
+                                    @docCount Files
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="courses-table-badge">
+                                    @quizCount Quizzes
+                                </span>
                             </td>
                         </tr>
                     }
@@ -79,8 +572,11 @@
         </div>
         @if (Model.Courses.Count == 0)
         {
-            <div class="role-empty-panel">
-                <strong data-i18n="admin.courses.noCourses">No courses found in the system.</strong>
+            <div style="padding: 4rem 2rem; text-align: center;">
+                <div style="font-size: 3rem; color: rgba(255, 255, 255, 0.05); margin-bottom: 1rem;">
+                    <i class="bi bi-journal-x"></i>
+                </div>
+                <strong class="text-white" data-i18n="docs.courses.noCourses">No courses found in the system.</strong>
             </div>
         }
     </div>

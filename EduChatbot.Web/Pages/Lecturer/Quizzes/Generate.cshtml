@@ -1,0 +1,144 @@
+@page
+@model EduChatbot.Web.Pages.Lecturer.Quizzes.GenerateModel
+@{
+    ViewData["Title"] = "Generate Quiz with AI";
+}
+
+<section class="role-page narrow">
+    <header class="role-hero compact">
+        <div>
+            <div class="role-kicker" data-i18n="quizzes.lecturer.kicker">AI Engine</div>
+            <h1 data-i18n="quizzes.lecturer.gen.title">Generate Quiz with AI</h1>
+            <p data-i18n="quizzes.lecturer.gen.desc">Select a course and an approved document to automatically generate a quiz draft.</p>
+        </div>
+    </header>
+
+    <div style="margin-bottom: 1.5rem;">
+        <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn">← Back to Quizzes</a>
+    </div>
+
+    <form method="post" class="role-form-card" id="generateForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="role-form-errors"></div>
+
+        <div class="role-field">
+            <label for="courseSelect" data-i18n="quizzes.lecturer.gen.course">Course</label>
+            <select id="courseSelect" asp-for="Input.CourseId" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1rem;">
+                <option value="" data-i18n="quizzes.lecturer.gen.selectCourse">-- Select Course --</option>
+                @foreach (var course in Model.Courses)
+                {
+                    <option value="@course.Id">[@course.Code] @course.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="role-field">
+            <label for="documentSelect" data-i18n="quizzes.lecturer.gen.document">Source Document (Approved only)</label>
+            <select id="documentSelect" asp-for="Input.DocumentId" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1rem;">
+                <option value="" data-i18n="quizzes.lecturer.gen.selectDoc">-- Select Document --</option>
+                @foreach (var doc in Model.Documents)
+                {
+                    <option value="@doc.Id" data-course-id="@doc.CourseId">@doc.FileName</option>
+                }
+            </select>
+        </div>
+
+        <div class="role-field">
+            <label for="titleInput" data-i18n="quizzes.lecturer.gen.quizTitle">Quiz Title</label>
+            <input type="text" id="titleInput" asp-for="Input.Title" required placeholder="e.g., Midterm Practice Quiz" style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1rem;" />
+        </div>
+
+        <div class="role-field">
+            <label for="difficultySelect" data-i18n="quizzes.lecturer.gen.difficulty">Difficulty</label>
+            <select id="difficultySelect" asp-for="Input.Difficulty" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1rem;">
+                <option value="Easy" data-i18n="quizzes.lecturer.gen.easy">Easy</option>
+                <option value="Medium" data-i18n="quizzes.lecturer.gen.medium" selected>Medium</option>
+                <option value="Hard" data-i18n="quizzes.lecturer.gen.hard">Hard</option>
+            </select>
+        </div>
+
+        <div class="row" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div class="col" style="flex: 1;">
+                <div class="role-field">
+                    <label for="questionsInput" data-i18n="quizzes.lecturer.gen.numQuestions">Number of Questions</label>
+                    <input type="number" id="questionsInput" asp-for="Input.NumberOfQuestions" min="1" max="50" style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem;" />
+                </div>
+            </div>
+            <div class="col" style="flex: 1;">
+                <div class="role-field">
+                    <label for="timeLimitInput" data-i18n="quizzes.lecturer.gen.timeLimit">Time Limit (Minutes)</label>
+                    <input type="number" id="timeLimitInput" asp-for="Input.TimeLimitMinutes" min="1" max="180" style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem;" />
+                </div>
+            </div>
+            <div class="col" style="flex: 1;">
+                <div class="role-field">
+                    <label for="maxAttemptsInput" data-i18n="quizzes.lecturer.gen.maxAttempts">Max Attempts</label>
+                    <input type="number" id="maxAttemptsInput" asp-for="Input.MaxAttempts" min="1" max="10" style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem;" />
+                </div>
+            </div>
+        </div>
+
+        <div class="role-field">
+            <label for="instructionInput" data-i18n="quizzes.lecturer.gen.additionalInst">Additional AI Instructions (Optional)</label>
+            <textarea id="instructionInput" asp-for="Input.AdditionalInstruction" placeholder="e.g. Focus on definitions in Chapter 2, translate terms..." style="width: 100%; min-height: 100px; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1.5rem; resize: vertical;"></textarea>
+        </div>
+
+        <div class="role-form-actions">
+            <button type="submit" class="role-primary-btn" id="submitBtn" data-i18n="quizzes.lecturer.generateBtn">Generate Quiz</button>
+            <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn" data-i18n="quizzes.lecturer.gen.cancel">Cancel</a>
+        </div>
+    </form>
+
+    <!-- Overlay Loader -->
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; color: #fff;">
+        <div style="width: 50px; height: 50px; border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-bottom: 1rem;"></div>
+        <h4 style="font-weight: bold; margin-bottom: 0.5rem;" data-i18n="quizzes.lecturer.gen.loadingTitle">AI is analyzing the document...</h4>
+        <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;" data-i18n="quizzes.lecturer.gen.loadingDesc">Generating quiz questions and options. This might take up to a minute.</p>
+    </div>
+</section>
+
+<style>
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const courseSelect = document.getElementById('courseSelect');
+            const docSelect = document.getElementById('documentSelect');
+            const allDocOptions = Array.from(docSelect.options);
+
+            // Filter documents based on course selection
+            courseSelect.addEventListener('change', function () {
+                const selectedCourseId = courseSelect.value;
+                docSelect.value = "";
+
+                // Remove existing options except the first placeholder
+                while (docSelect.options.length > 1) {
+                    docSelect.remove(1);
+                }
+
+                // Add filtered options
+                allDocOptions.forEach(opt => {
+                    if (opt.value === "") return;
+                    const optCourseId = opt.getAttribute('data-course-id');
+                    if (!selectedCourseId || optCourseId === selectedCourseId) {
+                        docSelect.add(new Option(opt.text, opt.value));
+                    }
+                });
+            });
+
+            // Show loading overlay on form submission
+            const form = document.getElementById('generateForm');
+            const overlay = document.getElementById('loadingOverlay');
+            form.addEventListener('submit', function (e) {
+                if ($(form).valid()) {
+                    overlay.style.display = 'flex';
+                }
+            });
+        });
+    </script>
+}

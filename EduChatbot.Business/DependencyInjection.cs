@@ -47,6 +47,9 @@ public static class DependencyInjection
         services.AddSingleton<IDocumentUploadRules, DocumentUploadRules>();
         services.AddScoped<IDocumentService, DocumentService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IQuizRepository, QuizRepository>();
+        services.AddHttpClient<ILecturerQuizService, LecturerQuizService>();
+        services.AddScoped<IStudentQuizService, StudentQuizService>();
 
         services.AddScoped<IChatRepository, ChatRepository>();
         services.AddScoped<IChatService, ChatService>();

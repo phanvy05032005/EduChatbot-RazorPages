@@ -1,86 +1,421 @@
 @page
 @model EduChatbot.Web.Pages.Documents.UploadModel
-
 @{
     ViewData["Title"] = "Upload Document";
 }
 
-<section class="role-page narrow">
-    <header class="role-hero compact">
-        <div>
-            <div class="role-kicker">Upload</div>
-            <h1>Upload document</h1>
-            <p>PDF/DOCX files are extracted, chunked, and indexed for chatbot retrieval.</p>
-        </div>
-    </header>
+<style>
+    /* Premium Lecturer Upload Page styles */
+    .lecturer-upload-container {
+        max-width: 680px;
+        margin: 2rem auto;
+        position: relative;
+    }
 
-    <form method="post" enctype="multipart/form-data" class="role-form-card">
-        @Html.AntiForgeryToken()
-        <div asp-validation-summary="All" class="role-form-errors"></div>
+    .lecturer-upload-card {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 2.5rem;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+        position: relative;
+        overflow: hidden;
+    }
 
-        <div class="role-field">
-            <label for="courseId" data-i18n="docs.upload.course">Course</label>
-            <select id="courseId" asp-for="CourseId" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--edu-border); border-radius: 8px; background: rgba(228, 240, 246, 0.045); color: var(--edu-text); font-family: inherit; font-size: 1rem; margin-bottom: 1rem;">
-                <option value="" style="background: var(--edu-bg); color: var(--edu-text);" data-i18n="docs.upload.selectCourse">-- Select course --</option>
-                @foreach (var course in Model.Courses)
-                {
-                    <option value="@course.Id" style="background: var(--edu-bg); color: var(--edu-text);">[@course.Code] - @course.Name</option>
-                }
-            </select>
-        </div>
+    .lecturer-upload-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+    }
 
-        <div class="role-field">
-            <label for="documentFile">Document file</label>
-            <label class="role-file-drop" for="documentFile">
-                <input type="file" id="documentFile" asp-for="DocumentFile" accept=".pdf,.docx" data-max-size="10485760" />
-                <span>Choose PDF or DOCX</span>
-                <small>Maximum file size: 10 MB</small>
-            </label>
-            <span id="documentFileValidation" class="role-validation"></span>
-        </div>
+    .lecturer-field-label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--edu-muted);
+        margin-bottom: 0.75rem;
+    }
 
-        <div class="role-form-actions">
-            <button type="submit" class="role-primary-btn">Upload</button>
-            <a asp-page="/Documents/Index" class="role-secondary-btn">Cancel</a>
-        </div>
-    </form>
-</section>
+    .lecturer-course-select {
+        width: 100%;
+        background: #070B16;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 0.9rem 1.25rem;
+        color: var(--edu-text);
+        font-size: 0.9rem;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1.25rem center;
+        background-size: 1rem;
+    }
+
+    .lecturer-course-select:focus {
+        border-color: rgba(14, 165, 233, 0.4);
+        box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+    }
+
+    /* Premium Dropzone */
+    .lecturer-upload-dropzone {
+        border: 2px dashed rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 3rem 2rem;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.01);
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        position: relative;
+    }
+
+    .lecturer-upload-dropzone:hover, .drag-zone-active {
+        border-color: rgba(14, 165, 233, 0.4);
+        background: rgba(14, 165, 233, 0.02);
+    }
+
+    .lecturer-dropzone-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #0ea5e9;
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .lecturer-upload-dropzone:hover .lecturer-dropzone-icon-wrapper {
+        transform: scale(1.08);
+        background: rgba(14, 165, 233, 0.1);
+        color: #ffffff;
+    }
+
+    .lecturer-dropzone-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .lecturer-dropzone-desc {
+        font-size: 0.85rem;
+        color: var(--edu-muted);
+        margin-bottom: 1rem;
+    }
+
+    .lecturer-dropzone-limit {
+        font-size: 0.75rem;
+        color: #0ea5e9;
+        font-weight: 700;
+        margin: 0;
+        opacity: 0.95;
+    }
+
+    /* File Preview */
+    .lecturer-file-preview {
+        display: none;
+        align-items: center;
+        gap: 1rem;
+        background: #070B16;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin-top: 1.5rem;
+        text-align: left;
+    }
+
+    .preview-icon {
+        font-size: 2rem;
+        color: #0ea5e9;
+        flex-shrink: 0;
+    }
+
+    .preview-filename {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #ffffff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+    }
+
+    .preview-filesize {
+        font-size: 0.75rem;
+        color: var(--edu-muted);
+        margin-top: 0.1rem;
+    }
+
+    .preview-remove-btn {
+        background: transparent;
+        border: none;
+        color: var(--edu-muted);
+        padding: 0.25rem;
+        cursor: pointer;
+        transition: color 0.2s ease;
+        line-height: 1;
+    }
+
+    .preview-remove-btn:hover {
+        color: #ef4444;
+    }
+
+    .lecturer-upload-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 2.5rem;
+    }
+
+    .btn-action-cancel {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--edu-text);
+        font-weight: 700;
+        font-size: 0.9rem;
+        padding: 0.9rem;
+        border-radius: 12px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action-cancel:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: #ffffff;
+    }
+
+    .btn-action-upload {
+        background: #0ea5e9;
+        border: 1px solid #0ea5e9;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.9rem;
+        padding: 0.9rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+    }
+
+    .btn-action-upload:hover {
+        background: #008cd4;
+        border-color: #008cd4;
+        color: #ffffff;
+    }
+</style>
+
+<div class="lecturer-upload-container">
+    <!-- Page Header Section -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-white mb-2" data-i18n="docs.upload.title">Upload Document</h1>
+        <p class="max-w-lg mx-auto" style="color: var(--edu-muted);" data-i18n="docs.upload.desc">
+            Upload PDF or DOCX files for extraction, chunking, and chatbot retrieval.
+        </p>
+    </div>
+
+    <!-- Main Upload Card -->
+    <div class="lecturer-upload-card">
+        @if (!Model.Courses.Any())
+        {
+            <div class="text-center py-4">
+                <div style="font-size: 3rem; color: rgba(255,255,255,0.05); margin-bottom: 1rem;">
+                    <i class="bi bi-shield-slash"></i>
+                </div>
+                <h5 class="text-white mb-2" data-i18n="docs.upload.noAssignedCourses">No assigned courses available for upload.</h5>
+                <p class="text-muted small">Please contact administrator to assign you to a course first.</p>
+                <a asp-page="/Documents/Index" class="btn-action-cancel d-inline-block mt-3" style="width: auto; padding: 0.6rem 2rem;" data-i18n="docs.upload.cancel">Cancel</a>
+            </div>
+        }
+        else
+        {
+            <form method="post" enctype="multipart/form-data" class="lecturer-upload-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="role-form-errors mb-4"></div>
+
+                <!-- Course Dropdown -->
+                <div class="mb-4">
+                    <label for="courseId" class="lecturer-field-label" data-i18n="docs.upload.selectCourseContext">Select Course Context</label>
+                    <select id="courseId" asp-for="CourseId" required class="lecturer-course-select">
+                        <option value="" data-i18n="docs.upload.chooseCourseHelp">Choose a course for context...</option>
+                        @foreach (var course in Model.Courses)
+                        {
+                            <option value="@course.Id">[@course.Code] - @course.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- File Attachment Dropzone -->
+                <div class="mb-4">
+                    <label class="lecturer-field-label" data-i18n="docs.upload.fileAttachment">File Attachment</label>
+                    <div class="lecturer-upload-dropzone" id="dropZone">
+                        <input type="file" id="documentFile" asp-for="DocumentFile" accept=".pdf,.docx" class="d-none" data-max-size="52428800" />
+                        
+                        <div class="lecturer-dropzone-icon-wrapper" id="dropZoneIcon">
+                            <i class="bi bi-cloud-upload"></i>
+                        </div>
+                        <h4 class="lecturer-dropzone-title" id="dropZoneTitle" data-i18n="docs.upload.chooseFileHelp">Choose PDF or DOCX</h4>
+                        <p class="lecturer-dropzone-desc" id="dropZoneDesc" data-i18n="docs.upload.dragDropHelp">
+                            Drag and drop your files here or click to browse.
+                        </p>
+                        <p class="lecturer-dropzone-limit" data-i18n="docs.upload.maxSize">Max size 50MB</p>
+
+                        <!-- Uploaded File Preview Card -->
+                        <div class="lecturer-file-preview align-items-center" id="filePreview">
+                            <i class="bi bi-file-earmark-text-fill preview-icon"></i>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="preview-filename" id="fileName">filename.pdf</div>
+                                <div class="preview-filesize" id="fileSize">2.4 MB</div>
+                            </div>
+                            <button type="button" class="preview-remove-btn" id="removeFile">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <span id="documentFileValidation" class="text-danger small mt-2 d-block"></span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="lecturer-upload-actions">
+                    <a asp-page="/Documents/Index" class="btn-action-cancel" data-i18n="docs.upload.cancel">Cancel</a>
+                    <button type="submit" class="btn-action-upload" id="submitBtn" data-i18n="docs.upload.startUpload">Start Upload</button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const documentInput = document.getElementById('documentFile');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('documentFile');
+        const filePreview = document.getElementById('filePreview');
+        const fileNameDisplay = document.getElementById('fileName');
+        const fileSizeDisplay = document.getElementById('fileSize');
+        const removeFileBtn = document.getElementById('removeFile');
         const validationMessage = document.getElementById('documentFileValidation');
+        const submitBtn = document.getElementById('submitBtn');
 
-        documentInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const fileName = file ? file.name : 'Choose PDF or DOCX';
-            const maxSize = Number(e.target.dataset.maxSize);
+        if (dropZone) {
+            // Trigger file dialog on dropzone click
+            dropZone.addEventListener('click', (e) => {
+                if (e.target !== removeFileBtn && !removeFileBtn.contains(e.target)) {
+                    fileInput.click();
+                }
+            });
 
-            e.target.nextElementSibling.textContent = fileName;
-            validationMessage.textContent = '';
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
 
-            if (file && file.size > maxSize) {
-                validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 10 MB.';
+            // Handle active drag class
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('drag-zone-active');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('drag-zone-active');
+                }, false);
+            });
+
+            // Handle dropped file
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelection(files[0]);
+                }
+            });
+
+            // Handle standard file selection
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelection(e.target.files[0]);
+                }
+            });
+
+            function handleFileSelection(file) {
+                const maxSize = Number(fileInput.dataset.maxSize);
+                validationMessage.textContent = '';
+
+                // Client-side file size validate
+                if (file.size > maxSize) {
+                    validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 50 MB.';
+                    clearSelectedFile();
+                    return;
+                }
+
+                // Show preview card
+                fileNameDisplay.textContent = file.name;
+                fileSizeDisplay.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                filePreview.style.display = 'flex';
+
+                // Hide placeholder details inside dropzone
+                document.getElementById('dropZoneIcon').style.display = 'none';
+                document.getElementById('dropZoneTitle').style.display = 'none';
+                document.getElementById('dropZoneDesc').style.display = 'none';
             }
-        });
 
-        document.querySelector('form.role-form-card').addEventListener('submit', function(e) {
-            const file = documentInput.files[0];
-            const maxSize = Number(documentInput.dataset.maxSize);
+            // Remove selected file click handler
+            removeFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearSelectedFile();
+            });
 
-            if (file && file.size > maxSize) {
-                e.preventDefault();
-                validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 10 MB.';
-                return;
+            function clearSelectedFile() {
+                fileInput.value = '';
+                filePreview.style.display = 'none';
+                
+                // Show placeholders back
+                document.getElementById('dropZoneIcon').style.display = 'inline-flex';
+                document.getElementById('dropZoneTitle').style.display = 'block';
+                document.getElementById('dropZoneDesc').style.display = 'block';
             }
 
-            const btn = this.querySelector('button[type="submit"]');
-            if(btn && documentInput.files.length > 0) {
-                btn.disabled = true;
-                btn.textContent = 'Uploading and indexing... please wait';
-                btn.style.opacity = '0.7';
-            }
-        });
+            // Form Submit loader validation
+            document.querySelector('form.lecturer-upload-form').addEventListener('submit', function(e) {
+                const file = fileInput.files[0];
+                const maxSize = Number(fileInput.dataset.maxSize);
+
+                if (!file) {
+                    e.preventDefault();
+                    validationMessage.textContent = 'Please select a PDF or DOCX file to upload.';
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    e.preventDefault();
+                    validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 50 MB.';
+                    return;
+                }
+
+                // Visual loading state
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.7';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Uploading & processing...';
+            });
+        }
     </script>
 }

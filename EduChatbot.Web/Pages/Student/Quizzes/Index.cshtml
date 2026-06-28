@@ -1,0 +1,103 @@
+@page
+@model EduChatbot.Web.Pages.Student.Quizzes.IndexModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Quizzes Library";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2 class="fw-bold mb-1" style="color: #fff; font-size: 1.75rem;" data-i18n="quizzes.student.libraryTitle">Quiz Library</h2>
+        <p class="text-muted mb-0" data-i18n="quizzes.student.libraryDesc">Test your knowledge with AI-generated quizzes from approved course documents.</p>
+    </div>
+    <a asp-page="/Student/Quizzes/History" class="btn btn-outline-primary rounded-pill px-4" style="border: 1px solid var(--edu-primary); color: var(--edu-primary); text-decoration: none; font-size: 0.875rem; padding: 0.4rem 1.2rem;" data-i18n="quizzes.student.myHistory">
+        <i class="bi bi-clock-history me-1"></i> My History
+    </a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger border-0 shadow-sm mb-4" style="background: rgba(220, 53, 69, 0.1); border-left: 4px solid #dc3545; color: #ff6b7a; padding: 1rem; border-radius: 8px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (Model.Quizzes.Count == 0)
+{
+    <div class="student-card text-center py-5" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 3rem;">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 60px; height: 60px; background: rgba(0, 123, 255, 0.1); color: var(--edu-primary);">
+            <i class="bi bi-journal-check fs-3"></i>
+        </div>
+        <h5 class="fw-bold text-white mb-2" data-i18n="quizzes.student.noQuizzes">No Quizzes Available</h5>
+        <p class="text-muted" data-i18n="quizzes.student.noQuizzesDesc">There are no published quizzes for your courses at the moment.</p>
+    </div>
+}
+else
+{
+    <div class="row g-4" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+        @foreach (var quiz in Model.Quizzes)
+        {
+            var attemptCount = Model.AttemptCounts.ContainsKey(quiz.Id) ? Model.AttemptCounts[quiz.Id] : 0;
+            var hasInProgress = Model.InProgressAttempts.ContainsKey(quiz.Id);
+            var isLimitReached = attemptCount >= quiz.MaxAttempts;
+
+            <div class="col">
+                <div class="student-card h-100 d-flex flex-column justify-content-between" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between mb-2" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="background: rgba(0, 123, 255, 0.1); color: var(--edu-primary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                @(quiz.Course?.Code ?? "N/A")
+                            </span>
+                            <span class="badge" style="background: @(quiz.Difficulty == "Easy" ? "rgba(40,167,69,0.1)" : quiz.Difficulty == "Medium" ? "rgba(255,193,7,0.1)" : "rgba(220,53,69,0.1)"); color: @(quiz.Difficulty == "Easy" ? "#28a745" : quiz.Difficulty == "Medium" ? "#ffc107" : "#dc3545"); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;" data-i18n="quizzes.lecturer.gen.@(quiz.Difficulty.ToLower())">
+                                @quiz.Difficulty
+                            </span>
+                        </div>
+                        
+                        <h5 class="fw-bold mb-2 text-white" style="font-size: 1.15rem; font-weight: bold; margin-bottom: 0.5rem;">@quiz.Title</h5>
+                        
+                        <p class="text-muted mb-3" style="font-size: 0.85rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="bi bi-file-earmark-text"></i> <span data-i18n="quizzes.documentSource">Source</span>: @(quiz.Document?.FileName ?? "N/A")
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-3 mb-4" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.8rem; color: rgba(255, 255, 255, 0.6);">
+                            <span class="d-flex align-items-center gap-1">
+                                <i class="bi bi-question-circle text-primary"></i> @quiz.NumberOfQuestions <span data-i18n="quizzes.questions">Questions</span>
+                            </span>
+                            <span class="d-flex align-items-center gap-1">
+                                <i class="bi bi-alarm text-primary"></i> @quiz.TimeLimitMinutes <span data-i18n="quizzes.minutes">Mins</span>
+                            </span>
+                            <span class="d-flex align-items-center gap-1">
+                                <i class="bi bi-person-check text-primary"></i> <span data-i18n="quizzes.maxAttempts">Attempt</span>: @attemptCount/@quiz.MaxAttempts
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-3" style="border-top: 1px solid var(--edu-border); padding-top: 1rem;">
+                        @if (hasInProgress)
+                        {
+                            var attempt = Model.InProgressAttempts[quiz.Id];
+                            <a asp-page="/Student/Quizzes/Take" asp-route-attemptId="@attempt.Id" class="btn btn-warning w-100 rounded-pill fw-semibold" style="width: 100%; display: block; text-align: center; text-decoration: none; padding: 0.5rem; border-radius: 50px; background: #ffc107; color: #111; font-weight: 600; border: none;" data-i18n="quizzes.student.continueInProgress">
+                                <i class="bi bi-play-circle-fill me-1"></i> Continue Quiz (In Progress)
+                            </a>
+                        }
+                        else if (!isLimitReached)
+                        {
+                            <form method="post" asp-page-handler="Start" asp-route-quizId="@quiz.Id">
+                                <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold" style="width: 100%; padding: 0.5rem; border-radius: 50px; background: var(--edu-primary); color: #fff; border: none; font-weight: 600; cursor: pointer;" data-i18n="quizzes.student.startQuiz">
+                                    <i class="bi bi-play-fill me-1"></i> Start Quiz
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary w-100 rounded-pill disabled" style="width: 100%; padding: 0.5rem; border-radius: 50px; background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.4); border: none; cursor: not-allowed;" disabled data-i18n="quizzes.student.limitReached">
+                                <i class="bi bi-dash-circle me-1"></i> Attempts Limit Reached
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

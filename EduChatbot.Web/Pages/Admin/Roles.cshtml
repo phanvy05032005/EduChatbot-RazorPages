@@ -4,30 +4,145 @@
     ViewData["Title"] = "Role Management";
 }
 
-<div class="admin-page">
-    <div class="admin-page-header">
+<div class="admin-page admin-roles-page text-start">
+    <!-- Page Header Section -->
+    <div class="admin-page-header mb-5">
         <div>
-            <div class="admin-kicker"><span data-i18n="admin.roles.permissions">Access</span> · <span data-i18n="admin.sidebar.roleManagement">Roles</span></div>
-            <h1><span data-i18n="admin.roles.title">Role</span> <span class="admin-serif" data-i18n="admin.roles.titleSerif">Management</span></h1>
-            <p data-i18n="admin.roles.subtitle">System roles and their corresponding permission scopes.</p>
+            <div class="admin-kicker">
+                <span>EDUCHATBOT</span> &middot; 
+                <span>ADMIN</span> &middot; 
+                <span data-i18n="admin.roles.kicker">System Configuration</span>
+            </div>
+            <h1 class="font-display-md text-display-md text-on-surface mb-2">
+                <span data-i18n="admin.roles.title">Role</span> 
+                <span data-i18n="admin.roles.titleSerif">Management</span>
+            </h1>
+            <p data-i18n="admin.roles.subtitle">System roles and their corresponding permission scopes. Manage access levels across the platform to ensure data integrity and security.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-nowrap" style="white-space: nowrap; flex-shrink: 0;">
+            <button type="button" class="admin-secondary-btn flex items-center gap-2 opacity-50" style="border-radius: 8px; cursor: not-allowed;" disabled title="Audit log export not configured">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span data-i18n="admin.roles.exportLog">Export Log</span>
+            </button>
+            <button type="button" class="admin-primary-btn flex items-center gap-2 opacity-50" style="border-radius: 8px; cursor: not-allowed;" disabled title="Custom roles are not enabled.">
+                <i class="bi bi-plus-circle"></i>
+                <span data-i18n="admin.roles.createNew">Create New Role</span>
+            </button>
         </div>
     </div>
-    <div class="role-grid">
+
+    <!-- Bento Grid Layout for Role Cards -->
+    <div class="row g-4 mb-5">
         @foreach (var role in Model.Roles)
         {
-            <section class="admin-card role-card">
-                <div class="role-card-top"><span class="role-icon" aria-hidden="true">◇</span><div><strong>@role.Permissions.Count</strong><small>Permissions</small></div></div>
-                <h2>@role.RoleName</h2>
-                <div class="permission-block">
-                    <div class="permission-title">Permissions</div>
-                    <ul class="permission-list">
-                        @foreach (var permission in role.Permissions)
-                        {
-                            <li>@permission</li>
-                        }
-                    </ul>
+            var isStudent = role.RoleName.Equals("Student", StringComparison.OrdinalIgnoreCase);
+            var isLecturer = role.RoleName.Equals("Lecturer", StringComparison.OrdinalIgnoreCase);
+            var isAdmin = role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+            string iconClass = "bi-mortarboard-fill";
+            string colorAccent = "#89ceff";
+            string badgeText = "Read Only";
+            string descI18n = "admin.roles.studentDesc";
+            string descEn = "Standard user role assigned to all learners. Grants basic interaction and history access.";
+            string statusI18n = "admin.roles.readOnly";
+            string countText = $"{role.Permissions.Count} Scopes";
+
+            if (isLecturer)
+            {
+                iconClass = "bi-person-badge-fill";
+                colorAccent = "#bfc6df";
+                badgeText = "Read Only";
+                descI18n = "admin.roles.lecturerDesc";
+                descEn = "Faculty member role with document management capabilities and chatbot evaluation access.";
+                statusI18n = "admin.roles.readOnly";
+            }
+            else if (isAdmin)
+            {
+                iconClass = "bi-shield-fill-check";
+                colorAccent = "#89ceff";
+                badgeText = "Super Admin";
+                descI18n = "admin.roles.adminDesc";
+                descEn = "Highest level of access. Can manage users, system settings, and core bot architecture.";
+                statusI18n = "admin.roles.superAdmin";
+            }
+
+            <div class="col-12 col-md-4">
+                <div class="glass-card rounded-xl p-4 d-flex flex-column h-100" style="border-radius: 14px;">
+                    <!-- Card Top Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div class="role-icon-box" style="color: @colorAccent;">
+                            <i class="bi @iconClass fs-4"></i>
+                        </div>
+                        <span class="role-badge-count" style="background: rgba(137, 206, 255, 0.08); color: #89ceff; border: 1px solid rgba(137, 206, 255, 0.15);">
+                            @countText
+                        </span>
+                    </div>
+
+                    <!-- Role Details -->
+                    <h3 class="font-card-title text-on-surface mb-2">@role.RoleName</h3>
+                    <p class="role-desc mb-4" data-i18n="@descI18n">
+                        @descEn
+                    </p>
+
+                    <!-- Permissions List -->
+                    <div class="mt-2 mb-4">
+                        <h4 class="text-label-caps text-on-surface-variant mb-3 flex align-items-center gap-2">
+                            <span class="d-inline-block rounded-circle" style="width: 6px; height: 6px; background-color: @colorAccent;"></span>
+                            <span data-i18n="admin.roles.activePermissions">Active Permissions</span>
+                        </h4>
+                        <ul class="list-unstyled space-y-2 mb-0" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                            @foreach (var permission in role.Permissions)
+                            {
+                                <li class="permission-item">
+                                    <i class="bi bi-check-circle-fill" style="color: @colorAccent; opacity: 0.85;"></i>
+                                    <span data-i18n="permission.@permission">@permission</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- Card Footer Actions -->
+                    <div class="role-card-footer">
+                        <span class="role-action-link" title="Scopes cannot be modified for system roles">
+                            Edit Scopes <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                        <span class="role-status-text" data-i18n="@statusI18n">@badgeText</span>
+                    </div>
                 </div>
-            </section>
+            </div>
         }
+    </div>
+
+    <!-- Security & Policy Panels Section -->
+    <div class="row g-4 mb-5">
+        <!-- Card 1: Inheritance Policy -->
+        <div class="col-12 col-md-6">
+            <div class="glass-card rounded-xl p-4 h-100" style="border-left: 4px solid rgba(137, 206, 255, 0.4); border-radius: 12px;">
+                <div class="d-flex align-items-center gap-2.5 mb-3">
+                    <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                    <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1rem; font-weight: 600;" data-i18n="admin.roles.inheritanceTitle">Inheritance Policy</h4>
+                </div>
+                <p class="text-body-sm text-on-surface-variant mb-3" style="font-size: 0.82rem; line-height: 1.6;" data-i18n="admin.roles.inheritanceDesc">
+                    Roles are designed to be hierarchical. Higher-tier roles inherit basic interaction permissions from lower-tier roles by default. Administrators can override specific scope assignments via the detailed permission matrix.
+                </p>
+                <div class="text-primary font-semibold text-body-sm d-flex align-items-center gap-1.5" style="font-size: 0.8rem; opacity: 0.7; cursor: not-allowed;">
+                    Review Security Documentation
+                    <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Recent Changes -->
+        <div class="col-12 col-md-6">
+            <div class="glass-card rounded-xl p-4 h-100" style="border-left: 4px solid rgba(191, 198, 223, 0.4); border-radius: 12px;">
+                <div class="d-flex align-items-center gap-2.5 mb-3">
+                    <i class="bi bi-shield-lock-fill text-tertiary fs-5"></i>
+                    <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1rem; font-weight: 600;" data-i18n="admin.roles.securityNoteTitle">Security Policy Note</h4>
+                </div>
+                <p class="text-body-sm text-on-surface-variant mb-0" style="font-size: 0.82rem; line-height: 1.6;" data-i18n="admin.roles.securityNoteDesc">
+                    System roles are used by authorization policies across the Admin, Lecturer, and Student areas. Changes to role permissions may affect access to protected pages.
+                </p>
+            </div>
+        </div>
     </div>
 </div>

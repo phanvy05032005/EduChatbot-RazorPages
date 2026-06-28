@@ -19,175 +19,475 @@
     }
 }
 
-<section class="account-profile-page">
-    <header class="account-profile-hero">
-        <div class="account-profile-hero-left">
-            <div class="account-profile-avatar" aria-hidden="true">@initial</div>
-            <div>
-                <div class="account-profile-kicker" data-i18n="@(isLecturer ? "profile.lecturerAccount" : "profile.studentAccount")">@accountLabel</div>
-                <h1>@userName</h1>
-                <p class="account-profile-email-display">@Model.ProfileInput.Email</p>
-            </div>
-        </div>
-        @if (isLecturer)
-        {
-            <a asp-page="/Documents/Dashboard" class="account-profile-back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                <span data-i18n="profile.backDashboard">@backText</span>
-            </a>
-        }
-        else
-        {
-            <a asp-page="/Chat/Index" class="account-profile-back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                <span data-i18n="profile.backChat">@backText</span>
-            </a>
-        }
-    </header>
+<style>
+    /* Premium Scoped Profile page custom styles */
+    .profile-premium-container {
+        width: min(100% - 2rem, 1100px);
+        margin: 2rem auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .profile-hero-card-premium {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        flex-wrap: wrap;
+        box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-hero-card-premium::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+    }
+
+    .profile-hero-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(14, 165, 233, 0.15);
+        color: #0ea5e9;
+        border: 2px solid rgba(14, 165, 233, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        font-weight: 800;
+        box-shadow: 0 0 15px rgba(14, 165, 233, 0.2);
+        flex-shrink: 0;
+    }
+
+    .profile-hero-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .profile-hero-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+    }
+
+    .profile-hero-badge-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-role-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(14, 165, 233, 0.2);
+        color: #0ea5e9;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+        padding: 0.25rem 0.65rem;
+        border-radius: 9999px;
+        letter-spacing: 0.05em;
+    }
+
+    .profile-email-badge {
+        font-size: 0.82rem;
+        color: var(--edu-muted);
+    }
+
+    .btn-profile-back-dashboard {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--edu-text);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: all 0.2s ease;
+    }
+
+    .btn-profile-back-dashboard:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #0ea5e9;
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Content Cards Grid */
+    .profile-content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+    }
+
+    .profile-card-premium {
+        background: #111827;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .profile-card-premium-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.015);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .profile-card-header-icon {
+        font-size: 1.25rem;
+        color: #0ea5e9;
+    }
+
+    .profile-card-premium-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0;
+    }
+
+    .profile-card-premium-body {
+        padding: 1.75rem 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .profile-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .profile-field-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--edu-muted);
+    }
+
+    .profile-input-field {
+        width: 100%;
+        background: #070B16;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        color: #ffffff;
+        font-size: 0.88rem;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .profile-input-field:focus {
+        border-color: rgba(14, 165, 233, 0.4);
+        box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+    }
+
+    .profile-input-field:read-only {
+        background: rgba(255, 255, 255, 0.02);
+        color: rgba(255, 255, 255, 0.4);
+        border-color: rgba(255, 255, 255, 0.04);
+        cursor: not-allowed;
+    }
+
+    .profile-field-input-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .profile-verified-tick {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #10b981;
+        font-size: 1rem;
+    }
+
+    .profile-pwd-toggle-btn {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: var(--edu-muted);
+        cursor: pointer;
+        padding: 0.25rem;
+        line-height: 1;
+        transition: color 0.2s ease;
+    }
+
+    .profile-pwd-toggle-btn:hover {
+        color: #ffffff;
+    }
+
+    /* Requirement Alert Card */
+    .profile-req-banner {
+        background: rgba(14, 165, 233, 0.03);
+        border: 1px solid rgba(14, 165, 233, 0.15);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .profile-req-icon {
+        color: #0ea5e9;
+        font-size: 1.15rem;
+        margin-top: 0.1rem;
+    }
+
+    .profile-req-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #0ea5e9;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-req-list {
+        margin: 0;
+        padding-left: 1.15rem;
+        font-size: 0.78rem;
+        color: var(--edu-muted);
+        line-height: 1.5;
+    }
+
+    /* Actions Footer */
+    .profile-card-premium-footer {
+        padding: 1.25rem 1.5rem;
+        background: rgba(255, 255, 255, 0.015);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-profile-submit {
+        background: #0ea5e9;
+        border: 1px solid #0ea5e9;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.88rem;
+        padding: 0.7rem 1.75rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+    }
+
+    .btn-profile-submit:hover {
+        background: #008cd4;
+        border-color: #008cd4;
+    }
+
+    .btn-profile-submit-dark {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--edu-text);
+        font-weight: 700;
+        font-size: 0.88rem;
+        padding: 0.7rem 1.75rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-profile-submit-dark:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .profile-validation-error {
+        font-size: 0.78rem;
+        color: #ef4444;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="profile-premium-container">
+    <!-- Page Header Section -->
+    <div class="mb-2">
+        <h1 class="fw-bold text-white mb-1" data-i18n="profile.title">Account Profile</h1>
+        <p class="text-muted" style="color: var(--edu-muted) !important;" data-i18n="profile.desc">
+            Manage your lecturer account and security settings.
+        </p>
+    </div>
 
     @if (TempData["ProfileMessage"] != null)
     {
-        <div class="account-profile-alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <div class="role-alert success">
+            <i class="bi bi-check-circle-fill me-2"></i>
             <strong>@TempData["ProfileMessage"]</strong>
         </div>
     }
 
-    <div class="account-profile-grid">
-        <form method="post" asp-page-handler="UpdateProfile" class="account-profile-card">
+    <!-- Header Card (User Summary) -->
+    <section class="profile-hero-card-premium">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <div class="profile-hero-avatar">
+                @initial
+            </div>
+            <div class="profile-hero-info">
+                <h3 class="profile-hero-title">@userName</h3>
+                <div class="profile-hero-badge-row">
+                    <span class="profile-role-badge" data-i18n="@(isLecturer ? "profile.lecturerAccount" : "profile.studentAccount")">
+                        @accountLabel
+                    </span>
+                    <span class="text-muted d-none d-sm-inline">•</span>
+                    <span class="profile-email-badge">@Model.ProfileInput.Email</span>
+                </div>
+            </div>
+        </div>
+        <div>
+            @if (isLecturer)
+            {
+                <a asp-page="/Documents/Dashboard" class="btn-profile-back-dashboard">
+                    <i class="bi bi-arrow-left"></i>
+                    <span data-i18n="profile.backDashboard">Back to Dashboard</span>
+                </a>
+            }
+            else
+            {
+                <a asp-page="/Chat/Index" class="btn-profile-back-dashboard">
+                    <i class="bi bi-arrow-left"></i>
+                    <span data-i18n="profile.backChat">Back to Chat</span>
+                </a>
+            }
+        </div>
+    </section>
+
+    <!-- Content Grid -->
+    <div class="profile-content-grid">
+        <!-- Personal Information Card -->
+        <form method="post" asp-page-handler="UpdateProfile" class="profile-card-premium">
             @Html.AntiForgeryToken()
-            <div class="account-profile-card-header">
-                <div class="account-profile-card-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+            <div class="profile-card-premium-header">
+                <i class="bi bi-person profile-card-header-icon"></i>
+                <h4 class="profile-card-premium-title" data-i18n="profile.personalInfo">Personal Information</h4>
+            </div>
+            <div class="profile-card-premium-body">
+                <!-- Full name field -->
+                <div class="profile-field-group">
+                    <label asp-for="ProfileInput.FullName" class="profile-field-label" data-i18n="profile.fullName">Full Name</label>
+                    <input asp-for="ProfileInput.FullName" maxlength="100" autocomplete="name" class="profile-input-field" placeholder="Enter your full name" data-i18n-placeholder="profile.fullNamePlaceholder" />
+                    <span asp-validation-for="ProfileInput.FullName" class="profile-validation-error"></span>
                 </div>
-                <div>
-                    <div class="account-profile-kicker" data-i18n="profile.personalInfo">Personal information</div>
-                    <h2 data-i18n="profile.title">Account details</h2>
+
+                <!-- Email field (readonly) -->
+                <div class="profile-field-group">
+                    <label asp-for="ProfileInput.Email" class="profile-field-label" data-i18n="profile.email">Email Address</label>
+                    <div class="profile-field-input-wrapper">
+                        <input asp-for="ProfileInput.Email" readonly class="profile-input-field" />
+                        <i class="bi bi-check-circle-fill profile-verified-tick" title="Verified Login Email"></i>
+                    </div>
                 </div>
             </div>
-
-            <div class="account-profile-field">
-                <label asp-for="ProfileInput.FullName">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
-                    <span data-i18n="profile.fullName">Full name</span>
-                </label>
-                <input asp-for="ProfileInput.FullName" maxlength="100" autocomplete="name" placeholder="Enter your full name" data-i18n-placeholder="profile.fullNamePlaceholder" />
-                <span asp-validation-for="ProfileInput.FullName" class="account-profile-validation"></span>
-            </div>
-
-            <div class="account-profile-field">
-                <label asp-for="ProfileInput.Email">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                    <span data-i18n="profile.email">Email login</span>
-                </label>
-                <input asp-for="ProfileInput.Email" readonly class="account-profile-readonly" />
-            </div>
-
-            <div class="account-profile-actions">
-                <button type="submit" class="account-profile-primary-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    <span data-i18n="profile.updateProfile">Save profile</span>
-                </button>
+            <div class="profile-card-premium-footer">
+                <button type="submit" class="btn-profile-submit" data-i18n="profile.updateProfile">Save profile</button>
             </div>
         </form>
 
-        <form method="post" asp-page-handler="ChangePassword" class="account-profile-card">
+        <!-- Change Password Card -->
+        <form method="post" asp-page-handler="ChangePassword" class="profile-card-premium">
             @Html.AntiForgeryToken()
-            <div class="account-profile-card-header">
-                <div class="account-profile-card-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div class="profile-card-premium-header">
+                <i class="bi bi-shield-lock profile-card-header-icon"></i>
+                <h4 class="profile-card-premium-title" data-i18n="profile.changePassword">Change Password</h4>
+            </div>
+            <div class="profile-card-premium-body">
+                <div asp-validation-summary="All" class="role-form-errors mb-2 text-danger small"></div>
+
+                <!-- Current Password -->
+                <div class="profile-field-group">
+                    <label asp-for="PasswordInput.CurrentPassword" class="profile-field-label" data-i18n="profile.currentPassword">Current Password</label>
+                    <div class="profile-field-input-wrapper">
+                        <input asp-for="PasswordInput.CurrentPassword" autocomplete="current-password" class="profile-input-field" placeholder="••••••••" />
+                        <button type="button" class="profile-pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye eye-open"></i>
+                            <i class="bi bi-eye-slash eye-closed" style="display: none;"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="PasswordInput.CurrentPassword" class="profile-validation-error"></span>
                 </div>
-                <div>
-                    <div class="account-profile-kicker" data-i18n="profile.kicker">Security</div>
-                    <h2 data-i18n="profile.changePassword">Change password</h2>
+
+                <!-- New Password -->
+                <div class="profile-field-group">
+                    <label asp-for="PasswordInput.NewPassword" class="profile-field-label" data-i18n="profile.newPassword">New Password</label>
+                    <div class="profile-field-input-wrapper">
+                        <input asp-for="PasswordInput.NewPassword" autocomplete="new-password" class="profile-input-field" placeholder="••••••••" />
+                        <button type="button" class="profile-pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye eye-open"></i>
+                            <i class="bi bi-eye-slash eye-closed" style="display: none;"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="PasswordInput.NewPassword" class="profile-validation-error"></span>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="profile-field-group">
+                    <label asp-for="PasswordInput.ConfirmPassword" class="profile-field-label" data-i18n="profile.confirmPassword">Confirm New Password</label>
+                    <div class="profile-field-input-wrapper">
+                        <input asp-for="PasswordInput.ConfirmPassword" autocomplete="new-password" class="profile-input-field" placeholder="••••••••" />
+                        <button type="button" class="profile-pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye eye-open"></i>
+                            <i class="bi bi-eye-slash eye-closed" style="display: none;"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="PasswordInput.ConfirmPassword" class="profile-validation-error"></span>
+                </div>
+
+                <!-- Requirements Banner -->
+                <div class="profile-req-banner">
+                    <i class="bi bi-info-circle-fill profile-req-icon"></i>
+                    <div>
+                        <div class="profile-req-title" data-i18n="profile.requirementsTitle">Password Requirements</div>
+                        <ul class="profile-req-list">
+                            <li data-i18n="profile.reqLength">Minimum 6 characters</li>
+                            <li data-i18n="profile.reqSpecial">Include at least 1 number and 1 special character</li>
+                            <li data-i18n="profile.reqCase">Include uppercase and lowercase letters</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-
-            <div asp-validation-summary="All" class="account-profile-errors"></div>
-
-            <div class="account-profile-field">
-                <label asp-for="PasswordInput.CurrentPassword">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <span data-i18n="profile.currentPassword">Current password</span>
-                </label>
-                <div class="pwd-input-wrapper">
-                    <input asp-for="PasswordInput.CurrentPassword" autocomplete="current-password" placeholder="••••••••" />
-                    <button type="button" class="pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
-                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                            <line x1="2" x2="22" y1="2" y2="22"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="account-profile-field">
-                <label asp-for="PasswordInput.NewPassword">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                    <span data-i18n="profile.newPassword">New password</span>
-                </label>
-                <div class="pwd-input-wrapper">
-                    <input asp-for="PasswordInput.NewPassword" autocomplete="new-password" placeholder="••••••••" />
-                    <button type="button" class="pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
-                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                            <line x1="2" x2="22" y1="2" y2="22"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="account-profile-field">
-                <label asp-for="PasswordInput.ConfirmPassword">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span data-i18n="profile.confirmPassword">Confirm new password</span>
-                </label>
-                <div class="pwd-input-wrapper">
-                    <input asp-for="PasswordInput.ConfirmPassword" autocomplete="new-password" placeholder="••••••••" />
-                    <button type="button" class="pwd-toggle-btn" title="Show password" aria-label="Toggle password visibility">
-                        <svg class="eye-open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <svg class="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                            <line x1="2" x2="22" y1="2" y2="22"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="account-profile-actions">
-                <button type="submit" class="account-profile-primary-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <span data-i18n="profile.changePasswordBtn">Change password</span>
-                </button>
+            <div class="profile-card-premium-footer">
+                <button type="submit" class="btn-profile-submit-dark" data-i18n="profile.changePasswordBtn">Change password</button>
             </div>
         </form>
     </div>
-</section>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Password visibility toggle
             const forms = document.querySelectorAll("form");
             forms.forEach(form => {
-                const toggleButtons = form.querySelectorAll(".pwd-toggle-btn");
+                const toggleButtons = form.querySelectorAll(".profile-pwd-toggle-btn");
                 toggleButtons.forEach(button => {
                     button.addEventListener("click", function () {
                         const input = this.parentElement.querySelector("input");
@@ -199,11 +499,11 @@
                         if (input.type === "password") {
                             input.type = "text";
                             if (eyeOpen) eyeOpen.style.display = "none";
-                            if (eyeClosed) eyeClosed.style.display = "block";
+                            if (eyeClosed) eyeClosed.style.display = "inline-block";
                             this.title = "Hide password";
                         } else {
                             input.type = "password";
-                            if (eyeOpen) eyeOpen.style.display = "block";
+                            if (eyeOpen) eyeOpen.style.display = "inline-block";
                             if (eyeClosed) eyeClosed.style.display = "none";
                             this.title = "Show password";
                         }

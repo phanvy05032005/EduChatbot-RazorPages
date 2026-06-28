@@ -4,33 +4,244 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div id="dashboard-container" class="admin-page">
+<div id="dashboard-container" class="admin-page text-start">
+    <!-- Page Header Section -->
     <div class="admin-page-header">
         <div>
-            <div class="admin-kicker" data-i18n="admin.dashboard.kicker">System overview</div>
-            <h1><span data-i18n="admin.dashboard.title">System</span> <span class="admin-serif" data-i18n="admin.dashboard.titleSerif">Overview</span></h1>
+            <div class="admin-kicker">
+                <span>EDUCHATBOT</span> &middot; 
+                <span>ADMIN</span> &middot; 
+                <span data-i18n="admin.sidebar.dashboard">DASHBOARD</span>
+            </div>
+            <h1 data-i18n="admin.dashboard.healthTitle">System Overview</h1>
             <p data-i18n="admin.dashboard.subtitle">Monitor metrics and activity across the EduChatbot system.</p>
         </div>
-        <a asp-page="/Admin/Dashboard" class="admin-secondary-btn" data-i18n="admin.dashboard.refresh">Refresh</a>
-    </div>
-
-    <div class="admin-metric-grid">
-        <article class="admin-card admin-metric-card success"><strong>@Model.TotalStudents.ToString("N0")</strong><span>Total Students</span></article>
-        <article class="admin-card admin-metric-card accent"><strong>@Model.TotalLecturers.ToString("N0")</strong><span>Total Lecturers</span></article>
-        <article class="admin-card admin-metric-card light"><strong>@Model.TotalDocuments.ToString("N0")</strong><span>Documents in System</span></article>
-        <article class="admin-card admin-metric-card warning"><strong>@Model.TotalChatQuestions.ToString("N0")</strong><span>Total Chat Questions</span></article>
-    </div>
-
-    <section class="admin-card admin-activity-card">
-        <div class="admin-card-header">
-            <h2><span aria-hidden="true">⌁</span> <span data-i18n="admin.dashboard.recentActivities">Recent activities</span></h2>
-            <span class="admin-live-pill" data-i18n="admin.dashboard.live">Live</span>
+        <div class="d-flex gap-2">
+            <button class="admin-secondary-btn flex items-center gap-2" style="border-radius: 8px;">
+                <i class="bi bi-calendar3"></i>
+                <span data-i18n="admin.dashboard.last24h">Last 24 Hours</span>
+            </button>
+            <button class="admin-primary-btn flex items-center gap-2" style="border-radius: 8px;">
+                <i class="bi bi-download"></i>
+                <span data-i18n="admin.dashboard.exportReport">Export Report</span>
+            </button>
         </div>
-        <ul class="activity-list">
-            @foreach (var activity in Model.RecentActivities)
-            {
-                <li><span class="activity-icon" aria-hidden="true">✦</span><div><strong>@activity</strong><small>Updated just now · Admin</small></div></li>
-            }
-        </ul>
-    </section>
+    </div>
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="dashboard-metric-grid">
+        <!-- Card 1: Total Students -->
+        <article class="admin-card dashboard-metric-card">
+            <div>
+                <p data-i18n="admin.sidebar.studentAccounts">Total Students</p>
+                <h3>@Model.TotalStudents.ToString("N0")</h3>
+                <div class="flex items-center gap-1 mt-2 text-success" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>+5.2%</span>
+                </div>
+            </div>
+            <div class="dashboard-metric-card-icon">
+                <i class="bi bi-mortarboard-fill"></i>
+            </div>
+        </article>
+
+        <!-- Card 2: Total Lecturers -->
+        <article class="admin-card dashboard-metric-card">
+            <div>
+                <p data-i18n="admin.sidebar.lecturerAccounts">Total Lecturers</p>
+                <h3>@Model.TotalLecturers.ToString("N0")</h3>
+                <div class="flex items-center gap-1 mt-2 text-success" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>+2.1%</span>
+                </div>
+            </div>
+            <div class="dashboard-metric-card-icon" style="background: rgba(192, 198, 219, 0.1); color: #bfc6df;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </article>
+
+        <!-- Card 3: Documents in System -->
+        <article class="admin-card dashboard-metric-card">
+            <div>
+                <p data-i18n="admin.courses.docsCount">Documents in System</p>
+                <h3>@Model.TotalDocuments.ToString("N0")</h3>
+                <div class="flex items-center gap-1 mt-2 text-primary" style="font-size: 11px; font-weight: 600; opacity: 0.7;">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span data-i18n="admin.dashboard.syncActive">Daily sync active</span>
+                </div>
+            </div>
+            <div class="dashboard-metric-card-icon" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">
+                <i class="bi bi-file-earmark-text-fill"></i>
+            </div>
+        </article>
+
+        <!-- Card 4: Total Chat Questions -->
+        <article class="admin-card dashboard-metric-card">
+            <div>
+                <p data-i18n="admin.dashboard.totalQuestions">Total Chat Questions</p>
+                <h3>@Model.TotalChatQuestions.ToString("N0")</h3>
+                <div class="flex items-center gap-1 mt-2 text-success" style="font-size: 11px; font-weight: 600;">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <span>98% Accuracy</span>
+                </div>
+            </div>
+            <div class="dashboard-metric-card-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                <i class="bi bi-chat-dots-fill"></i>
+            </div>
+        </article>
+    </div>
+
+    <!-- Asymmetric Bento Columns Grid -->
+    <div class="row g-4 mb-5">
+        <!-- Quick Actions & Health Column (col-12 col-lg-8) -->
+        <div class="col-12 col-md-8 d-flex flex-column gap-4">
+            <!-- Quick Actions Grid card -->
+            <section class="admin-card p-4 rounded-xl">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem;" data-i18n="admin.dashboard.quickActions">Quick Actions</h4>
+                    <i class="bi bi-lightning-fill text-warning"></i>
+                </div>
+                <div class="quick-actions-grid">
+                    <a asp-page="/Admin/AccountForm" asp-route-accountType="Student" class="quick-action-btn">
+                        <i class="bi bi-person-plus-fill"></i>
+                        <span data-i18n="admin.accounts.createAccount">Create Account</span>
+                    </a>
+                    <a asp-page="/Admin/Users" class="quick-action-btn">
+                        <i class="bi bi-people-fill"></i>
+                        <span data-i18n="admin.sidebar.users">Manage Users</span>
+                    </a>
+                    <a asp-page="/Admin/Courses" class="quick-action-btn">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                        <span data-i18n="admin.courses.title">Manage Courses</span>
+                    </a>
+                    <a asp-page="/Admin/Statistics" class="quick-action-btn">
+                        <i class="bi bi-bar-chart-line-fill"></i>
+                        <span data-i18n="admin.sidebar.statistics">View Statistics</span>
+                    </a>
+                    <a asp-page="/Admin/System" class="quick-action-btn">
+                        <i class="bi bi-sliders2-vertical"></i>
+                        <span data-i18n="admin.sidebar.system">System Management</span>
+                    </a>
+                    <a asp-page="/Admin/Roles" class="quick-action-btn">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span data-i18n="admin.sidebar.roles">Assign Roles</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Live System Health visual card -->
+            <div class="admin-card p-4 rounded-xl relative overflow-hidden" style="height: 250px;">
+                <div class="relative z-10 text-start">
+                    <h4 class="font-section-title text-on-surface mb-1" style="font-size: 1.1rem;" data-i18n="admin.dashboard.healthTitle">Live System Health</h4>
+                    <p class="text-on-surface-variant text-body-sm max-w-md mb-0" style="font-size: 0.8rem;" data-i18n="admin.dashboard.healthSubtitle">Real-time throughput and query latency across all academic departments.</p>
+                </div>
+                <div class="telemetry-bars-wrap">
+                    <div class="telemetry-bar" style="height: 40%;"></div>
+                    <div class="telemetry-bar" style="height: 65%;"></div>
+                    <div class="telemetry-bar" style="height: 50%;"></div>
+                    <div class="telemetry-bar" style="height: 80%;"></div>
+                    <div class="telemetry-bar highlight" style="height: 95%;"></div>
+                    <div class="telemetry-bar" style="height: 70%;"></div>
+                    <div class="telemetry-bar" style="height: 45%;"></div>
+                    <div class="telemetry-bar" style="height: 60%;"></div>
+                    <div class="telemetry-bar" style="height: 30%;"></div>
+                    <div class="telemetry-bar" style="height: 55%;"></div>
+                    <div class="telemetry-bar" style="height: 85%;"></div>
+                    <div class="telemetry-bar" style="height: 75%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Column (col-12 col-lg-4) -->
+        <div class="col-12 col-md-4">
+            <section class="admin-card p-4 rounded-xl d-flex flex-column h-100 text-start">
+                <div class="d-flex items-center justify-content-between mb-4">
+                    <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem;" data-i18n="admin.dashboard.recentActivities">Recent Activity</h4>
+                </div>
+                <div class="activity-timeline">
+                    @{
+                        int actIdx = 0;
+                        string[] icons = { "bi-person-plus-fill", "bi-upload-file", "bi-sliders", "bi-shield-check" };
+                        string[] colors = { "", "", "warning", "" };
+                    }
+                    @foreach (var activity in Model.RecentActivities)
+                    {
+                        var icon = icons[actIdx % icons.Length];
+                        var colorClass = colors[actIdx % colors.Length];
+                        actIdx++;
+
+                        <div class="timeline-item">
+                            <div class="timeline-item-icon @colorClass">
+                                <i class="bi @icon"></i>
+                            </div>
+                            <div class="timeline-item-content">
+                                <span class="timeline-item-title">@activity</span>
+                                <span class="timeline-item-desc" data-i18n="admin.dashboard.justNow">Updated just now · System</span>
+                                <span class="timeline-item-time" data-i18n="admin.dashboard.live">Live</span>
+                            </div>
+                        </div>
+                    }
+                    @if (Model.RecentActivities.Count == 0)
+                    {
+                        <div class="text-center py-4 text-muted" data-i18n="admin.dashboard.noRecentActivity">
+                            No recent activities.
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Bottom Services operational logs table -->
+    <div class="admin-card rounded-xl overflow-hidden mt-4">
+        <div class="p-4 border-b border-outline-variant flex justify-content-between align-items-center bg-surface-container-high/50" style="background: rgba(255,255,255,0.01);">
+            <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem;" data-i18n="admin.dashboard.systemStatusTitle">System Services Status</h4>
+            <div class="d-flex align-items-center gap-2">
+                <span class="system-health-dot"></span>
+                <span class="text-success fw-semibold" style="font-size: 0.8rem;" data-i18n="admin.dashboard.allOperational">All Systems Operational</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
+                    <tr class="bg-surface-container">
+                        <th class="px-4 py-3" data-i18n="admin.dashboard.serviceName">Service Subsystem</th>
+                        <th class="px-4 py-3" data-i18n="admin.dashboard.serviceLatency">Avg Response</th>
+                        <th class="px-4 py-3">Success Rate</th>
+                        <th class="px-4 py-3" data-i18n="admin.dashboard.serviceLoad">CPU Load</th>
+                        <th class="px-4 py-3" data-i18n="admin.dashboard.serviceStatus">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover:bg-surface-variant/30 transition-colors">
+                        <td class="px-4 py-3 align-middle fw-semibold">Database Subsystem</td>
+                        <td class="px-4 py-3 align-middle">3ms</td>
+                        <td class="px-4 py-3 align-middle">100.0%</td>
+                        <td class="px-4 py-3 align-middle">12%</td>
+                        <td class="px-4 py-3 align-middle">
+                            <span class="px-2.5 py-1 rounded bg-success/15 text-success font-bold" style="font-size: 10px; border: 1px solid rgba(16, 185, 129, 0.25);" data-i18n="admin.dashboard.optimal">Optimal</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-surface-variant/30 transition-colors">
+                        <td class="px-4 py-3 align-middle fw-semibold">Email Queue Worker</td>
+                        <td class="px-4 py-3 align-middle">45ms</td>
+                        <td class="px-4 py-3 align-middle">100.0%</td>
+                        <td class="px-4 py-3 align-middle">4%</td>
+                        <td class="px-4 py-3 align-middle">
+                            <span class="px-2.5 py-1 rounded bg-success/15 text-success font-bold" style="font-size: 10px; border: 1px solid rgba(16, 185, 129, 0.25);" data-i18n="admin.dashboard.optimal">Optimal</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-surface-variant/30 transition-colors">
+                        <td class="px-4 py-3 align-middle fw-semibold">Chatbot Vector store</td>
+                        <td class="px-4 py-3 align-middle">124ms</td>
+                        <td class="px-4 py-3 align-middle">99.8%</td>
+                        <td class="px-4 py-3 align-middle">24%</td>
+                        <td class="px-4 py-3 align-middle">
+                            <span class="px-2.5 py-1 rounded bg-primary/15 text-primary font-bold" style="font-size: 10px; border: 1px solid rgba(14, 165, 233, 0.25);" data-i18n="admin.dashboard.active">Active</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

@@ -27,6 +27,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<EmailQueue> EmailQueues => Set<EmailQueue>();
 
+    public DbSet<Quiz> Quizzes => Set<Quiz>();
+
+    public DbSet<QuizQuestion> QuizQuestions => Set<QuizQuestion>();
+
+    public DbSet<QuizOption> QuizOptions => Set<QuizOption>();
+
+    public DbSet<QuizAttempt> QuizAttempts => Set<QuizAttempt>();
+
+    public DbSet<QuizAttemptAnswer> QuizAttemptAnswers => Set<QuizAttemptAnswer>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -195,6 +205,131 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasColumnType("timestamp with time zone");
 
             entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<Quiz>(entity =>
+        {
+            entity.ToTable("quizzes");
+            entity.HasKey(q => q.Id);
+            entity.Property(q => q.Id).HasColumnName("id");
+            entity.Property(q => q.CourseId).HasColumnName("course_id");
+            entity.Property(q => q.DocumentId).HasColumnName("document_id");
+            entity.Property(q => q.Title).HasColumnName("title").IsRequired().HasMaxLength(255);
+            entity.Property(q => q.Difficulty).HasColumnName("difficulty").IsRequired().HasMaxLength(50);
+            entity.Property(q => q.AdditionalInstruction).HasColumnName("additional_instruction");
+            entity.Property(q => q.NumberOfQuestions).HasColumnName("number_of_questions");
+            entity.Property(q => q.TimeLimitMinutes).HasColumnName("time_limit_minutes");
+            entity.Property(q => q.MaxAttempts).HasColumnName("max_attempts");
+            entity.Property(q => q.Status).HasColumnName("status").IsRequired().HasMaxLength(50);
+            entity.Property(q => q.CreatedByLecturerId).HasColumnName("created_by_lecturer_id").IsRequired().HasMaxLength(450);
+            entity.Property(q => q.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp with time zone");
+            entity.Property(q => q.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamp with time zone");
+            entity.Property(q => q.PublishedAt).HasColumnName("published_at").HasColumnType("timestamp with time zone");
+
+            entity.HasOne(q => q.Course)
+                .WithMany()
+                .HasForeignKey(q => q.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(q => q.Document)
+                .WithMany()
+                .HasForeignKey(q => q.DocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(q => q.CreatedByLecturer)
+                .WithMany()
+                .HasForeignKey(q => q.CreatedByLecturerId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QuizQuestion>(entity =>
+        {
+            entity.ToTable("quiz_questions");
+            entity.HasKey(q => q.Id);
+            entity.Property(q => q.Id).HasColumnName("id");
+            entity.Property(q => q.QuizId).HasColumnName("quiz_id");
+            entity.Property(q => q.QuestionOrder).HasColumnName("question_order");
+            entity.Property(q => q.QuestionText).HasColumnName("question_text").IsRequired();
+            entity.Property(q => q.Explanation).HasColumnName("explanation");
+            entity.Property(q => q.SourceChunkId).HasColumnName("source_chunk_id");
+
+            entity.HasOne(q => q.Quiz)
+                .WithMany(qz => qz.Questions)
+                .HasForeignKey(q => q.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(q => q.SourceChunk)
+                .WithMany()
+                .HasForeignKey(q => q.SourceChunkId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<QuizOption>(entity =>
+        {
+            entity.ToTable("quiz_options");
+            entity.HasKey(o => o.Id);
+            entity.Property(o => o.Id).HasColumnName("id");
+            entity.Property(o => o.QuizQuestionId).HasColumnName("quiz_question_id");
+            entity.Property(o => o.OptionOrder).HasColumnName("option_order");
+            entity.Property(o => o.Label).HasColumnName("label").IsRequired().HasMaxLength(10);
+            entity.Property(o => o.OptionText).HasColumnName("option_text").IsRequired();
+            entity.Property(o => o.IsCorrect).HasColumnName("is_correct");
+
+            entity.HasOne(o => o.Question)
+                .WithMany(q => q.Options)
+                .HasForeignKey(o => o.QuizQuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QuizAttempt>(entity =>
+        {
+            entity.ToTable("quiz_attempts");
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.Id).HasColumnName("id");
+            entity.Property(a => a.QuizId).HasColumnName("quiz_id");
+            entity.Property(a => a.StudentId).HasColumnName("student_id").IsRequired().HasMaxLength(450);
+            entity.Property(a => a.Status).HasColumnName("status").IsRequired().HasMaxLength(50);
+            entity.Property(a => a.StartedAt).HasColumnName("started_at").HasColumnType("timestamp with time zone");
+            entity.Property(a => a.SubmittedAt).HasColumnName("submitted_at").HasColumnType("timestamp with time zone");
+            entity.Property(a => a.TotalQuestions).HasColumnName("total_questions");
+            entity.Property(a => a.CorrectCount).HasColumnName("correct_count");
+            entity.Property(a => a.Score).HasColumnName("score");
+
+            entity.HasOne(a => a.Quiz)
+                .WithMany(q => q.Attempts)
+                .HasForeignKey(a => a.QuizId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(a => a.Student)
+                .WithMany()
+                .HasForeignKey(a => a.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QuizAttemptAnswer>(entity =>
+        {
+            entity.ToTable("quiz_attempt_answers");
+            entity.HasKey(aa => aa.Id);
+            entity.Property(aa => aa.Id).HasColumnName("id");
+            entity.Property(aa => aa.QuizAttemptId).HasColumnName("quiz_attempt_id");
+            entity.Property(aa => aa.QuizQuestionId).HasColumnName("quiz_question_id");
+            entity.Property(aa => aa.SelectedOptionId).HasColumnName("selected_option_id");
+            entity.Property(aa => aa.IsCorrect).HasColumnName("is_correct");
+
+            entity.HasOne(aa => aa.Attempt)
+                .WithMany(a => a.Answers)
+                .HasForeignKey(aa => aa.QuizAttemptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(aa => aa.Question)
+                .WithMany()
+                .HasForeignKey(aa => aa.QuizQuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(aa => aa.SelectedOption)
+                .WithMany()
+                .HasForeignKey(aa => aa.SelectedOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

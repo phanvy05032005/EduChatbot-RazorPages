@@ -1,0 +1,104 @@
+@page
+@model EduChatbot.Web.Pages.Student.Quizzes.HistoryModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Quiz History";
+    ViewData["BodyClass"] = "student-shell";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1" style="color: #fff; font-size: 1.75rem;" data-i18n="quizzes.student.his.title">My Quiz History</h2>
+    <p class="text-muted mb-0" data-i18n="quizzes.student.his.desc">Track and review all your past quiz attempts.</p>
+</div>
+
+<div style="margin-bottom: 1.5rem;">
+    <a asp-page="/Student/Quizzes/Index" class="btn btn-outline-light rounded-pill px-4" style="border: 1px solid rgba(255,255,255,0.2); color: #fff; text-decoration: none; font-size: 0.875rem;">
+        ← Back to Quizzes
+    </a>
+</div>
+
+@if (!Model.Attempts.Any())
+{
+    <div class="student-card text-center py-5" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 3rem;">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 60px; height: 60px; background: rgba(0, 123, 255, 0.1); color: var(--edu-primary);">
+            <i class="bi bi-clock-history fs-3"></i>
+        </div>
+        <h5 class="fw-bold text-white mb-2" data-i18n="quizzes.student.his.noAttempts">No History Record</h5>
+        <p class="text-muted" data-i18n="quizzes.student.his.noAttemptsDesc">You haven't completed any quizzes yet.</p>
+    </div>
+}
+else
+{
+    <div class="student-card" style="background: #181c26; border: 1px solid var(--edu-border); border-radius: 16px; padding: 1.5rem; overflow: hidden;">
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table align-middle mb-0" style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--edu-border); color: rgba(255,255,255,0.6); font-size: 0.85rem;">
+                        <th style="padding: 1rem;" data-i18n="quizzes.lecturer.quizTitle">Quiz Title</th>
+                        <th style="padding: 1rem;" data-i18n="quizzes.course">Course</th>
+                        <th style="padding: 1rem;" data-i18n="quizzes.lecturer.att.startedAt">Started At</th>
+                        <th style="padding: 1rem;" data-i18n="quizzes.lecturer.att.submittedAt">Submitted At</th>
+                        <th style="padding: 1rem;" data-i18n="quizzes.lecturer.att.correctCount">Correct Answers</th>
+                        <th style="padding: 1rem;" data-i18n="quizzes.lecturer.att.score">Score</th>
+                        <th style="padding: 1rem; text-align: right;" data-i18n="quizzes.actions">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var attempt in Model.Attempts)
+                    {
+                        var isSubmitted = attempt.Status == "Submitted";
+                        var isPassed = isSubmitted && (attempt.Score >= 50);
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff; font-size: 0.9rem;">
+                            <td style="padding: 1rem;">
+                                <strong>@attempt.QuizTitle</strong>
+                            </td>
+                            <td style="padding: 1rem;">
+                                <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="background: rgba(0, 123, 255, 0.1); color: var(--edu-primary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                                    @attempt.CourseCode
+                                </span>
+                            </td>
+                            <td style="padding: 1rem; color: rgba(255,255,255,0.7);">@attempt.StartedAt.ToString("g")</td>
+                            <td style="padding: 1rem; color: rgba(255,255,255,0.7);">
+                                @if (attempt.SubmittedAt.HasValue)
+                                {
+                                    @attempt.SubmittedAt.Value.ToString("g")
+                                }
+                                else
+                                {
+                                    <span data-i18n="quizzes.student.his.inProgress">In Progress</span>
+                                }
+                            </td>
+                            <td style="padding: 1rem;">
+                                @(isSubmitted ? $"{attempt.CorrectCount} / {attempt.TotalQuestions}" : "-")
+                            </td>
+                            <td style="padding: 1rem;">
+                                @if (isSubmitted)
+                                {
+                                    <strong style="color: @(isPassed ? "#28a745" : "#dc3545");">@attempt.Score?.ToString("0.0")%</strong>
+                                }
+                                else
+                                {
+                                    <span class="text-warning" data-i18n="quizzes.student.his.inProgress">In Progress</span>
+                                }
+                            </td>
+                            <td style="padding: 1rem; text-align: right;">
+                                @if (isSubmitted)
+                                {
+                                    <a asp-page="/Student/Quizzes/Result" asp-route-attemptId="@attempt.AttemptId" class="btn btn-primary btn-sm rounded-pill px-3" style="padding: 0.3rem 1rem; background: var(--edu-primary); border: none; color: #fff; font-size: 0.8rem; text-decoration: none; border-radius: 20px;" data-i18n="quizzes.student.his.viewResult">
+                                        View Result
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-page="/Student/Quizzes/Take" asp-route-attemptId="@attempt.AttemptId" class="btn btn-warning btn-sm rounded-pill px-3" style="padding: 0.3rem 1rem; background: #ffc107; border: none; color: #111; font-size: 0.8rem; text-decoration: none; border-radius: 20px; font-weight: 500;" data-i18n="quizzes.student.his.continue">
+                                        Continue
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

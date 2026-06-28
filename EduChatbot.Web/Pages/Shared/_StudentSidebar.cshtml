@@ -52,6 +52,11 @@
             <i class="bi bi-file-earmark-text fs-5"></i>
             <span data-i18n="student.sidebar.documents">Documents</span>
         </a>
+        <a class="nav-item d-flex align-items-center gap-3 px-3 py-2 rounded-3 @(currentPage.StartsWith("/Student/Quizzes", StringComparison.OrdinalIgnoreCase) ? "active" : "")" 
+           asp-page="/Student/Quizzes/Index">
+            <i class="bi bi-patch-question fs-5"></i>
+            <span data-i18n="student.sidebar.quizzes">Quizzes</span>
+        </a>
     </nav>
 
     <!-- Sidebar User Footer -->

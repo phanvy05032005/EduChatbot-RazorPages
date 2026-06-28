@@ -4,122 +4,174 @@
     ViewData["Title"] = Model.Title;
 }
 
-<div class="admin-page">
+<div class="admin-page text-start">
+    <!-- Page Header Section -->
     <div class="admin-page-header">
         <div>
             <div class="admin-kicker">
                 <span>EDUCHATBOT</span> &middot; 
                 <span>ADMIN</span> &middot; 
-                <span>USERS</span>
+                <span data-i18n="admin.sidebar.users">USERS</span>
             </div>
-            <h1>Users</h1>
-            <p>View, search, lock, unlock, and manage student and lecturer accounts.</p>
+            <h1 data-i18n="admin.sidebar.users">User Accounts</h1>
+            <p data-i18n="admin.accounts.viewSearchDesc">View, search, lock, unlock, and manage student and lecturer accounts within the EduChatbot ecosystem.</p>
         </div>
-        <a id="CreateAccountBtn" asp-page="/Admin/AccountForm" asp-route-accountType="Student" class="admin-primary-btn">Create Account</a>
     </div>
 
+    <!-- Hidden forms for Excel upload via toolbar buttons -->
+    <form id="ImportStudentsForm" method="post" asp-page-handler="ImportStudents" enctype="multipart/form-data" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="file" id="ImportStudentsInput" name="excelFile" accept=".xlsx" required onchange="document.getElementById('ImportStudentsForm').submit();" />
+    </form>
+
+    <form id="ImportLecturersForm" method="post" asp-page-handler="ImportLecturers" enctype="multipart/form-data" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="file" id="ImportLecturersInput" name="excelFile" accept=".xlsx" required onchange="document.getElementById('ImportLecturersForm').submit();" />
+    </form>
+
+    <!-- TempData Alerts -->
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="admin-alert success" style="border: 1px solid rgba(168, 230, 207, 0.28); border-radius: 8px; padding: 0.8rem 1rem; background: rgba(168, 230, 207, 0.08); color: #a8e6cf; margin-bottom: 1.5rem;">
-            @TempData["AdminMessage"]
+        <div class="admin-alert success" style="border: 1px solid rgba(52, 211, 153, 0.28); border-radius: 8px; padding: 0.8rem 1rem; background: rgba(52, 211, 153, 0.08); color: #34d399; margin-bottom: 1.5rem;">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["AdminMessage"]
         </div>
     }
 
     @if (TempData["AdminError"] != null)
     {
-        <div class="admin-alert danger" style="border: 1px solid rgba(255, 154, 162, 0.28); border-radius: 8px; padding: 0.8rem 1rem; background: rgba(255, 154, 162, 0.08); color: #ff9aa2; margin-bottom: 1.5rem;">
-            @TempData["AdminError"]
+        <div class="admin-alert danger" style="border: 1px solid rgba(251, 113, 133, 0.28); border-radius: 8px; padding: 0.8rem 1rem; background: rgba(251, 113, 133, 0.08); color: #fb7185; margin-bottom: 1.5rem;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["AdminError"]
         </div>
     }
 
-    <!-- Tabs Navigation -->
-    <div class="admin-tabs">
-        <button type="button" class="admin-tab-btn" data-tab-name="students">Student Accounts</button>
-        <button type="button" class="admin-tab-btn" data-tab-name="lecturers">Lecturer Accounts</button>
-    </div>
-
-    <!-- Hidden field to persist active tab on page model postback -->
+    <!-- Hidden field to persist active tab -->
     <input type="hidden" id="ActiveTabState" value="@Model.ActiveTab" />
 
-    <!-- STUDENT ACCOUNTS PANEL -->
-    <div class="admin-tab-panel d-none" id="TabPanel-students">
-        <!-- Import Students Excel -->
-        <section class="admin-card mb-4" style="margin-bottom: 2rem; border: 1px solid rgba(228, 240, 246, 0.14); border-radius: 8px; background: rgba(228, 240, 246, 0.04); padding: 1.25rem;">
-            <div class="admin-card-header" style="border-bottom: 1px solid rgba(228, 240, 246, 0.08); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-                <h2 style="font-size: 16px; color: #e4f0f6; margin: 0;">Import student accounts via Excel</h2>
-            </div>
-            <div>
-                <form method="post" asp-page-handler="ImportStudents" enctype="multipart/form-data" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                    @Html.AntiForgeryToken()
-                    <input type="file" name="excelFile" accept=".xlsx" required style="padding: 0.5rem; border: 1px solid rgba(228, 240, 246, 0.14); border-radius: 6px; background: rgba(228, 240, 246, 0.04); color: #e4f0f6;" />
-                    <button type="submit" class="admin-primary-btn" style="height: auto;">Upload & Import</button>
-                </form>
-            </div>
-        </section>
+    <!-- Search & Toolbar -->
+    <div class="admin-toolbar-flex">
+        <!-- Search boxes dynamic by tab -->
+        <div id="SearchContainer-students" class="w-100 w-md-auto">
+            <form method="get" class="admin-search-wrapper">
+                <input type="hidden" name="tab" value="students" />
+                <input type="hidden" name="lecturerSearchTerm" value="@Model.LecturerSearchTerm" />
+                <i class="bi bi-search"></i>
+                <input type="search" name="studentSearchTerm" value="@Model.StudentSearchTerm" placeholder="Search by name, ID, or email..." />
+            </form>
+        </div>
 
-        <!-- Search Students -->
-        <form method="get" class="admin-search" style="margin-bottom: 1.5rem;">
-            <input type="hidden" name="tab" value="students" />
-            <input type="hidden" name="lecturerSearchTerm" value="@Model.LecturerSearchTerm" />
-            <div class="admin-search-input">
-                <input type="search" name="studentSearchTerm" value="@Model.StudentSearchTerm" placeholder="Search by ID, full name, or email" />
-            </div>
-            <button type="submit">Search</button>
-        </form>
+        <div id="SearchContainer-lecturers" class="w-100 w-md-auto d-none">
+            <form method="get" class="admin-search-wrapper">
+                <input type="hidden" name="tab" value="lecturers" />
+                <input type="hidden" name="studentSearchTerm" value="@Model.StudentSearchTerm" />
+                <i class="bi bi-search"></i>
+                <input type="search" name="lecturerSearchTerm" value="@Model.LecturerSearchTerm" placeholder="Search by name, ID, or email..." />
+            </form>
+        </div>
 
-        <!-- Students List Table -->
-        <section id="accounts-table-card-students" class="admin-card admin-table-card" style="border: 1px solid rgba(228, 240, 246, 0.14); border-radius: 8px; background: rgba(228, 240, 246, 0.04); overflow: hidden;">
-            <div class="admin-card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(228, 240, 246, 0.08); padding: 1rem;">
-                <h2 style="font-size: 16px; color: #e4f0f6; margin: 0;">List Students</h2>
-                <span style="font-size: 13px; color: rgba(228, 240, 246, 0.62);">@Model.Students.Count account(s)</span>
-            </div>
+        <!-- Action buttons -->
+        <div class="d-flex align-items-center gap-2 w-100 w-md-auto justify-content-md-end">
+            <button type="button" id="ImportExcelBtn" class="admin-secondary-btn flex items-center gap-2" style="border-radius: 8px;">
+                <i class="bi bi-download"></i>
+                <span data-i18n="admin.accounts.importExcelBtn">Import Excel</span>
+            </button>
+            <a id="CreateAccountBtn" asp-page="/Admin/AccountForm" asp-route-accountType="Student" class="admin-primary-btn flex items-center gap-2" style="border-radius: 8px;">
+                <i class="bi bi-person-plus-fill"></i>
+                <span data-i18n="admin.accounts.createAccount">Create User</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="admin-users-tabs">
+        <button type="button" class="admin-users-tab-btn" data-tab-name="students">
+            <span data-i18n="admin.sidebar.studentAccounts">Student Accounts</span>
+            <span class="admin-tab-count-badge">@Model.Students.Count.ToString("N0")</span>
+        </button>
+        <button type="button" class="admin-users-tab-btn" data-tab-name="lecturers">
+            <span data-i18n="admin.sidebar.lecturerAccounts">Lecturer Accounts</span>
+            <span class="admin-tab-count-badge">@Model.Lecturers.Count.ToString("N0")</span>
+        </button>
+    </div>
+
+    <!-- User Table Card Wrapper -->
+    <div class="admin-card rounded-xl overflow-hidden shadow-sm mb-5">
+        <!-- STUDENT ACCOUNTS PANEL -->
+        <div class="admin-tab-panel d-none" id="TabPanel-students">
             <div class="table-responsive">
-                <table class="table admin-table mb-0" style="width: 100%; border-collapse: collapse;">
+                <table class="table admin-table mb-0">
                     <thead>
-                        <tr style="background: rgba(228, 240, 246, 0.02); text-align: left;">
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Student ID</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Full Name</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Email</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Status</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Actions</th>
+                        <tr class="bg-surface-container-highest/30">
+                            <th class="px-4 py-3" data-i18n="admin.accounts.account">Account</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.email">Email</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.role">Role</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.status">Status</th>
+                            <th class="px-4 py-3 text-end" data-i18n="admin.accounts.actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var account in Model.Students)
                         {
-                            <tr style="border-bottom: 1px solid rgba(228, 240, 246, 0.05); color: #e4f0f6;">
-                                <td style="padding: 0.85rem 1rem;"><code>@account.Id</code></td>
-                                <td style="padding: 0.85rem 1rem;">@account.FullName</td>
-                                <td style="padding: 0.85rem 1rem;">@account.Email</td>
-                                <td style="padding: 0.85rem 1rem;">
-                                    <span class="admin-status @(account.Status == "Active" ? "is-active" : "is-locked")">@account.Status</span>
+                            var displayName = !string.IsNullOrWhiteSpace(account.FullName) ? account.FullName : account.Email;
+                            var avatarInitial = !string.IsNullOrWhiteSpace(displayName) ? displayName.Trim()[0].ToString().ToUpper() : "S";
+
+                            <tr class="hover:bg-surface-container-highest/20 transition-colors">
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="admin-user-avatar-student">@avatarInitial</div>
+                                        <div>
+                                            <div class="admin-user-name">@account.FullName</div>
+                                            <div class="admin-user-sub-id">ID: <code>@account.Id</code></div>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td style="padding: 0.85rem 1rem;" class="admin-actions">
-                                    <a asp-page="/Admin/AccountForm" asp-route-id="@account.Id" title="Edit">Edit</a>
-                                    @if (account.Status == "Active")
-                                    {
-                                        <form method="post" asp-page-handler="Lock" class="d-inline">
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="admin-email-truncate" title="@account.Email">@account.Email</div>
+                                </td>
+                                <td class="px-4 py-3 align-middle">
+                                    <span class="admin-role-badge">Student</span>
+                                </td>
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="admin-status-dot-wrapper">
+                                        <span class="admin-status-dot @(account.Status == "Active" ? "active" : "locked")"></span>
+                                        <span class="text-on-surface text-body-sm">@(account.Status == "Active" ? "Active" : "Locked")</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-middle text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a asp-page="/Admin/AccountForm" asp-route-id="@account.Id" class="admin-action-btn" title="Edit User">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        @if (account.Status == "Active")
+                                        {
+                                            <form method="post" asp-page-handler="Lock" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@account.Id" />
+                                                <input type="hidden" name="tab" value="students" />
+                                                <button type="submit" class="admin-action-btn" title="Lock Account">
+                                                    <i class="bi bi-lock-fill"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-page-handler="Unlock" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@account.Id" />
+                                                <input type="hidden" name="tab" value="students" />
+                                                <button type="submit" class="admin-action-btn text-success" title="Unlock Account" style="color: #10b981 !important;">
+                                                    <i class="bi bi-unlock-fill"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <form method="post" asp-page-handler="Delete" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@account.Id" />
                                             <input type="hidden" name="tab" value="students" />
-                                            <button type="submit">Lock</button>
+                                            <button type="submit" class="admin-action-btn delete-btn" title="Delete User" onclick="return confirm('Delete this student account?');">
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
                                         </form>
-                                    }
-                                    else
-                                    {
-                                        <form method="post" asp-page-handler="Unlock" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@account.Id" />
-                                            <input type="hidden" name="tab" value="students" />
-                                            <button type="submit">Unlock</button>
-                                        </form>
-                                    }
-                                    <form method="post" asp-page-handler="Delete" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@account.Id" />
-                                        <input type="hidden" name="tab" value="students" />
-                                        <button type="submit" class="danger" onclick="return confirm('Delete this account?');">Delete</button>
-                                    </form>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -128,93 +180,92 @@
             </div>
             @if (Model.Students.Count == 0)
             {
-                <div class="admin-empty-state" style="padding: 2rem; text-align: center; color: rgba(228, 240, 246, 0.45);">No matching students found.</div>
+                <div class="admin-empty-state py-5 text-center text-muted" data-i18n="admin.accounts.emptyStudents">
+                    No student accounts found.
+                </div>
             }
-        </section>
-    </div>
+        </div>
 
-    <!-- LECTURER ACCOUNTS PANEL -->
-    <div class="admin-tab-panel d-none" id="TabPanel-lecturers">
-        <!-- Import Lecturers Excel -->
-        <section class="admin-card mb-4" style="margin-bottom: 2rem; border: 1px solid rgba(228, 240, 246, 0.14); border-radius: 8px; background: rgba(228, 240, 246, 0.04); padding: 1.25rem;">
-            <div class="admin-card-header" style="border-bottom: 1px solid rgba(228, 240, 246, 0.08); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-                <h2 style="font-size: 16px; color: #e4f0f6; margin: 0;">Import lecturer accounts via Excel</h2>
-            </div>
-            <div>
-                <form method="post" asp-page-handler="ImportLecturers" enctype="multipart/form-data" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                    @Html.AntiForgeryToken()
-                    <input type="file" name="excelFile" accept=".xlsx" required style="padding: 0.5rem; border: 1px solid rgba(228, 240, 246, 0.14); border-radius: 6px; background: rgba(228, 240, 246, 0.04); color: #e4f0f6;" />
-                    <button type="submit" class="admin-primary-btn" style="height: auto;">Upload & Import</button>
-                </form>
-            </div>
-        </section>
-
-        <!-- Search Lecturers -->
-        <form method="get" class="admin-search" style="margin-bottom: 1.5rem;">
-            <input type="hidden" name="tab" value="lecturers" />
-            <input type="hidden" name="studentSearchTerm" value="@Model.StudentSearchTerm" />
-            <div class="admin-search-input">
-                <input type="search" name="lecturerSearchTerm" value="@Model.LecturerSearchTerm" placeholder="Search by ID, full name, or email" />
-            </div>
-            <button type="submit">Search</button>
-        </form>
-
-        <!-- Lecturers List Table -->
-        <section id="accounts-table-card-lecturers" class="admin-card admin-table-card" style="border: 1px solid rgba(228, 240, 246, 0.14); border-radius: 8px; background: rgba(228, 240, 246, 0.04); overflow: hidden;">
-            <div class="admin-card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(228, 240, 246, 0.08); padding: 1rem;">
-                <h2 style="font-size: 16px; color: #e4f0f6; margin: 0;">List Lecturers</h2>
-                <span style="font-size: 13px; color: rgba(228, 240, 246, 0.62);">@Model.Lecturers.Count account(s)</span>
-            </div>
+        <!-- LECTURER ACCOUNTS PANEL -->
+        <div class="admin-tab-panel d-none" id="TabPanel-lecturers">
             <div class="table-responsive">
-                <table class="table admin-table mb-0" style="width: 100%; border-collapse: collapse;">
+                <table class="table admin-table mb-0">
                     <thead>
-                        <tr style="background: rgba(228, 240, 246, 0.02); text-align: left;">
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Lecturer ID</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Full Name</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Email</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Department</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Status</th>
-                            <th style="padding: 0.75rem 1rem; color: rgba(228, 240, 246, 0.45); font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(228, 240, 246, 0.08);">Actions</th>
+                        <tr class="bg-surface-container-highest/30">
+                            <th class="px-4 py-3" data-i18n="admin.accounts.account">Account</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.email">Email</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.role">Role</th>
+                            <th class="px-4 py-3" data-i18n="admin.accounts.status">Status</th>
+                            <th class="px-4 py-3 text-end" data-i18n="admin.accounts.actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var account in Model.Lecturers)
                         {
-                            <tr style="border-bottom: 1px solid rgba(228, 240, 246, 0.05); color: #e4f0f6;">
-                                <td style="padding: 0.85rem 1rem;"><code>@account.Id</code></td>
-                                <td style="padding: 0.85rem 1rem;">@account.FullName</td>
-                                <td style="padding: 0.85rem 1rem;">@account.Email</td>
-                                <td style="padding: 0.85rem 1rem;">@account.Department</td>
-                                <td style="padding: 0.85rem 1rem;">
-                                    <span class="admin-status @(account.Status == "Active" ? "is-active" : "is-locked")">@account.Status</span>
+                            var displayName = !string.IsNullOrWhiteSpace(account.FullName) ? account.FullName : account.Email;
+                            var avatarInitial = !string.IsNullOrWhiteSpace(displayName) ? displayName.Trim()[0].ToString().ToUpper() : "L";
+
+                            <tr class="hover:bg-surface-container-highest/20 transition-colors">
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="admin-user-avatar-lecturer">@avatarInitial</div>
+                                        <div>
+                                            <div class="admin-user-name">@account.FullName</div>
+                                            <div class="admin-user-sub-id">ID: <code>@account.Id</code> @(string.IsNullOrWhiteSpace(account.Department) ? "" : $"· {account.Department}")</div>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td style="padding: 0.85rem 1rem;" class="admin-actions">
-                                    <a asp-page="/Admin/AccountForm" asp-route-id="@account.Id" title="Edit">Edit</a>
-                                    <a asp-page="/Admin/LecturerDetail" asp-route-id="@account.Id" title="Details">Details</a>
-                                    @if (account.Status == "Active")
-                                    {
-                                        <form method="post" asp-page-handler="Lock" class="d-inline">
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="admin-email-truncate" title="@account.Email">@account.Email</div>
+                                </td>
+                                <td class="px-4 py-3 align-middle">
+                                    <span class="admin-role-badge" style="background: rgba(148,163,184,0.15); color: #c0c6db; border-color: rgba(148,163,184,0.25);">Lecturer</span>
+                                </td>
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="admin-status-dot-wrapper">
+                                        <span class="admin-status-dot @(account.Status == "Active" ? "active" : "locked")"></span>
+                                        <span class="text-on-surface text-body-sm">@(account.Status == "Active" ? "Active" : "Locked")</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 align-middle text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a asp-page="/Admin/AccountForm" asp-route-id="@account.Id" class="admin-action-btn" title="Edit User">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <a asp-page="/Admin/LecturerDetail" asp-route-id="@account.Id" class="admin-action-btn" title="Details">
+                                            <i class="bi bi-info-circle-fill"></i>
+                                        </a>
+                                        @if (account.Status == "Active")
+                                        {
+                                            <form method="post" asp-page-handler="Lock" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@account.Id" />
+                                                <input type="hidden" name="tab" value="lecturers" />
+                                                <button type="submit" class="admin-action-btn" title="Lock Account">
+                                                    <i class="bi bi-lock-fill"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" asp-page-handler="Unlock" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@account.Id" />
+                                                <input type="hidden" name="tab" value="lecturers" />
+                                                <button type="submit" class="admin-action-btn text-success" title="Unlock Account" style="color: #10b981 !important;">
+                                                    <i class="bi bi-unlock-fill"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <form method="post" asp-page-handler="Delete" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@account.Id" />
                                             <input type="hidden" name="tab" value="lecturers" />
-                                            <button type="submit">Lock</button>
+                                            <button type="submit" class="admin-action-btn delete-btn" title="Delete User" onclick="return confirm('Delete this lecturer account?');">
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
                                         </form>
-                                    }
-                                    else
-                                    {
-                                        <form method="post" asp-page-handler="Unlock" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@account.Id" />
-                                            <input type="hidden" name="tab" value="lecturers" />
-                                            <button type="submit">Unlock</button>
-                                        </form>
-                                    }
-                                    <form method="post" asp-page-handler="Delete" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@account.Id" />
-                                        <input type="hidden" name="tab" value="lecturers" />
-                                        <button type="submit" class="danger" onclick="return confirm('Delete this account?');">Delete</button>
-                                    </form>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -223,28 +274,122 @@
             </div>
             @if (Model.Lecturers.Count == 0)
             {
-                <div class="admin-empty-state" style="padding: 2rem; text-align: center; color: rgba(228, 240, 246, 0.45);">No matching lecturers found.</div>
+                <div class="admin-empty-state py-5 text-center text-muted" data-i18n="admin.accounts.emptyLecturers">
+                    No lecturer accounts found.
+                </div>
             }
-        </section>
+        </div>
+    </div>
+
+    <!-- Bottom Contextual Information Grid -->
+    <div class="row g-4 mt-2">
+        <!-- Card 1: Account Security -->
+        <div class="col-12 col-md-4">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-circle bg-primary/10 border border-primary/20 d-flex align-items-center justify-content-center text-primary" style="width: 48px; height: 48px;">
+                        <i class="bi bi-shield-check fs-4"></i>
+                    </div>
+                    <h3 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem;" data-i18n="admin.accounts.securityTitle">Account Security</h3>
+                </div>
+                <p class="text-on-surface-variant text-body-sm leading-relaxed" style="font-size: 0.82rem;">
+                    <span data-i18n="admin.accounts.securityDesc1">Platform-wide accounts are protected by Identity rules. We currently manage </span>
+                    <strong>@Model.Lecturers.Count</strong>
+                    <span data-i18n="admin.accounts.securityDesc2"> lecturer roles and </span>
+                    <strong>@Model.Students.Count</strong>
+                    <span data-i18n="admin.accounts.securityDesc3"> student accounts securely.</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Card 2: Security Policies -->
+        <div class="col-12 col-md-4">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-circle bg-success/10 border border-success/20 d-flex align-items-center justify-content-center text-success" style="width: 48px; height: 48px;">
+                        <i class="bi bi-shield-lock-fill fs-4"></i>
+                    </div>
+                    <h3 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem;" data-i18n="admin.accounts.policyTitle">Security Policies</h3>
+                </div>
+                <ul class="list-unstyled space-y-2 mb-0" style="font-size: 0.82rem;">
+                    <li class="d-flex align-items-center gap-2 mb-2 text-on-surface-variant">
+                        <span class="w-1.5 h-1.5 rounded-circle bg-primary" style="width: 6px; height: 6px; display: inline-block;"></span>
+                        <span data-i18n="admin.accounts.policyLock">Auto-lock on 5 failed attempts</span>
+                    </li>
+                    <li class="d-flex align-items-center gap-2 mb-2 text-on-surface-variant">
+                        <span class="w-1.5 h-1.5 rounded-circle bg-primary" style="width: 6px; height: 6px; display: inline-block;"></span>
+                        <span data-i18n="admin.accounts.policyMfa">MFA optional for student roles</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Card 3: Usage Stats -->
+        <div class="col-12 col-md-4">
+            <div class="admin-card p-4 rounded-xl d-flex flex-column h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-circle bg-info/10 border border-info/20 d-flex align-items-center justify-content-center text-info" style="width: 48px; height: 48px;">
+                        <i class="bi bi-bar-chart-line fs-4"></i>
+                    </div>
+                    <h3 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem;" data-i18n="admin.accounts.statsTitle">Usage Stats</h3>
+                </div>
+                <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <div>
+                            <div class="text-3xl font-bold text-primary" style="font-size: 2.2rem; line-height: 1;">@((Model.Students.Count + Model.Lecturers.Count).ToString("N0"))</div>
+                            <div class="text-on-surface-variant font-label-sm mt-1" style="font-size: 0.75rem;" data-i18n="admin.accounts.statsTotal">Total Registered Accounts</div>
+                        </div>
+                        <a asp-page="/Admin/Statistics" class="text-primary font-bold text-body-sm d-flex align-items-center gap-1 hover:underline text-decoration-none" style="font-size: 0.8rem;">
+                            <span data-i18n="admin.accounts.statsDetails">Details</span> <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                    <!-- Stacked Distribution Bar -->
+                    @{
+                        var totalAcc = Model.Students.Count + Model.Lecturers.Count;
+                        double studentPercent = totalAcc > 0 ? (double)Model.Students.Count / totalAcc * 100 : 50;
+                        double lecturerPercent = totalAcc > 0 ? (double)Model.Lecturers.Count / totalAcc * 100 : 50;
+                    }
+                    <div class="admin-stats-progress-bar" style="height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 9999px; overflow: hidden; display: flex; margin-top: 0.75rem;">
+                        <div class="admin-stats-progress-fill" style="width: @studentPercent%; background-color: #0ea5e9;"></div>
+                        <div class="admin-stats-progress-fill" style="width: @lecturerPercent%; background-color: #bfc6df;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 text-muted" style="font-size: 11px;">
+                        <span>
+                            <span data-i18n="admin.accounts.statsStudentLabel">Student</span>: 
+                            @Model.Students.Count.ToString("N0") (@studentPercent.ToString("F0")%)
+                        </span>
+                        <span>
+                            <span data-i18n="admin.accounts.statsLecturerLabel">Lecturer</span>: 
+                            @Model.Lecturers.Count.ToString("N0") (@lecturerPercent.ToString("F0")%)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            const $tabBtns = $('.admin-tab-btn');
+            const $tabBtns = $('.admin-users-tab-btn');
             const $tabPanels = $('.admin-tab-panel');
+            
+            // Search containers
+            const $searchStudents = $('#SearchContainer-students');
+            const $searchLecturers = $('#SearchContainer-lecturers');
+
             const $createBtn = $('#CreateAccountBtn');
             const $activeTabState = $('#ActiveTabState');
 
             // Switch to a tab
             function switchToTab(tabName) {
-                // Deactivate all
+                // Deactivate all tab elements
                 $tabBtns.removeClass('active');
                 $tabPanels.addClass('d-none');
 
-                // Activate specific
-                const $activeBtn = $(`.admin-tab-btn[data-tab-name="${tabName}"]`);
+                // Activate specific panel & button
+                const $activeBtn = $(`.admin-users-tab-btn[data-tab-name="${tabName}"]`);
                 const $activePanel = $(`#TabPanel-${tabName}`);
 
                 if ($activeBtn.length && $activePanel.length) {
@@ -252,19 +397,22 @@
                     $activePanel.removeClass('d-none');
                     $activeTabState.val(tabName);
 
-                    // Update creation button link and preselected role query param
+                    // Sync Search inputs visibility
                     if (tabName === 'lecturers') {
+                        $searchStudents.addClass('d-none');
+                        $searchLecturers.removeClass('d-none');
                         $createBtn.attr('href', '/Admin/AccountForm?accountType=Lecturer');
                     } else {
+                        $searchLecturers.addClass('d-none');
+                        $searchStudents.removeClass('d-none');
                         $createBtn.attr('href', '/Admin/AccountForm?accountType=Student');
                     }
                 }
             }
 
-            // Click listener
+            // Click listener for tabs
             $tabBtns.on('click', function () {
                 const tabName = $(this).data('tab-name');
-                // Push active tab parameter to browser history for better UX on back/refresh
                 const url = new URL(window.location);
                 url.searchParams.set('tab', tabName);
                 window.history.pushState({}, '', url);
@@ -275,6 +423,16 @@
             // Initial load state
             const initialTab = new URLSearchParams(window.location.search).get('tab') || $activeTabState.val() || 'students';
             switchToTab(initialTab);
+
+            // Handle consolidated Import Excel button click
+            $('#ImportExcelBtn').on('click', function () {
+                const currentTab = $activeTabState.val();
+                if (currentTab === 'lecturers') {
+                    $('#ImportLecturersInput').click();
+                } else {
+                    $('#ImportStudentsInput').click();
+                }
+            });
         });
     </script>
 }
