@@ -1,6 +1,8 @@
 @inject Microsoft.AspNetCore.Identity.UserManager<EduChatbot.Models.Identity.ApplicationUser> UserManager
 @{
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    var currentPath = Context.Request.Path.Value ?? "";
+    var isSubscriptionActive = currentPath.StartsWith("/Subscription", StringComparison.OrdinalIgnoreCase);
     var appUser = await UserManager.GetUserAsync(User);
     var displayName = !string.IsNullOrWhiteSpace(appUser?.FullName)
         ? appUser.FullName
@@ -56,6 +58,11 @@
            asp-page="/Student/Quizzes/Index">
             <i class="bi bi-patch-question fs-5"></i>
             <span data-i18n="student.sidebar.quizzes">Quizzes</span>
+        </a>
+        <a class="nav-item d-flex align-items-center gap-3 px-3 py-2 rounded-3 @(isSubscriptionActive ? "active" : "")"
+           asp-page="/Subscription/Plans">
+            <i class="bi bi-stars fs-5"></i>
+            <span data-i18n="student.sidebar.subscription">Subscription</span>
         </a>
     </nav>
 

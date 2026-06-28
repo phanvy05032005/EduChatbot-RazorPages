@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PayOS;
 using Pgvector.EntityFrameworkCore;
 
 namespace EduChatbot.Business;
@@ -65,6 +66,23 @@ public static class DependencyInjection
         services.AddScoped<IEmailQueueService, EmailQueueService>();
         services.AddHostedService<EmailQueueWorker>();
 
+        // PayOS + Subscription + Payment
+        services.Configure<EduChatbot.Business.Services.PayOSOptions>(
+            configuration.GetSection(EduChatbot.Business.Services.PayOSOptions.SectionName));
+
+        services.AddSingleton<PayOSClient>(sp =>
+        {
+            var payosSection = configuration.GetSection(EduChatbot.Business.Services.PayOSOptions.SectionName);
+            var clientId = payosSection["ClientId"] ?? string.Empty;
+            var apiKey = payosSection["ApiKey"] ?? string.Empty;
+            var checksumKey = payosSection["ChecksumKey"] ?? string.Empty;
+            return new PayOSClient(clientId, apiKey, checksumKey);
+        });
+
+        services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        services.AddScoped<IPayOSPaymentService, PayOSPaymentService>();
+        services.AddScoped<ISubscriptionService, SubscriptionService>();
+        services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
         return services;
     }
 

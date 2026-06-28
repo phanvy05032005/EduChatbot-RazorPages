@@ -1,0 +1,113 @@
+@page
+@model EduChatbot.Web.Pages.Subscription.MeModel
+
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "My Subscription";
+    ViewData["BodyClass"] = "subscription-shell";
+    var sub = Model.Subscription;
+    var usedPercent = sub.TokenLimit > 0
+        ? Math.Min((double)sub.UsedTokens / sub.TokenLimit * 100, 100)
+        : 0;
+}
+
+<link rel="stylesheet" href="~/css/subscription.css" asp-append-version="true" />
+
+<section class="sub-page">
+    <header class="sub-hero">
+        <div class="sub-kicker" data-i18n="subscription.me.kicker">My Subscription</div>
+        <h1 data-i18n="subscription.me.title">My Subscription</h1>
+        <p data-i18n="subscription.me.subtitle">Review your current plan, request quota, and unlocked learning features.</p>
+    </header>
+
+    @if (TempData["SubMessage"] != null)
+    {
+        var msgType = TempData["SubMessageType"]?.ToString() ?? "warning";
+        <div class="sub-alert @msgType">
+            @if (msgType == "warning")
+            {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            }
+            else
+            {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            }
+            <strong>@TempData["SubMessage"]</strong>
+        </div>
+    }
+
+    <div class="sub-me-grid">
+        <div class="sub-me-stat accent">
+            <span data-i18n="subscription.me.currentPlan">Current Plan</span>
+            <strong>@sub.AccountTitle</strong>
+        </div>
+        <div class="sub-me-stat success">
+            <span data-i18n="subscription.me.remaining">Remaining Requests</span>
+            <strong>@sub.RemainingTokens.ToString("N0")</strong>
+        </div>
+        <div class="sub-me-stat warning">
+            <span data-i18n="subscription.me.used">Used Requests</span>
+            <strong>@sub.UsedTokens.ToString("N0")</strong>
+        </div>
+    </div>
+
+    <div class="sub-me-detail">
+        <div class="sub-me-detail-header">
+            <div class="sub-me-detail-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            </div>
+            <h2 data-i18n="subscription.me.details">Plan Details</h2>
+        </div>
+
+        <div class="sub-me-detail-row">
+            <label data-i18n="subscription.me.planType">Plan Type</label>
+            <span class="value">@sub.SubscriptionType</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label data-i18n="subscription.me.planName">Plan Name</label>
+            <span class="value">@sub.AccountTitle</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label data-i18n="subscription.me.limit">Request Limit</label>
+            <span class="value">@sub.TokenLimit.ToString("N0")</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label data-i18n="subscription.me.nextReset">Next Reset Time</label>
+            <span class="value">@sub.NextRefreshTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</span>
+        </div>
+        <div class="sub-me-detail-row">
+            <label>Quiz</label>
+            @if (sub.QuizUnlocked)
+            {
+                <span class="value success" data-i18n="subscription.me.quizUnlocked">Unlocked</span>
+            }
+            else
+            {
+                <span class="value danger" data-i18n="subscription.me.quizLocked">Locked — Premium required</span>
+            }
+        </div>
+
+        <div class="sub-token-bar">
+            <div class="sub-token-bar-label">
+                <span data-i18n="subscription.me.used">Used Requests</span>
+                <span>@sub.UsedTokens.ToString("N0") / @sub.TokenLimit.ToString("N0")</span>
+            </div>
+            <div class="sub-token-bar-track">
+                <div class="sub-token-bar-fill" style="width: @usedPercent.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+            </div>
+        </div>
+
+        <div class="sub-me-actions">
+            @if (!sub.QuizUnlocked)
+            {
+                <a asp-page="/Subscription/Plans" class="sub-link-btn primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    <span data-i18n="subscription.action.upgrade">Upgrade Premium</span>
+                </a>
+            }
+            <a asp-page="/Student/Chat" class="sub-link-btn">
+                <span data-i18n="subscription.action.backChat">Back to Chat</span>
+            </a>
+        </div>
+    </div>
+</section>

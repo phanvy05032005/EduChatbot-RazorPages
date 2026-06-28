@@ -217,7 +217,10 @@
                                         <form method="post" asp-page-handler="DeleteCourse" class="mb-0 d-inline-block">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@course.Id" />
-                                            <button type="submit" class="admin-action-btn delete-btn" onclick="return confirm('Delete this course? All uploaded course documents will lose connection.');" style="padding: 0.35rem; border-radius: 6px;" title="Delete Course">
+                                            <button type="submit" class="admin-action-btn delete-btn" 
+                                                    data-i18n-confirm="admin.courses.confirmDelete"
+                                                    data-i18n-confirm-en="Delete this course? All uploaded course documents will lose connection."
+                                                    style="padding: 0.35rem; border-radius: 6px;" title="Delete Course">
                                                 <i class="bi bi-trash3-fill"></i>
                                             </button>
                                         </form>

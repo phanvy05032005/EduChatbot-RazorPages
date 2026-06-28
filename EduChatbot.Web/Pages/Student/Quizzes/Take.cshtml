@@ -84,9 +84,25 @@
                     timerDisplay.textContent = "00:00";
                     timerDisplay.style.color = "#dc3545";
                     
-                    // Auto submit form
-                    alert("Time is up! Your quiz is being submitted automatically.");
-                    form.submit();
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: window.EduI18n && window.EduI18n.getLang() === 'vi' ? 'Hết giờ làm bài!' : 'Time is Up!',
+                            text: window.EduI18n && window.EduI18n.getLang() === 'vi' ? 'Thời gian làm bài thi của bạn đã hết. Bài thi sẽ tự động được nộp.' : 'Your quiz time has run out. Your answers are being submitted automatically.',
+                            icon: 'warning',
+                            background: '#181c26',
+                            color: '#fff',
+                            confirmButtonColor: '#007bff',
+                            confirmButtonText: 'OK',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            willClose: function () {
+                                form.submit();
+                            }
+                        });
+                    } else {
+                        alert("Time is up! Your quiz is being submitted automatically.");
+                        form.submit();
+                    }
                     return;
                 }
 

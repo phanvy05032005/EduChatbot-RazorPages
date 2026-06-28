@@ -101,7 +101,10 @@
                                 <form method="post" asp-page-handler="Delete" class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@account.Id" />
-                                    <button type="submit" class="danger" onclick="return confirm('Delete this account?');" data-i18n="admin.accounts.delete">Delete</button>
+                                    <button type="submit" class="danger" 
+                                            data-i18n-confirm="admin.accounts.confirmDelete"
+                                            data-i18n-confirm-en="Are you sure you want to delete this account?"
+                                            data-i18n="admin.accounts.delete">Delete</button>
                                 </form>
                             </td>
                         </tr>

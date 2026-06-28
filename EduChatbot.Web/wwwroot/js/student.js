@@ -58,6 +58,46 @@
         let isSending = false;
         let isComposing = false;
 
+        function updateQuotaBadge(remaining, limit) {
+            const badge = document.getElementById('chat-quota-badge');
+            if (badge) {
+                const label = window.EduI18n ? EduI18n.t('student.chat.quotaLabel') : 'Requests';
+                badge.textContent = label + ': ' + remaining + '/' + limit;
+                
+                // Reset state classes
+                badge.className = 'badge rounded-pill px-3 py-2 fw-semibold';
+                
+                const percent = (remaining / limit) * 100;
+                if (remaining <= 0) {
+                    badge.classList.add('quota-badge-danger');
+                    disableChatInput();
+                } else if (percent <= 20) {
+                    badge.classList.add('quota-badge-warning');
+                } else {
+                    badge.classList.add('quota-badge-success');
+                }
+            }
+        }
+
+        function disableChatInput() {
+            if (chatInput) {
+                chatInput.disabled = true;
+                const viMsg = 'Bạn đã hết lượt hỏi. Vui lòng nâng cấp gói hoặc chờ reset.';
+                const enMsg = 'You have no requests remaining. Please upgrade or wait for reset.';
+                chatInput.placeholder = window.EduI18n && EduI18n.currentLang === 'vi' ? viMsg : enMsg;
+            }
+            if (sendBtn) {
+                sendBtn.disabled = true;
+            }
+        }
+
+        const quotaBadge = document.getElementById('chat-quota-badge');
+        if (quotaBadge) {
+            const initialRemaining = parseInt(quotaBadge.getAttribute('data-remaining') || '0', 10);
+            const initialLimit = parseInt(quotaBadge.getAttribute('data-limit') || '0', 10);
+            updateQuotaBadge(initialRemaining, initialLimit);
+        }
+
         function updateSendBtn() {
             sendBtn.disabled = isSending || !chatInput.value.trim();
         }
@@ -149,6 +189,7 @@
             scrollToBottom();
 
             let accumulated = '';
+            let handledError = false;
 
             fetch(streamUrl, {
                 method: 'POST',
@@ -161,6 +202,46 @@
                     '&__RequestVerificationToken=' + encodeURIComponent(antiForgeryToken)
             })
             .then(function (res) {
+                if (!res.ok) {
+                    return res.json().then(function (data) {
+                        isSending = false;
+                        updateSendBtn();
+                        handledError = true;
+                        
+                        // Default fallback message
+                        const defaultErrorMsg = window.EduI18n && EduI18n.currentLang === 'vi'
+                            ? 'Bạn đã sử dụng hết lượt hỏi của gói hiện tại. Vui lòng chờ đến kỳ reset tiếp theo hoặc nâng cấp gói.'
+                            : 'You have used all requests in your current plan. Please wait until the next reset period or upgrade your plan.';
+                        const errorMsg = data.message || defaultErrorMsg;
+                            
+                        const upgradeLabel = window.EduI18n && EduI18n.currentLang === 'vi'
+                            ? 'Xem gói dịch vụ'
+                            : 'View Subscription Plans';
+
+                        // Render error details directly in chat bubble with warning styles
+                        bubble.innerHTML = '<div class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-2"></i>' + escapeHtml(errorMsg) + '</div>' +
+                            '<div class="mt-2"><a href="/Subscription/Plans" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold px-3"><i class="bi bi-stars me-1"></i>' + upgradeLabel + '</a></div>';
+                        
+                        finishStream(bubble, "");
+                        
+                        if (data.errorCode === 'REQUEST_QUOTA_EXCEEDED') {
+                            disableChatInput();
+                            const qBadge = document.getElementById('chat-quota-badge');
+                            if (qBadge) {
+                                const limit = parseInt(qBadge.getAttribute('data-limit') || '100', 10);
+                                updateQuotaBadge(0, limit);
+                            }
+                        }
+                        
+                        throw new Error(data.message || "Quota exceeded");
+                    }).catch(function (err) {
+                        isSending = false;
+                        updateSendBtn();
+                        if (err.message && err.message !== "Quota exceeded") {
+                            throw err;
+                        }
+                    });
+                }
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
@@ -180,9 +261,7 @@
                         if (!line.startsWith('data: ')) continue;
                         const jsonStr = line.substring(6);
                         try {
-                            const data = JSON.parse(jsonStr);
-
-                            if (data.token) {
+                            const data = JSON.parse(jsonStr);                             if (data.token) {
                                 accumulated += data.token;
                                 bubble.innerHTML = renderMarkdown(accumulated) + '<span class="typing-cursor"></span>';
                                 scrollToBottom();
@@ -192,6 +271,12 @@
                                 avatar.classList.add('bg-warning');
                                 bubble.innerHTML = renderMarkdown(accumulated);
                                 scrollToBottom();
+                            } else if (data.type === 'quota') {
+                                updateQuotaBadge(data.remainingRequests, data.requestLimit);
+                            } else if (data.type === 'error') {
+                                handledError = true;
+                                bubble.innerHTML = '<div class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-2"></i>' + escapeHtml(data.message) + '</div>';
+                                finishStream(bubble, "");
                             } else if (data.sources && data.sources.length > 0) {
                                 renderStreamSources(contentDiv, data.sources);
                                 scrollToBottom();
@@ -206,7 +291,8 @@
 
                 return reader.read().then(processChunk);
             })
-            .catch(function () {
+            .catch(function (err) {
+                if (handledError) return;
                 bubble.innerHTML = renderMarkdown(window.EduI18n ? EduI18n.t('chat.errorSending') : 'Sorry, an error occurred. Please try again.');
                 scrollToBottom();
             })

@@ -23,6 +23,7 @@
         'nav.myCourses': 'Môn học của tôi',
         'nav.allCourses': 'Tất cả môn học',
         'student.sidebar.quizzes': 'Bài trắc nghiệm',
+        'student.sidebar.subscription': 'Gói dịch vụ',
         'nav.quizzesManagement': 'Quản lý trắc nghiệm',
         'nav.quizzes': 'Trắc nghiệm',
 
@@ -548,6 +549,7 @@
         'student.sidebar.chathistory': 'Lịch sử Chat',
         'student.sidebar.courses': 'Môn học',
         'student.sidebar.documents': 'Tài liệu',
+        'student.sidebar.subscription': 'Gói dịch vụ',
         'student.sidebar.logout': 'Đăng xuất',
         'student.sidebar.profile': 'Hồ sơ của tôi',
         'student.sidebar.changepassword': 'Đổi mật khẩu',
@@ -555,6 +557,39 @@
         'student.topbar.changepassword': 'Đổi mật khẩu',
         'student.topbar.startchat': 'Bắt đầu Chat mới',
         'student.topbar.search_placeholder': 'Tìm môn học, tài liệu...',
+
+        /* ---- Subscription ---- */
+        'subscription.kicker': 'Gói dịch vụ',
+        'subscription.plans.title': 'Gói dịch vụ',
+        'subscription.plans.subtitle': 'Chọn gói để mở khóa tính năng học tập và duy trì tiến độ học.',
+        'subscription.plans.viewMine': 'Gói của tôi',
+        'subscription.price.free': 'Miễn phí',
+        'subscription.feature.requests': 'lượt hỏi',
+        'subscription.feature.chat': 'Hỗ trợ học tập qua Chat AI',
+        'subscription.feature.quizUnlocked': 'Mở khóa Quiz',
+        'subscription.feature.quizLocked': 'Quiz bị khóa',
+        'subscription.badge.current': 'Gói hiện tại',
+        'subscription.badge.premiumCurrent': 'Premium đang hoạt động',
+        'subscription.action.upgrade': 'Nâng cấp Premium',
+        'subscription.action.backChat': 'Quay lại Chat',
+        'subscription.action.backDashboard': 'Quay lại bảng điều khiển',
+        'subscription.action.viewMine': 'Xem gói của tôi',
+        'subscription.action.retry': 'Thử lại',
+        'subscription.me.kicker': 'Gói của tôi',
+        'subscription.me.title': 'Gói dịch vụ của bạn',
+        'subscription.me.subtitle': 'Xem gói hiện tại, lượt hỏi còn lại và các tính năng học tập đã mở khóa.',
+        'subscription.me.currentPlan': 'Gói hiện tại',
+        'subscription.me.remaining': 'Lượt hỏi còn lại',
+        'subscription.me.used': 'Lượt hỏi đã dùng',
+        'subscription.me.details': 'Chi tiết gói dịch vụ',
+        'subscription.me.planType': 'Loại gói',
+        'subscription.me.planName': 'Tên gói',
+        'subscription.me.limit': 'Hạn mức lượt hỏi',
+        'subscription.me.nextReset': 'Thời gian reset tiếp theo',
+        'subscription.me.quizUnlocked': 'Đã mở khóa',
+        'subscription.me.quizLocked': 'Bị khóa - Cần Premium',
+        'subscription.callback.successTitle': 'Thanh toán thành công',
+        'subscription.callback.failedTitle': 'Thanh toán thất bại',
 
         /* ---- Student Dashboard ---- */
         'student.dashboard.welcome': 'Chào mừng quay lại',
@@ -670,10 +705,19 @@
         'student.chat.match': 'độ khớp',
         'student.chat.sourcePreview': 'Xem nguồn trích dẫn',
         'student.chat.openDocument': 'Mở tài liệu',
+        'student.chat.quotaLabel': 'Lượt hỏi',
+        'student.chat.quotaExceeded': 'Bạn đã sử dụng hết lượt hỏi của gói hiện tại. Vui lòng chờ đến kỳ reset tiếp theo hoặc nâng cấp gói.',
+        'student.chat.quotaExceededShort': 'Hết lượt hỏi',
+        'student.chat.upgradePlan': 'Nâng cấp gói',
+        'student.chat.noRequestsPlaceholder': 'Bạn đã hết lượt hỏi. Vui lòng nâng cấp gói hoặc chờ reset.',
+        'student.chat.waitForReset': 'Vui lòng chờ đến kỳ reset tiếp theo.',
+        'student.chat.viewSubscriptionPlans': 'Xem gói dịch vụ',
+        'documents.deleteConfirm': 'Bạn có chắc chắn muốn xóa tài liệu này cùng với tất cả các phân đoạn (chunk) của nó?',
     };
 
     /* ---------- English translations for JS-generated text ---------- */
     const EN = {
+        'student.sidebar.subscription': 'Subscription',
         'student.chat.sources': 'Sources:',
         'student.chat.chunk': 'Chunk',
         'student.chat.match': 'match',
@@ -692,6 +736,14 @@
         'student.chat.thinking': 'EduBot is thinking...',
         'student.chat.inputPlaceholder': 'Ask EduBot a question about courses...',
         'student.chat.input_placeholder': 'Ask EduBot a question about courses...',
+        'student.chat.quotaLabel': 'Requests',
+        'student.chat.quotaExceeded': 'You have used all requests in your current plan. Please wait until the next reset period or upgrade your plan.',
+        'student.chat.quotaExceededShort': 'Quota Exceeded',
+        'student.chat.upgradePlan': 'Upgrade Plan',
+        'student.chat.noRequestsPlaceholder': 'You have no requests remaining. Please upgrade or wait for reset.',
+        'student.chat.waitForReset': 'Please wait until the next reset period.',
+        'student.chat.viewSubscriptionPlans': 'View Subscription Plans',
+        'documents.deleteConfirm': 'Are you sure you want to delete this document and all its chunks?',
         'chat.searchingDocs': 'Searching documents...',
         'chat.errorSending': 'Sorry, an error occurred while sending the message. Please try again.',
         'student.chathistory.delete': 'Delete',
@@ -705,7 +757,44 @@
         'student.chathistory.bulkDeleteModalTitle': 'Delete Conversations',
         'student.chathistory.bulkDeleteConfirm': 'Are you sure you want to delete all selected chats?',
         'student.chathistory.deleteMultipleSuccess': 'Successfully deleted the selected chat conversations.',
-        'student.chathistory.noChatsSelected': 'No conversations selected for deletion.'
+        'student.chathistory.noChatsSelected': 'No conversations selected for deletion.',
+
+        /* ---- Subscription ---- */
+        'subscription.kicker': 'Subscription',
+        'subscription.plans.title': 'Subscription Plans',
+        'subscription.plans.subtitle': 'Choose a plan to unlock learning features and keep your study flow moving.',
+        'subscription.plans.viewMine': 'My Subscription',
+        'subscription.price.free': 'Free',
+        'subscription.feature.requests': 'requests',
+        'subscription.feature.chat': 'AI learning chat',
+        'subscription.feature.quizUnlocked': 'Quiz unlocked',
+        'subscription.feature.quizLocked': 'Quiz locked',
+        'subscription.badge.current': 'Current plan',
+        'subscription.badge.premiumCurrent': 'Premium active',
+        'subscription.action.upgrade': 'Upgrade Premium',
+        'subscription.action.backChat': 'Back to Chat',
+        'subscription.action.backDashboard': 'Back to Dashboard',
+        'subscription.action.viewMine': 'View My Subscription',
+        'subscription.action.retry': 'Try Again',
+        'subscription.me.kicker': 'My Subscription',
+        'subscription.me.title': 'My Subscription',
+        'subscription.me.subtitle': 'Review your current plan, request quota, and unlocked learning features.',
+        'subscription.me.currentPlan': 'Current Plan',
+        'subscription.me.remaining': 'Remaining Requests',
+        'subscription.me.used': 'Used Requests',
+        'subscription.me.details': 'Plan Details',
+        'subscription.me.planType': 'Plan Type',
+        'subscription.me.planName': 'Plan Name',
+        'subscription.me.limit': 'Request Limit',
+        'subscription.me.nextReset': 'Next Reset Time',
+        'subscription.me.quizUnlocked': 'Unlocked',
+        'subscription.me.quizLocked': 'Locked — Premium required',
+        'subscription.callback.successTitle': 'Payment Successful',
+        'subscription.callback.failedTitle': 'Payment Failed',
+        'subscription.callback.successDesc': 'Your account has been upgraded to Premium successfully.',
+        'subscription.callback.cancelledDesc': 'The payment was cancelled. You are still on the Basic plan.',
+        'subscription.callback.failedDesc': 'The payment failed. Please try again.',
+        'subscription.callback.errorDesc': 'Invalid order information or error verifying payment.'
     };
 
     /* ---------- Core logic ---------- */
@@ -759,17 +848,77 @@
             }
         });
 
-        // Translate data-i18n-confirm (onclick confirm dialogs)
+        // Setup modern SweetAlert2 confirm handler
         document.querySelectorAll('[data-i18n-confirm]').forEach(function (el) {
-            var key = el.getAttribute('data-i18n-confirm');
-            if (lang === 'vi' && VI[key]) {
-                el.setAttribute('onclick', "return confirm('" + VI[key].replace(/'/g, "\\'") + "');");
-            } else {
-                var en = el.getAttribute('data-i18n-confirm-en');
-                if (en) {
-                    el.setAttribute('onclick', "return confirm('" + en.replace(/'/g, "\\'") + "');");
+            // Remove any inline onclick attributes to prevent native dialogs
+            el.removeAttribute('onclick');
+
+            // Avoid adding multiple click event listeners if toggle is called multiple times
+            if (el.dataset.swalHooked) return;
+            el.dataset.swalHooked = "true";
+            
+            el.addEventListener('click', function(e) {
+                // If this click is triggered programmatically by our code, let it proceed!
+                if (el.dataset.swalSubmitting === 'true') {
+                    return;
                 }
-            }
+
+                e.preventDefault();
+                var currentLang = EduI18n.getLang();
+                var key = el.getAttribute('data-i18n-confirm');
+                
+                var text = "";
+                if (currentLang === 'vi' && VI[key]) {
+                    text = VI[key];
+                } else if (currentLang === 'en' && EN[key]) {
+                    text = EN[key];
+                } else {
+                    text = el.getAttribute('data-i18n-confirm-en') || el.getAttribute('data-i18n-confirm') || '';
+                }
+                
+                // Show modern SweetAlert2 confirm dialog
+                if (window.Swal) {
+                    Swal.fire({
+                        title: currentLang === 'vi' ? 'Xác nhận' : 'Confirm',
+                        text: text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: currentLang === 'vi' ? 'Đồng ý' : 'Yes',
+                        cancelButtonText: currentLang === 'vi' ? 'Hủy' : 'Cancel',
+                        background: '#181c26',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'swal2-dark-custom shadow border'
+                        }
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            var form = el.closest('form');
+                            if (form && el.type === 'submit') {
+                                // Programmatically submit the form
+                                el.dataset.swalSubmitting = 'true';
+                                el.click(); // Click again, which will trigger default behavior since swalSubmitting is true
+                                el.dataset.swalSubmitting = 'false';
+                            } else if (el.tagName === 'A') {
+                                window.location.href = el.href;
+                            } else if (form) {
+                                form.submit();
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback to native confirm if SweetAlert2 is not loaded
+                    if (confirm(text)) {
+                        var form = el.closest('form');
+                        if (form) {
+                            form.submit();
+                        } else if (el.tagName === 'A') {
+                            window.location.href = el.href;
+                        }
+                    }
+                }
+            });
         });
 
         // Update toggle button text

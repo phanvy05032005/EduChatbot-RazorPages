@@ -55,7 +55,7 @@ public class TakeModel : PageModel
         try
         {
             await _studentQuizService.SubmitQuizAsync(Input.AttemptId, studentId, Input);
-            return RedirectToPage("/Student/Quizzes/Result", new { attemptId = Input.AttemptId });
+            return RedirectToPage("/Student/Quizzes/Result", new { attemptId = Input.AttemptId, submitted = true });
         }
         catch (Exception ex)
         {

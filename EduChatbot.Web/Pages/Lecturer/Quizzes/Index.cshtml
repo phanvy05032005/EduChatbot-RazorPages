@@ -404,9 +404,12 @@
                                         </a>
                                         @if (quiz.Status == QuizStatuses.Published)
                                         {
-                                            <form method="post" asp-page-handler="Archive" asp-route-id="@quiz.Id" style="display: inline;" onsubmit="return confirm('Are you sure you want to archive this quiz?\nStudents will no longer see this quiz for new attempts, but existing attempts and results will be kept.');">
+                                            <form method="post" asp-page-handler="Archive" asp-route-id="@quiz.Id" style="display: inline;">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="quiz-action-btn btn-archive" title="Archive" data-i18n-title="quizzes.lecturer.rev.archiveBtn">
+                                                <button type="submit" class="quiz-action-btn btn-archive" title="Archive" 
+                                                        data-i18n-title="quizzes.lecturer.rev.archiveBtn"
+                                                        data-i18n-confirm="quizzes.lecturer.rev.archiveConfirm"
+                                                        data-i18n-confirm-en="Are you sure you want to archive this quiz? Students will no longer see this quiz for new attempts, but existing attempts and results will be kept.">
                                                     <i class="bi bi-archive"></i>
                                                 </button>
                                             </form>

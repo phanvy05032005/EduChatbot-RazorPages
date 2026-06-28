@@ -458,56 +458,95 @@
             const conversationId = deleteBtn.dataset.conversationId;
             if (!conversationId) return;
 
-            const confirmed = confirm('Bạn có chắc chắn muốn xóa cuộc trò chuyện này?');
-            if (!confirmed) return;
+            const titleText = window.EduI18n && EduI18n.currentLang === 'en' ? 'Delete Conversation' : 'Xóa cuộc trò chuyện';
+            const confirmMsgText = window.EduI18n && EduI18n.currentLang === 'en' 
+                ? 'Are you sure you want to delete this conversation?' 
+                : 'Bạn có chắc chắn muốn xóa cuộc trò chuyện này?';
+            const deleteBtnText = window.EduI18n && EduI18n.currentLang === 'en' ? 'Delete' : 'Xóa';
+            const cancelBtnText = window.EduI18n && EduI18n.currentLang === 'en' ? 'Cancel' : 'Hủy';
 
-            fetch('/Chat/Index?handler=DeleteConversation', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': antiForgeryToken
-                },
-                body: 'id=' + encodeURIComponent(conversationId) + '&__RequestVerificationToken=' + encodeURIComponent(antiForgeryToken)
-            })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Lỗi từ máy chủ khi xóa cuộc trò chuyện.');
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Remove from DOM
-                    const wrapper = deleteBtn.closest('.chat-sidebar-item-wrapper');
-                    if (wrapper) {
-                        const isCurrentActive = wrapper.classList.contains('active');
-                        const group = wrapper.closest('.chat-sidebar-group');
-                        wrapper.remove();
-
-                        // If no more items in the group, remove the group header
-                        if (group && group.querySelectorAll('.chat-sidebar-item-wrapper').length === 0) {
-                            group.remove();
-                        }
-
-                        // If the sidebar is now completely empty, show empty state message
-                        const sidebarList = document.querySelector('.chat-sidebar-list');
-                        if (sidebarList && sidebarList.querySelectorAll('.chat-sidebar-item-wrapper').length === 0) {
-                            sidebarList.innerHTML = '<div class="chat-sidebar-empty" data-i18n="chat.noConversationsShort">No conversations yet.</div>';
-                        }
-
-                        // If we deleted the currently active conversation, redirect to Index
-                        if (isCurrentActive) {
-                            window.location.href = '/Chat/Index';
-                        }
+            if (window.Swal) {
+                Swal.fire({
+                    title: titleText,
+                    text: confirmMsgText,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: deleteBtnText,
+                    cancelButtonText: cancelBtnText,
+                    background: '#181c26',
+                    color: '#fff'
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        executeDelete();
                     }
-                } else {
-                    alert('Không thể xóa cuộc trò chuyện: ' + (data.error || 'Lỗi không xác định'));
+                });
+            } else {
+                if (confirm(confirmMsgText)) {
+                    executeDelete();
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Có lỗi xảy ra: ' + err.message);
-            });
+            }
+
+            function executeDelete() {
+                fetch('/Chat/Index?handler=DeleteConversation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': antiForgeryToken
+                    },
+                    body: 'id=' + encodeURIComponent(conversationId) + '&__RequestVerificationToken=' + encodeURIComponent(antiForgeryToken)
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Lỗi từ máy chủ khi xóa cuộc trò chuyện.');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Remove from DOM
+                        const wrapper = deleteBtn.closest('.chat-sidebar-item-wrapper');
+                        if (wrapper) {
+                            const isCurrentActive = wrapper.classList.contains('active');
+                            const group = wrapper.closest('.chat-sidebar-group');
+                            wrapper.remove();
+
+                            // If no more items in the group, remove the group header
+                            if (group && group.querySelectorAll('.chat-sidebar-item-wrapper').length === 0) {
+                                group.remove();
+                            }
+
+                            // If the sidebar is now completely empty, show empty state message
+                            const sidebarList = document.querySelector('.chat-sidebar-list');
+                            if (sidebarList && sidebarList.querySelectorAll('.chat-sidebar-item-wrapper').length === 0) {
+                                sidebarList.innerHTML = '<div class="chat-sidebar-empty" data-i18n="chat.noConversationsShort">No conversations yet.</div>';
+                            }
+
+                            // If we deleted the currently active conversation, redirect to Index
+                            if (isCurrentActive) {
+                                window.location.href = '/Chat/Index';
+                            }
+                        }
+                    } else {
+                        throw new Error(data.error || 'Lỗi không xác định');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: err.message,
+                            icon: 'error',
+                            background: '#181c26',
+                            color: '#fff'
+                        });
+                    } else {
+                        alert('Có lỗi xảy ra: ' + err.message);
+                    }
+                });
+            }
         });
     })();
 })();

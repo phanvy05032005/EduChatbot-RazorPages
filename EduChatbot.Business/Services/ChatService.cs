@@ -18,6 +18,7 @@ public class ChatService : IChatService
     private readonly OpenRouterSettings _settings;
     private readonly ChatSettings _chatSettings;
     private readonly ILogger<ChatService> _logger;
+    private readonly ISubscriptionAccessService _accessService;
 
     private static readonly Regex CjkRegex = new(
         @"[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF]",
@@ -29,7 +30,8 @@ public class ChatService : IChatService
         HttpClient httpClient,
         IOptions<OpenRouterSettings> settings,
         IOptions<ChatSettings> chatSettings,
-        ILogger<ChatService> logger)
+        ILogger<ChatService> logger,
+        ISubscriptionAccessService accessService)
     {
         _chatRepository = chatRepository;
         _embeddingService = embeddingService;
@@ -37,6 +39,7 @@ public class ChatService : IChatService
         _settings = settings.Value;
         _chatSettings = chatSettings.Value;
         _logger = logger;
+        _accessService = accessService;
     }
 
     public async Task<List<ChatConversation>> GetConversationsAsync(string userId)
@@ -86,7 +89,9 @@ public class ChatService : IChatService
             throw new UnauthorizedAccessException("Access denied: Conversation does not exist or does not belong to the current user.");
         }
 
-        // Step 2: Save user message to DB now that ownership is validated.
+        await _accessService.CheckCanChatAsync(userId);
+
+        // Step 2: Save user message to DB now that ownership and quota are validated.
         var userMessage = new ChatMessage
         {
             ConversationId = conversationId,
@@ -164,7 +169,9 @@ public class ChatService : IChatService
         };
         await _chatRepository.AddMessageAsync(aiMessage);
 
-        // Step 8: Update title and return
+        await _accessService.ConsumeChatRequestAsync(userId);
+
+        // Step 8: Update title and return.
         await UpdateConversationTitleAsync(conversationId, userId, question);
 
         return aiMessage;
@@ -182,7 +189,9 @@ public class ChatService : IChatService
             yield break;
         }
 
-        // Step 2: Save user message to DB now that ownership is validated.
+        await _accessService.CheckCanChatAsync(userId);
+
+        // Step 2: Save user message to DB now that ownership and quota are validated.
         var userMessage = new ChatMessage
         {
             ConversationId = conversationId,
@@ -251,6 +260,12 @@ public class ChatService : IChatService
                 CreatedAt = DateTime.UtcNow
             };
             await _chatRepository.AddMessageAsync(aiMsg);
+            await _accessService.ConsumeChatRequestAsync(userId);
+            var updatedSub = await _accessService.GetCurrentSubscriptionAsync(userId);
+            if (updatedSub != null)
+            {
+                yield return JsonSerializer.Serialize(new { type = "quota", remainingRequests = updatedSub.RemainingRequests, requestLimit = updatedSub.Plan.RequestLimit });
+            }
             await UpdateConversationTitleAsync(conversationId, userId, question);
 
             yield return JsonSerializer.Serialize(new { done = true });
@@ -330,6 +345,12 @@ public class ChatService : IChatService
                 CreatedAt = DateTime.UtcNow
             };
             await _chatRepository.AddMessageAsync(aiMsg);
+            await _accessService.ConsumeChatRequestAsync(userId);
+            var updatedSub = await _accessService.GetCurrentSubscriptionAsync(userId);
+            if (updatedSub != null)
+            {
+                yield return JsonSerializer.Serialize(new { type = "quota", remainingRequests = updatedSub.RemainingRequests, requestLimit = updatedSub.Plan.RequestLimit });
+            }
             await UpdateConversationTitleAsync(conversationId, userId, question);
 
             yield return JsonSerializer.Serialize(new { done = true });
@@ -382,9 +403,17 @@ public class ChatService : IChatService
             CreatedAt = DateTime.UtcNow
         };
         await _chatRepository.AddMessageAsync(aiMessage);
+        await _accessService.ConsumeChatRequestAsync(userId);
 
         // Step 11: Yield sources.
         yield return JsonSerializer.Serialize(new { sources = sourceCitations });
+
+        // Yield updated quota event
+        var finalSub = await _accessService.GetCurrentSubscriptionAsync(userId);
+        if (finalSub != null)
+        {
+            yield return JsonSerializer.Serialize(new { type = "quota", remainingRequests = finalSub.RemainingRequests, requestLimit = finalSub.Plan.RequestLimit });
+        }
 
         // Step 12: Update conversation title.
         await UpdateConversationTitleAsync(conversationId, userId, question);

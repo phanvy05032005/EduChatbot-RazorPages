@@ -1,4 +1,5 @@
 using EduChatbot.Models;
+using EduChatbot.Models.Enums;
 using EduChatbot.Models.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<QuizAttempt> QuizAttempts => Set<QuizAttempt>();
 
     public DbSet<QuizAttemptAnswer> QuizAttemptAnswers => Set<QuizAttemptAnswer>();
+
+    public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -153,6 +160,127 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
             entity.Property(user => user.FullName).HasMaxLength(100);
+            entity.Property(user => user.SubscriptionType)
+                .HasColumnName("subscription_type")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(SubscriptionType.BASIC);
+
+            entity.Property(user => user.AccountTitle)
+                .HasColumnName("account_title")
+                .HasMaxLength(50)
+                .HasDefaultValue("Basic");
+
+            entity.Property(user => user.TokenLimit)
+                .HasColumnName("token_limit")
+                .HasDefaultValue(5000);
+
+            entity.Property(user => user.UsedTokens)
+                .HasColumnName("used_tokens")
+                .HasDefaultValue(0);
+
+            entity.Ignore(user => user.IsQuizUnlocked);
+        });
+
+        modelBuilder.Entity<PaymentTransaction>(entity =>
+        {
+            entity.ToTable("payment_transactions");
+            entity.HasKey(pt => pt.Id);
+
+            entity.Property(pt => pt.Id).HasColumnName("id");
+            entity.Property(pt => pt.UserId).HasColumnName("user_id").IsRequired().HasMaxLength(450);
+            entity.Property(pt => pt.OrderCode).HasColumnName("order_code");
+            entity.Property(pt => pt.Amount).HasColumnName("amount").HasColumnType("decimal(18,2)");
+            entity.Property(pt => pt.Currency).HasColumnName("currency").HasMaxLength(10).HasDefaultValue("VND");
+            entity.Property(pt => pt.Provider)
+                .HasColumnName("provider")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(PaymentProvider.PAYOS);
+            entity.Property(pt => pt.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(PaymentStatus.PENDING);
+            entity.Property(pt => pt.CheckoutUrl).HasColumnName("checkout_url").HasMaxLength(1000);
+            entity.Property(pt => pt.PayOSPaymentLinkId).HasColumnName("payos_payment_link_id").HasMaxLength(255);
+            entity.Property(pt => pt.CreatedAt)
+                .HasColumnName("created_at")
+                .HasColumnType("timestamp with time zone");
+            entity.Property(pt => pt.PaidAt)
+                .HasColumnName("paid_at")
+                .HasColumnType("timestamp with time zone");
+            entity.Property(pt => pt.UpdatedAt)
+                .HasColumnName("updated_at")
+                .HasColumnType("timestamp with time zone");
+            entity.Property(pt => pt.SubscriptionId)
+                .HasColumnName("subscription_id");
+
+            entity.HasIndex(pt => pt.OrderCode).IsUnique();
+            entity.HasIndex(pt => pt.UserId);
+            entity.HasIndex(pt => pt.SubscriptionId);
+
+            entity.HasOne(pt => pt.User)
+                .WithMany()
+                .HasForeignKey(pt => pt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pt => pt.Subscription)
+                .WithMany()
+                .HasForeignKey(pt => pt.SubscriptionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<SubscriptionPlan>(entity =>
+        {
+            entity.ToTable("subscription_plans");
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Id).HasColumnName("id");
+            entity.Property(p => p.Name).HasColumnName("name").IsRequired().HasMaxLength(100);
+            entity.Property(p => p.Price).HasColumnName("price").HasColumnType("decimal(18,2)");
+            entity.Property(p => p.DurationDays).HasColumnName("duration_days");
+            entity.Property(p => p.RequestLimit).HasColumnName("request_limit");
+            entity.Property(p => p.RefreshIntervalMinutes).HasColumnName("refresh_interval_minutes");
+            entity.Property(p => p.AllowChat).HasColumnName("allow_chat");
+            entity.Property(p => p.AllowQuiz).HasColumnName("allow_quiz");
+            entity.Property(p => p.TokenLimit).HasColumnName("token_limit");
+            entity.Property(p => p.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp with time zone");
+            entity.Property(p => p.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamp with time zone");
+        });
+
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.ToTable("subscriptions");
+            entity.HasKey(s => s.Id);
+
+            entity.Property(s => s.Id).HasColumnName("id");
+            entity.Property(s => s.UserId).HasColumnName("user_id").IsRequired().HasMaxLength(450);
+            entity.Property(s => s.SubscriptionPlanId).HasColumnName("subscription_plan_id");
+            entity.Property(s => s.Status)
+                .HasColumnName("status")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(SubscriptionStatus.PENDING);
+            entity.Property(s => s.StartDate).HasColumnName("start_date").HasColumnType("timestamp with time zone");
+            entity.Property(s => s.EndDate).HasColumnName("end_date").HasColumnType("timestamp with time zone");
+            entity.Property(s => s.RemainingRequests).HasColumnName("remaining_requests");
+            entity.Property(s => s.RequestWindowStart).HasColumnName("request_window_start").HasColumnType("timestamp with time zone");
+            entity.Property(s => s.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp with time zone");
+            entity.Property(s => s.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamp with time zone");
+
+            entity.HasIndex(s => new { s.UserId, s.Status });
+            entity.HasIndex(s => new { s.UserId, s.SubscriptionPlanId, s.Status });
+
+            entity.HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(s => s.Plan)
+                .WithMany()
+                .HasForeignKey(s => s.SubscriptionPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Course>(entity =>

@@ -14,16 +14,24 @@ namespace EduChatbot.Web.Pages.Student
     {
         private readonly IChatService _chatService;
         private readonly IDocumentService _documentService;
+        private readonly ISubscriptionAccessService _subscriptionAccessService;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ChatModel(IChatService chatService, IDocumentService documentService, IWebHostEnvironment webHostEnvironment)
+        public ChatModel(
+            IChatService chatService, 
+            IDocumentService documentService, 
+            ISubscriptionAccessService subscriptionAccessService,
+            IWebHostEnvironment webHostEnvironment)
         {
             _chatService = chatService;
             _documentService = documentService;
+            _subscriptionAccessService = subscriptionAccessService;
             _webHostEnvironment = webHostEnvironment;
         }
 
         public ChatConversation ActiveConversation { get; private set; } = new();
+        public int RemainingRequests { get; private set; }
+        public int RequestLimit { get; private set; }
         public List<ChatMessageViewModel> ActiveConversationMessages { get; private set; } = [];
         public List<ChatConversationSummary> Conversations { get; private set; } = [];
         public List<Course> Courses { get; private set; } = [];
@@ -35,6 +43,19 @@ namespace EduChatbot.Web.Pages.Student
         public async Task<IActionResult> OnGetAsync(int? chatId, int? courseId, int? documentId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            // Pre-load subscription quota details
+            var currentSub = await _subscriptionAccessService.GetCurrentSubscriptionAsync(userId);
+            if (currentSub != null)
+            {
+                RemainingRequests = currentSub.RemainingRequests;
+                RequestLimit = currentSub.Plan.RequestLimit;
+            }
+            else
+            {
+                RemainingRequests = 0;
+                RequestLimit = 0;
+            }
 
             // Load student's conversation list
             Conversations = await _chatService.GetConversationSummariesAsync(userId);
@@ -170,6 +191,44 @@ namespace EduChatbot.Web.Pages.Student
         public async Task<IActionResult> OnPostSendMessageStreamAsync(int conversationId, string message)
         {
             var httpResponse = HttpContext.Response;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            try
+            {
+                // Pre-check subscription and quota status before starting the stream response
+                await _subscriptionAccessService.CheckCanChatAsync(userId);
+            }
+            catch (EduChatbot.Business.Exceptions.QuotaExceededException ex)
+            {
+                httpResponse.ContentType = "application/json";
+                httpResponse.StatusCode = 429; // 429 Too Many Requests
+                var errorObj = new
+                {
+                    errorCode = "REQUEST_QUOTA_EXCEEDED",
+                    messageKey = "student.chat.quotaExceeded",
+                    message = ex.Message,
+                    remainingRequests = 0,
+                    upgradeUrl = "/Subscription/Plans"
+                };
+                await httpResponse.WriteAsync(JsonSerializer.Serialize(errorObj));
+                return new EmptyResult();
+            }
+            catch (InvalidOperationException ex)
+            {
+                httpResponse.ContentType = "application/json";
+                httpResponse.StatusCode = 400; // 400 Bad Request for other invalid subs
+                var errorObj = new
+                {
+                    errorCode = "SUBSCRIPTION_INVALID",
+                    messageKey = "student.chat.subscriptionInvalid",
+                    message = ex.Message,
+                    remainingRequests = 0,
+                    upgradeUrl = "/Subscription/Plans"
+                };
+                await httpResponse.WriteAsync(JsonSerializer.Serialize(errorObj));
+                return new EmptyResult();
+            }
+
             httpResponse.ContentType = "text/event-stream";
             httpResponse.Headers.CacheControl = "no-cache";
             httpResponse.Headers.Connection = "keep-alive";
@@ -181,7 +240,6 @@ namespace EduChatbot.Web.Pages.Student
                 return new EmptyResult();
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             var cancellationToken = HttpContext.RequestAborted;
 
             var preferredLanguage = HttpContext.Request.Cookies["edu_lang"];
@@ -190,9 +248,22 @@ namespace EduChatbot.Web.Pages.Student
                 preferredLanguage = "vi";
             }
 
-            await foreach (var data in _chatService.SendMessageStreamAsync(conversationId, userId, message.Trim(), preferredLanguage, cancellationToken))
+            try
             {
-                await WriteSSEAsync(httpResponse, data);
+                await foreach (var data in _chatService.SendMessageStreamAsync(conversationId, userId, message.Trim(), preferredLanguage, cancellationToken))
+                {
+                    await WriteSSEAsync(httpResponse, data);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Send standard SSE error event so that frontend is notified and doesn't type indefinitely
+                var errorObj = new
+                {
+                    type = "error",
+                    message = ex.Message
+                };
+                await WriteSSEAsync(httpResponse, JsonSerializer.Serialize(errorObj));
             }
 
             return new EmptyResult();

@@ -311,6 +311,7 @@ else
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/js/i18n.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @if (User.IsInRole("Admin") || User.IsInRole("Lecturer"))
@@ -553,6 +554,73 @@ else
             }
         });
     </script>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.Swal) {
+                    var rawTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["SuccessMessage"]?.ToString() ?? ""));
+                    var title = rawTitle;
+                    
+                    if (window.EduI18n && window.EduI18n.getLang() === 'vi') {
+                        if (rawTitle.includes("Quiz published successfully")) {
+                            title = "Đề thi đã được xuất bản thành công! Sinh viên đã có thể làm bài.";
+                        } else if (rawTitle.includes("Quiz archived successfully")) {
+                            title = "Đề thi đã được lưu trữ thành công.";
+                        } else if (rawTitle.includes("Question updated successfully")) {
+                            title = "Cập nhật câu hỏi thành công.";
+                        } else if (rawTitle.includes("Question deleted successfully")) {
+                            title = "Xóa câu hỏi thành công.";
+                        } else if (rawTitle.includes("Question added manually successfully")) {
+                            title = "Thêm câu hỏi thủ công thành công.";
+                        } else if (rawTitle.includes("Generated") && rawTitle.includes("more questions")) {
+                            title = "Sinh thêm câu hỏi bằng AI thành công.";
+                        }
+                    }
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: title,
+                        showConfirmButton: false,
+                        timer: 4500,
+                        timerProgressBar: true,
+                        background: '#181c26',
+                        color: '#fff'
+                    });
+                }
+            });
+        </script>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.Swal) {
+                    var rawText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ErrorMessage"]?.ToString() ?? ""));
+                    var text = rawText;
+                    
+                    if (window.EduI18n && window.EduI18n.getLang() === 'vi') {
+                        if (rawText.startsWith("Failed to submit quiz")) {
+                            text = "Nộp bài thi thất bại: " + rawText.replace("Failed to submit quiz: ", "");
+                        }
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: window.EduI18n && window.EduI18n.getLang() === 'vi' ? 'Lỗi' : 'Error',
+                        text: text,
+                        confirmButtonColor: '#007bff',
+                        confirmButtonText: 'OK',
+                        background: '#181c26',
+                        color: '#fff'
+                    });
+                }
+            });
+        </script>
+    }
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

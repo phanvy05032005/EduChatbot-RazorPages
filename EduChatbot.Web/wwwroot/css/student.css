@@ -868,4 +868,25 @@
     transform: translateY(-2px);
 }
 
+/* ========================================================
+   Quota Badge Styling in Student Chat
+   ======================================================== */
+.student-shell .quota-badge-success {
+    background-color: var(--student-success-bg) !important;
+    color: var(--student-success) !important;
+    border: 1px solid rgba(168, 230, 207, 0.2) !important;
+}
+
+.student-shell .quota-badge-warning {
+    background-color: var(--student-warning-bg) !important;
+    color: var(--student-warning) !important;
+    border: 1px solid rgba(255, 215, 154, 0.2) !important;
+}
+
+.student-shell .quota-badge-danger {
+    background-color: var(--student-danger-bg) !important;
+    color: var(--student-danger) !important;
+    border: 1px solid rgba(255, 154, 162, 0.2) !important;
+}
+
 

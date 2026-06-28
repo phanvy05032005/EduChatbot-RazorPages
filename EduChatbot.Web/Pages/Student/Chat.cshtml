@@ -72,10 +72,18 @@
                 <h5 class="fw-bold mb-0 text-truncate" style="font-size: 1rem;">@Model.ActiveConversation.Title</h5>
             </div>
             
-            <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-1" asp-page="/Student/Chat">
-                <i class="bi bi-plus-lg fs-6"></i>
-                <span data-i18n="student.chat.new_session">New Session</span>
-            </a>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Quota Badge -->
+                <span id="chat-quota-badge" class="badge rounded-pill px-3 py-2 fw-semibold" 
+                      data-remaining="@Model.RemainingRequests" 
+                      data-limit="@Model.RequestLimit">
+                </span>
+
+                <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-1" asp-page="/Student/Chat">
+                    <i class="bi bi-plus-lg fs-6"></i>
+                    <span data-i18n="student.chat.new_session">New Session</span>
+                </a>
+            </div>
         </div>
 
         <!-- Messages Log List -->

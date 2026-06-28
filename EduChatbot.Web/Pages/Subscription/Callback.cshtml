@@ -1,0 +1,58 @@
+@page
+@model EduChatbot.Web.Pages.Subscription.CallbackModel
+
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = Model.IsSuccess ? "Thanh toán thành công" : "Kết quả thanh toán";
+    ViewData["BodyClass"] = "subscription-shell";
+}
+
+<link rel="stylesheet" href="~/css/subscription.css" asp-append-version="true" />
+
+<section class="sub-page">
+    <div class="sub-callback">
+        @if (Model.IsProcessed && Model.IsSuccess)
+        {
+            <div class="sub-callback-icon success">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h2 data-i18n="subscription.callback.successTitle">Payment Successful</h2>
+            <p data-i18n="@Model.MessageKey">@Model.DefaultMessage</p>
+            <div class="sub-callback-actions">
+                <a asp-page="/Subscription/Me" class="sub-link-btn primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    <span data-i18n="subscription.action.viewMine">View My Subscription</span>
+                </a>
+                <a asp-page="/Student/Chat" class="sub-link-btn">
+                    <span data-i18n="subscription.action.backChat">Back to Chat</span>
+                </a>
+                <a asp-page="/Student/Index" class="sub-link-btn">
+                    <span data-i18n="subscription.action.backDashboard">Back to Dashboard</span>
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="sub-callback-icon failed">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+            </div>
+            <h2 data-i18n="subscription.callback.failedTitle">Payment Failed</h2>
+            <p data-i18n="@Model.MessageKey">@Model.DefaultMessage</p>
+            @if (Model.ErrorDetail != null)
+            {
+                <p style="font-size: 0.88rem;">@Model.ErrorDetail</p>
+            }
+            <div class="sub-callback-actions">
+                <a asp-page="/Subscription/Plans" class="sub-link-btn primary">
+                    <span data-i18n="subscription.action.retry">Try Again</span>
+                </a>
+                <a asp-page="/Student/Chat" class="sub-link-btn">
+                    <span data-i18n="subscription.action.backChat">Back to Chat</span>
+                </a>
+                <a asp-page="/Student/Index" class="sub-link-btn">
+                    <span data-i18n="subscription.action.backDashboard">Back to Dashboard</span>
+                </a>
+            </div>
+        }
+    </div>
+</section>

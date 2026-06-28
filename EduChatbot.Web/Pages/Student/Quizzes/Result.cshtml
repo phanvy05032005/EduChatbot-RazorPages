@@ -109,3 +109,24 @@
         }
     </div>
 }
+
+@if (Request.Query["submitted"] == "true")
+{
+    @section Scripts {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: window.EduI18n && EduI18n.getLang() === 'vi' ? 'Nộp bài thành công!' : 'Quiz Submitted!',
+                        text: window.EduI18n && EduI18n.getLang() === 'vi' ? 'Chúc mừng bạn đã hoàn thành bài thi. Hãy xem kết quả chi tiết bên dưới.' : 'Congratulations on completing the quiz. Check your detailed results below.',
+                        icon: 'success',
+                        background: '#181c26',
+                        color: '#fff',
+                        confirmButtonColor: '#007bff',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        </script>
+    }
+}
