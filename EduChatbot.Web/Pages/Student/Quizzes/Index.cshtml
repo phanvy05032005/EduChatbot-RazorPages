@@ -74,7 +74,13 @@ else
                     </div>
 
                     <div class="border-top pt-3" style="border-top: 1px solid var(--edu-border); padding-top: 1rem;">
-                        @if (hasInProgress)
+                        @if (!Model.CanUseQuiz)
+                        {
+                            <button type="button" class="btn btn-secondary w-100 rounded-pill fw-semibold btn-lock-quiz" style="width: 100%; padding: 0.5rem; border-radius: 50px; background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.4); border: 1px dashed var(--edu-border); font-weight: 600; cursor: pointer;" data-i18n="quizzes.student.premiumRequired">
+                                <i class="bi bi-lock-fill me-1"></i> Premium Required
+                            </button>
+                        }
+                        else if (hasInProgress)
                         {
                             var attempt = Model.InProgressAttempts[quiz.Id];
                             <a asp-page="/Student/Quizzes/Take" asp-route-attemptId="@attempt.Id" class="btn btn-warning w-100 rounded-pill fw-semibold" style="width: 100%; display: block; text-align: center; text-decoration: none; padding: 0.5rem; border-radius: 50px; background: #ffc107; color: #111; font-weight: 600; border: none;" data-i18n="quizzes.student.continueInProgress">
@@ -100,4 +106,40 @@ else
             </div>
         }
     </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const lockButtons = document.querySelectorAll('.btn-lock-quiz');
+            lockButtons.forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (window.Swal && window.EduI18n) {
+                        const title = window.EduI18n.t('quizzes.student.alertTitle');
+                        const text = window.EduI18n.t('quizzes.student.alertText');
+                        const confirmText = window.EduI18n.t('quizzes.student.alertConfirm');
+                        const cancelText = window.EduI18n.t('quizzes.student.alertCancel');
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: title,
+                            text: text,
+                            showCancelButton: true,
+                            confirmButtonColor: '#007bff',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: confirmText,
+                            cancelButtonText: cancelText,
+                            background: '#181c26',
+                            color: '#fff'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/Subscription/Plans';
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 }

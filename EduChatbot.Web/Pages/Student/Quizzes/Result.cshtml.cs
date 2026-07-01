@@ -15,10 +15,12 @@ namespace EduChatbot.Web.Pages.Student.Quizzes;
 public class ResultModel : PageModel
 {
     private readonly IStudentQuizService _studentQuizService;
+    private readonly ISubscriptionAccessService _subscriptionAccessService;
 
-    public ResultModel(IStudentQuizService studentQuizService)
+    public ResultModel(IStudentQuizService studentQuizService, ISubscriptionAccessService subscriptionAccessService)
     {
         _studentQuizService = studentQuizService;
+        _subscriptionAccessService = subscriptionAccessService;
     }
 
     public StudentQuizResultViewModel Result { get; set; } = null!;
@@ -30,6 +32,11 @@ public class ResultModel : PageModel
         {
             Result = await _studentQuizService.GetResultAsync(attemptId, studentId);
             return Page();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Premium subscription required"))
+        {
+            TempData["ErrorMessage"] = ex.Message;
+            return RedirectToPage("/Subscription/Plans");
         }
         catch (KeyNotFoundException)
         {

@@ -13,11 +13,21 @@ public class StudentQuizService : IStudentQuizService
 {
     private readonly IQuizRepository _quizRepository;
     private readonly ApplicationDbContext _context;
+    private readonly ISubscriptionAccessService _subscriptionAccessService;
 
-    public StudentQuizService(IQuizRepository quizRepository, ApplicationDbContext context)
+    public StudentQuizService(IQuizRepository quizRepository, ApplicationDbContext context, ISubscriptionAccessService subscriptionAccessService)
     {
         _quizRepository = quizRepository;
         _context = context;
+        _subscriptionAccessService = subscriptionAccessService;
+    }
+
+    private async Task EnsurePremiumQuizAccessAsync(string studentId)
+    {
+        if (!await _subscriptionAccessService.CheckCanUseQuizAsync(studentId))
+        {
+            throw new InvalidOperationException("Premium subscription required for quizzes.");
+        }
     }
 
     public async Task<List<Quiz>> GetAvailableQuizzesAsync(string studentId)
@@ -27,6 +37,7 @@ public class StudentQuizService : IStudentQuizService
 
     public async Task<QuizAttempt> StartQuizAsync(int quizId, string studentId)
     {
+        await EnsurePremiumQuizAccessAsync(studentId);
         var quiz = await _quizRepository.GetQuizWithQuestionsAndOptionsAsync(quizId);
         if (quiz == null || quiz.Status != QuizStatuses.Published)
         {
@@ -65,6 +76,7 @@ public class StudentQuizService : IStudentQuizService
 
     public async Task<StudentTakeQuizViewModel> GetTakeQuizAsync(int attemptId, string studentId)
     {
+        await EnsurePremiumQuizAccessAsync(studentId);
         var attempt = await _quizRepository.GetAttemptForStudentAsync(attemptId, studentId);
         if (attempt == null)
         {
@@ -112,6 +124,7 @@ public class StudentQuizService : IStudentQuizService
 
     public async Task<QuizAttempt> SubmitQuizAsync(int attemptId, string studentId, StudentSubmitQuizInput input)
     {
+        await EnsurePremiumQuizAccessAsync(studentId);
         var attempt = await _quizRepository.GetAttemptForStudentAsync(attemptId, studentId);
         if (attempt == null)
         {
@@ -207,6 +220,11 @@ public class StudentQuizService : IStudentQuizService
         if (attempt == null)
         {
             throw new KeyNotFoundException("Attempt not found.");
+        }
+
+        if (attempt.Status == "InProgress" && !await _subscriptionAccessService.CheckCanUseQuizAsync(studentId))
+        {
+            throw new InvalidOperationException("Premium subscription required for in-progress quizzes.");
         }
 
         var quiz = attempt.Quiz;

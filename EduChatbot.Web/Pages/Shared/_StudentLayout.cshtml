@@ -133,6 +133,8 @@
                     if (window.EduI18n && window.EduI18n.getLang() === 'vi') {
                         if (rawText.startsWith("Failed to submit quiz")) {
                             text = "Nộp bài thi thất bại: " + rawText.replace("Failed to submit quiz: ", "");
+                        } else if (rawText.includes("Premium subscription required for quizzes")) {
+                            text = "Tính năng này yêu cầu tài khoản Premium. Vui lòng nâng cấp gói để tiếp tục.";
                         }
                     }
 

@@ -90,9 +90,18 @@ else
                                 }
                                 else
                                 {
-                                    <a asp-page="/Student/Quizzes/Take" asp-route-attemptId="@attempt.AttemptId" class="btn btn-warning btn-sm rounded-pill px-3" style="padding: 0.3rem 1rem; background: #ffc107; border: none; color: #111; font-size: 0.8rem; text-decoration: none; border-radius: 20px; font-weight: 500;" data-i18n="quizzes.student.his.continue">
-                                        Continue
-                                    </a>
+                                    if (!Model.CanUseQuiz)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3 btn-lock-quiz" style="padding: 0.3rem 1rem; background: rgba(255, 255, 255, 0.1); border: 1px dashed var(--edu-border); color: rgba(255,255,255,0.4); font-size: 0.8rem; border-radius: 20px; font-weight: 500;" data-i18n="quizzes.student.premiumRequired">
+                                            Premium Required
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="/Student/Quizzes/Take" asp-route-attemptId="@attempt.AttemptId" class="btn btn-warning btn-sm rounded-pill px-3" style="padding: 0.3rem 1rem; background: #ffc107; border: none; color: #111; font-size: 0.8rem; text-decoration: none; border-radius: 20px; font-weight: 500;" data-i18n="quizzes.student.his.continue">
+                                            Continue
+                                        </a>
+                                    }
                                 }
                             </td>
                         </tr>
@@ -101,4 +110,40 @@ else
             </table>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const lockButtons = document.querySelectorAll('.btn-lock-quiz');
+            lockButtons.forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (window.Swal && window.EduI18n) {
+                        const title = window.EduI18n.t('quizzes.student.alertTitle');
+                        const text = window.EduI18n.t('quizzes.student.alertText');
+                        const confirmText = window.EduI18n.t('quizzes.student.alertConfirm');
+                        const cancelText = window.EduI18n.t('quizzes.student.alertCancel');
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: title,
+                            text: text,
+                            showCancelButton: true,
+                            confirmButtonColor: '#007bff',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: confirmText,
+                            cancelButtonText: cancelText,
+                            background: '#181c26',
+                            color: '#fff'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/Subscription/Plans';
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 }

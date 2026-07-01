@@ -15,19 +15,24 @@ namespace EduChatbot.Web.Pages.Student.Quizzes;
 public class IndexModel : PageModel
 {
     private readonly IStudentQuizService _studentQuizService;
+    private readonly ISubscriptionAccessService _subscriptionAccessService;
 
-    public IndexModel(IStudentQuizService studentQuizService)
+    public IndexModel(IStudentQuizService studentQuizService, ISubscriptionAccessService subscriptionAccessService)
     {
         _studentQuizService = studentQuizService;
+        _subscriptionAccessService = subscriptionAccessService;
     }
 
     public List<Quiz> Quizzes { get; set; } = [];
     public Dictionary<int, int> AttemptCounts { get; set; } = [];
     public Dictionary<int, QuizAttempt> InProgressAttempts { get; set; } = [];
+    public bool CanUseQuiz { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        CanUseQuiz = await _subscriptionAccessService.CheckCanUseQuizAsync(studentId);
+
         Quizzes = await _studentQuizService.GetAvailableQuizzesAsync(studentId);
 
         foreach (var q in Quizzes)
@@ -47,6 +52,11 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostStartAsync(int quizId)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (!await _subscriptionAccessService.CheckCanUseQuizAsync(studentId))
+        {
+            TempData["ErrorMessage"] = "Premium subscription required for quizzes.";
+            return RedirectToPage("/Subscription/Plans");
+        }
         try
         {
             var attempt = await _studentQuizService.StartQuizAsync(quizId, studentId);

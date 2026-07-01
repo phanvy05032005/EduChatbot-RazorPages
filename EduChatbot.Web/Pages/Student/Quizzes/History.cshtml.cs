@@ -14,17 +14,22 @@ namespace EduChatbot.Web.Pages.Student.Quizzes;
 public class HistoryModel : PageModel
 {
     private readonly IStudentQuizService _studentQuizService;
+    private readonly ISubscriptionAccessService _subscriptionAccessService;
 
-    public HistoryModel(IStudentQuizService studentQuizService)
+    public HistoryModel(IStudentQuizService studentQuizService, ISubscriptionAccessService subscriptionAccessService)
     {
         _studentQuizService = studentQuizService;
+        _subscriptionAccessService = subscriptionAccessService;
     }
 
     public List<StudentQuizHistoryItemViewModel> Attempts { get; set; } = [];
+    public bool CanUseQuiz { get; set; }
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        CanUseQuiz = await _subscriptionAccessService.CheckCanUseQuizAsync(studentId);
         Attempts = await _studentQuizService.GetHistoryAsync(studentId);
+        return Page();
     }
 }

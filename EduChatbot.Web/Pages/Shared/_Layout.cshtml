@@ -13,10 +13,10 @@
 
     var userNeedsPasswordChange = false;
     EduChatbot.Models.Identity.ApplicationUser? appUser = null;
-    if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Student") || User.IsInRole("Lecturer")))
+    if (User.Identity?.IsAuthenticated == true)
     {
         appUser = await UserManager.GetUserAsync(User);
-        if (appUser != null && !appUser.HasChangedPassword)
+        if (appUser != null && !appUser.HasChangedPassword && (User.IsInRole("Student") || User.IsInRole("Lecturer")))
         {
             userNeedsPasswordChange = true;
         }
@@ -113,13 +113,28 @@
                     <span data-i18n="admin.sidebar.statistics">Statistics</span>
                 </a>
             </nav>
-            <form asp-page="/Account/Logout" method="post" class="admin-logout">
-                @Html.AntiForgeryToken()
-                <button type="submit">
-                    <span class="admin-menu-icon">↳</span>
-                    <span data-i18n="admin.sidebar.logout">Logout</span>
-                </button>
-            </form>
+            <div class="admin-sidebar-footer sidebar-footer pt-3 mt-auto border-top">
+                @{
+                    var adminSideName = !string.IsNullOrWhiteSpace(appUser?.FullName) ? appUser.FullName : (appUser?.Email ?? User.Identity?.Name ?? "Admin");
+                    var adminSideEmail = appUser?.Email ?? "";
+                    var adminSideAvatar = !string.IsNullOrWhiteSpace(adminSideName) ? adminSideName.Trim()[0].ToString().ToUpper() : "A";
+                }
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center fw-bold rounded-circle" style="width: 40px; height: 40px; font-size: 0.95rem; background: linear-gradient(135deg, #f97316, #c2410c) !important;">
+                        @adminSideAvatar
+                    </div>
+                    <div class="user-info overflow-hidden" style="text-align: left;">
+                        <p class="user-name mb-0 fw-semibold text-truncate text-white" style="font-size: 0.9rem;">@adminSideName</p>
+                        <p class="user-email mb-0 text-muted text-truncate" style="font-size: 0.75rem;">@adminSideEmail</p>
+                    </div>
+                </div>
+                <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
+                    <button type="submit" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2 btn-sm">
+                        <i class="bi bi-box-arrow-right fs-6"></i>
+                        <span data-i18n="admin.sidebar.logout">Sign Out</span>
+                    </button>
+                </form>
+            </div>
         </aside>
         <div class="admin-content">
             <header class="admin-topbar">
@@ -130,11 +145,49 @@
                 </div>
                 <div class="admin-user-wrap">
                     <button type="button" class="lang-toggle-btn" onclick="EduI18n.toggle()" title="Switch language" style="background: rgba(228,240,246,0.08); border: 1px solid rgba(228,240,246,0.15); color: #e4f0f6; border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; margin-right: 1rem;">VI</button>
-                    <div class="admin-user">
-                        <span aria-hidden="true"></span>
-                        @User.Identity?.Name
+                    <div class="admin-account-dropdown">
+                        @{
+                            var adminDisplayName = !string.IsNullOrWhiteSpace(appUser?.FullName) ? appUser.FullName : (appUser?.Email ?? User.Identity?.Name ?? "Admin");
+                            var adminEmailDisplay = appUser?.Email ?? User.Identity?.Name ?? "";
+                            var adminAvatarInitial = !string.IsNullOrWhiteSpace(adminDisplayName) ? adminDisplayName.Trim()[0].ToString().ToUpper() : "A";
+                        }
+                        <button type="button" class="admin-account-trigger" id="adminAccountTrigger" aria-haspopup="true" aria-expanded="false">
+                            <span class="admin-account-avatar">@adminAvatarInitial</span>
+                            <span class="admin-account-name d-none d-md-inline">@adminDisplayName</span>
+                            <i class="bi bi-chevron-down admin-account-caret"></i>
+                        </button>
+                        <div class="admin-account-menu" id="adminAccountMenu">
+                            <div class="admin-account-menu-header">
+                                <div class="admin-menu-header-avatar">@adminAvatarInitial</div>
+                                <div class="admin-menu-header-info">
+                                    <div class="admin-menu-header-name">@adminDisplayName</div>
+                                    <div class="admin-menu-header-email">@adminEmailDisplay</div>
+                                    <span class="admin-menu-header-badge" data-i18n="profile.adminAccount">Admin Account</span>
+                                </div>
+                            </div>
+                            <div class="admin-account-menu-divider"></div>
+                            <a asp-page="/Account/Profile" class="admin-account-menu-item">
+                                <i class="bi bi-person-fill"></i>
+                                <span data-i18n="profile.personalInfo">View Profile</span>
+                            </a>
+                            <a asp-page="/Account/Profile" class="admin-account-menu-item">
+                                <i class="bi bi-shield-lock-fill"></i>
+                                <span data-i18n="profile.changePassword">Change Password</span>
+                            </a>
+                            <a asp-page="/Admin/Dashboard" class="admin-account-menu-item">
+                                <i class="bi bi-speedometer2"></i>
+                                <span data-i18n="admin.sidebar.dashboard">Dashboard</span>
+                            </a>
+                            <div class="admin-account-menu-divider"></div>
+                            <form asp-page="/Account/Logout" method="post" class="admin-logout-form-dropdown">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="admin-account-menu-item danger">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span data-i18n="admin.sidebar.logout">Logout</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="admin-avatar">A</div>
                 </div>
             </header>
             <main role="main" class="admin-main">
@@ -168,10 +221,28 @@ else
                     <a asp-page="/Lecturer/Quizzes/Index" data-i18n="nav.quizzesManagement" class="@(currentRolePage != null && currentRolePage.StartsWith("/Lecturer/Quizzes") ? "active" : "")">Quizzes Management</a>
                     <a asp-page="/Account/Profile" data-i18n="nav.profile" class="@(currentRolePage == "/Account/Profile" ? "active" : "")">Profile</a>
                 </nav>
-                <form asp-page="/Account/Logout" method="post" class="role-logout">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" data-i18n="nav.logout">Logout</button>
-                </form>
+                <div class="role-sidebar-footer sidebar-footer pt-3 mt-auto border-top">
+                    @{
+                        var lecSideName = !string.IsNullOrWhiteSpace(appUser?.FullName) ? appUser.FullName : (appUser?.Email ?? User.Identity?.Name ?? "Lecturer");
+                        var lecSideEmail = appUser?.Email ?? "";
+                        var lecSideAvatar = !string.IsNullOrWhiteSpace(lecSideName) ? lecSideName.Trim()[0].ToString().ToUpper() : "L";
+                    }
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="user-avatar bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold rounded-circle" style="width: 40px; height: 40px; font-size: 0.95rem; background: linear-gradient(135deg, var(--edu-primary), #0056b3) !important; color: #fff !important;">
+                            @lecSideAvatar
+                        </div>
+                        <div class="user-info overflow-hidden" style="text-align: left;">
+                            <p class="user-name mb-0 fw-semibold text-truncate text-white" style="font-size: 0.9rem;">@lecSideName</p>
+                            <p class="user-email mb-0 text-muted text-truncate" style="font-size: 0.75rem;">@lecSideEmail</p>
+                        </div>
+                    </div>
+                    <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
+                        <button type="submit" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 rounded-3 py-2 btn-sm">
+                            <i class="bi bi-box-arrow-right fs-6"></i>
+                            <span data-i18n="nav.logout">Sign Out</span>
+                        </button>
+                    </form>
+                </div>
             </aside>
             <div class="role-content">
                 <header class="role-topbar">
@@ -529,6 +600,7 @@ else
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Lecturer dropdown
             const trigger = document.getElementById("lecturerAccountTrigger");
             const menu = document.getElementById("lecturerAccountMenu");
             
@@ -549,6 +621,31 @@ else
                     if (!trigger.contains(e.target) && !menu.contains(e.target)) {
                         menu.classList.remove("show");
                         trigger.setAttribute("aria-expanded", "false");
+                    }
+                });
+            }
+
+            // Admin dropdown
+            const adminTrigger = document.getElementById("adminAccountTrigger");
+            const adminMenu = document.getElementById("adminAccountMenu");
+            
+            if (adminTrigger && adminMenu) {
+                adminTrigger.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    const isShown = adminMenu.classList.contains("show");
+                    if (isShown) {
+                        adminMenu.classList.remove("show");
+                        adminTrigger.setAttribute("aria-expanded", "false");
+                    } else {
+                        adminMenu.classList.add("show");
+                        adminTrigger.setAttribute("aria-expanded", "true");
+                    }
+                });
+                
+                document.addEventListener("click", function (e) {
+                    if (!adminTrigger.contains(e.target) && !adminMenu.contains(e.target)) {
+                        adminMenu.classList.remove("show");
+                        adminTrigger.setAttribute("aria-expanded", "false");
                     }
                 });
             }

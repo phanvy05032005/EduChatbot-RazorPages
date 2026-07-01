@@ -142,7 +142,7 @@
 .student-shell .topbar-user-avatar {
     width: 40px;
     height: 40px;
-    border-radius: 12px;
+    border-radius: 50%;
     background: linear-gradient(135deg, var(--student-text), var(--student-primary)) !important;
     color: #0a0f1e !important;
     font-weight: 700;
@@ -887,6 +887,38 @@
     background-color: var(--student-danger-bg) !important;
     color: var(--student-danger) !important;
     border: 1px solid rgba(255, 154, 162, 0.2) !important;
+}
+
+/* Sidebar footer user details styling - make text clearly visible on dark backgrounds */
+.student-shell .sidebar-footer .user-name {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.student-shell .sidebar-footer .user-email {
+    color: rgba(228, 240, 246, 0.65) !important;
+}
+
+@media (min-width: 993px) {
+    body.student-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        overflow: hidden !important;
+    }
+
+    .student-shell .student-container {
+        flex-grow: 1 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        width: 100vw !important;
+        overflow: hidden !important;
+    }
+
+    .student-shell .student-sidebar {
+        height: 100% !important;
+    }
 }
 
 

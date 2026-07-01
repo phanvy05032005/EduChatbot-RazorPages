@@ -14,10 +14,12 @@ namespace EduChatbot.Web.Pages.Student.Quizzes;
 public class TakeModel : PageModel
 {
     private readonly IStudentQuizService _studentQuizService;
+    private readonly ISubscriptionAccessService _subscriptionAccessService;
 
-    public TakeModel(IStudentQuizService studentQuizService)
+    public TakeModel(IStudentQuizService studentQuizService, ISubscriptionAccessService subscriptionAccessService)
     {
         _studentQuizService = studentQuizService;
+        _subscriptionAccessService = subscriptionAccessService;
     }
 
     [BindProperty]
@@ -28,6 +30,11 @@ public class TakeModel : PageModel
     public async Task<IActionResult> OnGetAsync(int attemptId)
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (!await _subscriptionAccessService.CheckCanUseQuizAsync(studentId))
+        {
+            TempData["ErrorMessage"] = "Premium subscription required for quizzes.";
+            return RedirectToPage("/Subscription/Plans");
+        }
         try
         {
             QuizData = await _studentQuizService.GetTakeQuizAsync(attemptId, studentId);
@@ -52,6 +59,11 @@ public class TakeModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (!await _subscriptionAccessService.CheckCanUseQuizAsync(studentId))
+        {
+            TempData["ErrorMessage"] = "Premium subscription required for quizzes.";
+            return RedirectToPage("/Subscription/Plans");
+        }
         try
         {
             await _studentQuizService.SubmitQuizAsync(Input.AttemptId, studentId, Input);
@@ -60,6 +72,10 @@ public class TakeModel : PageModel
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = "Failed to submit quiz: " + ex.Message;
+            if (ex.Message.Contains("Premium subscription required"))
+            {
+                return RedirectToPage("/Subscription/Plans");
+            }
             return RedirectToPage("/Student/Quizzes/Index");
         }
     }

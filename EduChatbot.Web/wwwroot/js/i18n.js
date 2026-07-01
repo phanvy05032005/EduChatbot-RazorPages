@@ -168,6 +168,11 @@
         'quizzes.student.continueInProgress': 'Tiếp tục làm bài (Đang thực hiện)',
         'quizzes.student.startQuiz': 'Bắt đầu làm bài',
         'quizzes.student.limitReached': 'Đã hết lượt thi',
+        'quizzes.student.premiumRequired': 'Yêu cầu Premium',
+        'quizzes.student.alertTitle': 'Yêu cầu gói Premium',
+        'quizzes.student.alertText': 'Tính năng làm bài trắc nghiệm yêu cầu tài khoản của bạn phải ở gói Premium. Vui lòng nâng cấp gói để tiếp tục.',
+        'quizzes.student.alertConfirm': 'Xem gói dịch vụ',
+        'quizzes.student.alertCancel': 'Đóng',
 
         /* ---- Student Take ---- */
         'quizzes.student.take.desc': 'Vui lòng hoàn thành tất cả câu hỏi trước khi nộp bài.',
@@ -495,6 +500,7 @@
         'profile.changePassword': 'Đổi mật khẩu',
         'profile.lecturerAccount': 'Tài khoản Giảng viên',
         'profile.studentAccount': 'Tài khoản Sinh viên',
+        'profile.adminAccount': 'Tài khoản Quản trị',
         'profile.backDashboard': 'Quay lại bảng điều khiển',
         'profile.backChat': 'Quay lại phòng chat',
         'profile.fullName': 'Họ và tên',
@@ -794,7 +800,15 @@
         'subscription.callback.successDesc': 'Your account has been upgraded to Premium successfully.',
         'subscription.callback.cancelledDesc': 'The payment was cancelled. You are still on the Basic plan.',
         'subscription.callback.failedDesc': 'The payment failed. Please try again.',
-        'subscription.callback.errorDesc': 'Invalid order information or error verifying payment.'
+        'subscription.callback.errorDesc': 'Invalid order information or error verifying payment.',
+        'quizzes.student.premiumRequired': 'Premium Required',
+        'quizzes.student.alertTitle': 'Premium Plan Required',
+        'quizzes.student.alertText': 'The quiz taking feature requires a Premium account subscription. Please upgrade your plan to continue.',
+        'quizzes.student.alertConfirm': 'View Subscription Plans',
+        'quizzes.student.alertCancel': 'Close',
+        'profile.adminAccount': 'Admin Account',
+        'profile.lecturerAccount': 'Lecturer Account',
+        'profile.studentAccount': 'Student Account'
     };
 
     /* ---------- Core logic ---------- */
