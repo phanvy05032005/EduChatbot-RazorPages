@@ -1,5 +1,6 @@
 using System.Reflection;
 using EduChatbot.Business.Services;
+using EduChatbot.Models;
 using EduChatbot.Models.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -22,12 +23,14 @@ public class SystemModel : PageModel
     public string ApplicationStatus { get; private set; } = "Running";
     public string StorageUsage { get; private set; } = "0 MB";
     public string SystemVersion { get; private set; } = "1.0.0";
+    public List<EmailQueue> EmailQueueLogs { get; private set; } = new();
 
     public async Task OnGetAsync()
     {
         DatabaseStatus = await _adminService.CanConnectToDatabaseAsync() ? "Connected" : "Unavailable";
         StorageUsage = FormatBytes(GetUploadStorageUsage());
         SystemVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+        EmailQueueLogs = await _adminService.GetEmailQueueLogsAsync();
     }
 
     private long GetUploadStorageUsage()

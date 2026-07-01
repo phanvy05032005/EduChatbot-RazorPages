@@ -150,4 +150,72 @@
             </div>
         </div>
     </div>
+
+    <!-- Email Queue Logs Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="admin-card p-4 rounded-xl" style="border-radius: 12px;">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-envelope-paper-fill text-primary" style="font-size: 1.25rem;"></i>
+                        <h4 class="font-section-title text-on-surface mb-0" style="font-size: 1.1rem; font-weight: 600;">System Email Queue Logs (SMTP Bypass & Credentials Reader)</h4>
+                    </div>
+                    <span class="badge bg-secondary" style="font-size: 0.75rem;">Latest @Model.EmailQueueLogs.Count logs</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: rgba(0,0,0,0.02); border-bottom: 2px solid var(--outline-variant);">
+                                <th style="padding: 12px; font-weight: 600;">To Email</th>
+                                <th style="padding: 12px; font-weight: 600;">Subject</th>
+                                <th style="padding: 12px; font-weight: 600;">Status</th>
+                                <th style="padding: 12px; font-weight: 600;">Enqueued Time</th>
+                                <th style="padding: 12px; font-weight: 600;">Email Body Content (Contains Password Details)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.EmailQueueLogs.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No emails have been enqueued yet. Create an account to see email logs.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var email in Model.EmailQueueLogs)
+                                {
+                                    var statusClass = email.Status switch
+                                    {
+                                        "Sent" => "bg-success",
+                                        "Pending" => "bg-warning text-dark",
+                                        "Processing" => "bg-info text-dark",
+                                        "Failed" => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                    <tr>
+                                        <td style="padding: 12px; font-weight: 600;">@email.ToEmail</td>
+                                        <td style="padding: 12px;">@email.Subject</td>
+                                        <td style="padding: 12px;">
+                                            <span class="badge @statusClass" style="border-radius: 4px; padding: 4px 8px; font-size: 0.7rem; font-weight: 600;">@email.Status</span>
+                                            @if (email.RetryCount > 0)
+                                            {
+                                                <small class="text-muted d-block" style="font-size: 0.7rem; margin-top: 2px;">Retries: @email.RetryCount/5</small>
+                                            }
+                                        </td>
+                                        <td style="padding: 12px;">@email.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td style="padding: 12px;">
+                                            <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--outline-variant); padding: 12px; background: #ffffff; border-radius: 8px; min-width: 380px;">
+                                                @Html.Raw(email.Body)
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

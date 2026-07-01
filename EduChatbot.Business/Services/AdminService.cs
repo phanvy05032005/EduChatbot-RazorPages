@@ -1100,4 +1100,12 @@ public class AdminService : IAdminService
             return Failure($"Error processing Excel file: {ex.Message}");
         }
     }
+
+    public async Task<List<EmailQueue>> GetEmailQueueLogsAsync(int limit = 50)
+    {
+        return await _context.EmailQueues
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
 }

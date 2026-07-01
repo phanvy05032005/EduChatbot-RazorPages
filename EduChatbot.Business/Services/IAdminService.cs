@@ -44,4 +44,6 @@ public interface IAdminService
     Task<AdminOperationResult> RemoveLecturerFromCourseAsync(string lecturerId, int courseId);
 
     Task<AdminOperationResult> ImportCoursesFromExcelAsync(Stream fileStream);
+
+    Task<List<EmailQueue>> GetEmailQueueLogsAsync(int limit = 50);
 }
