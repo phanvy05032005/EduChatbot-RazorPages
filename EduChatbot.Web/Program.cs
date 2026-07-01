@@ -2,6 +2,7 @@ using EduChatbot.Business;
 using EduChatbot.Business.Services;
 using EduChatbot.Web.Hubs;
 using EduChatbot.Web.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.IO;
 
@@ -101,6 +102,8 @@ app.Lifetime.ApplicationStarted.Register(() =>
         await ConfirmPayOSWebhookAsync(app.Services, app.Logger);
     });
 });
+
+await app.Services.MigrateDatabaseAsync();
 
 await app.Services.SeedEduChatbotIdentityAsync();
 await EduChatbot.Business.Services.SubscriptionSeeder.SeedAsync(app.Services);

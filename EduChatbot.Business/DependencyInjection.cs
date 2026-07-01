@@ -90,4 +90,11 @@ public static class DependencyInjection
     {
         return IdentitySeeder.SeedAsync(serviceProvider);
     }
+
+    public static async Task MigrateDatabaseAsync(this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
 }

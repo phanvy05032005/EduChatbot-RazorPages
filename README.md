@@ -8,7 +8,7 @@ Hệ thống được thiết kế theo kiến trúc **3 lớp (3-Tier/3-Layer A
 
 ## 1. Sơ đồ kiến trúc 3 lớp (Architecture Diagram)
 
-Dự án tuân thủ nghiêm ngặt mô hình kiến trúc 3 lớp để đảm bảo tính dễ bảo trì, mở rộng và kiểm thử:
+Dự án tuân thủ nghiêm ngặt mô hình kiến trúc 3 lớp để đảm bảo tính dễ bảo trì, mở rộng và kiểm thử: 
 
 ![Kiến trúc 3 lớp EduChatbot](docs/images/ThreeLayer.drawio.png)
 
