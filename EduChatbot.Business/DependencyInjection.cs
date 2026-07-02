@@ -59,7 +59,7 @@ public static class DependencyInjection
         services.Configure<ChatSettings>(configuration.GetSection("Chat"));
         services.AddHttpClient<IEmbeddingService, OpenRouterEmbeddingService>();
         services.AddHttpClient<IChatService, ChatService>();
-        services.AddScoped<IEmailService, EmailService>();
+        services.AddHttpClient<IEmailService, EmailService>();
 
         // Email Queue (DB) + Worker
         services.AddScoped<IEmailQueueRepository, EmailQueueRepository>();
