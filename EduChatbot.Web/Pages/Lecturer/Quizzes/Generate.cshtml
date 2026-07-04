@@ -106,7 +106,7 @@
         </div>
 
         <!-- Long-wait reassurance -->
-        <div style="display: none; color: #fbbf24; font-size: 0.85rem; max-width: 400px; padding: 0.6rem 1rem; border-radius: 6px; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); line-height: 1.4;" id="longWaitMessage">
+        <div style="display: none; color: #fbbf24; font-size: 0.85rem; max-width: 400px; padding: 0.6rem 1rem; border-radius: 6px; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); line-height: 1.4;" id="longWaitMessage" data-i18n="quizzes.generate.longWait">
             This is taking longer than usual depending on document size or AI traffic, but the system is still processing. Please do not close or reload this page.
         </div>
     </div>
@@ -158,13 +158,15 @@
             const elapsedTimer = document.getElementById('elapsedTimer');
             const longWaitMessage = document.getElementById('longWaitMessage');
 
-            const statusTexts = [
-                "Analyzing document content...",
-                "Generating multiple-choice questions...",
-                "Preparing answer options and correct keys...",
-                "Structuring quiz draft...",
-                "Finalizing quiz details..."
-            ];
+            function getStatusTexts() {
+                return [
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status0') : "Analyzing document content...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status1') : "Generating multiple-choice questions...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status2') : "Preparing answer options and correct keys...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status3') : "Structuring quiz draft...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status4') : "Finalizing quiz details..."
+                ];
+            }
 
             let isSubmitting = false;
  
@@ -182,7 +184,10 @@
                     
                     // Disable submit button and change text
                     submitBtn.disabled = true;
-                    submitBtn.innerText = "Generating...";
+                    submitBtn.innerText = window.EduI18n ? window.EduI18n.t('quizzes.generate.btnGenerating') : "Generating...";
+
+                    const statusTexts = getStatusTexts();
+                    rotatingStatus.innerText = statusTexts[0];
 
                     // Start timers
                     let secondsElapsed = 0;
@@ -191,10 +196,14 @@
                     // Update elapsed time every 1s
                     const timerInterval = setInterval(() => {
                         secondsElapsed++;
-                        elapsedTimer.innerText = `Elapsed time: ${secondsElapsed}s`;
+                        const template = window.EduI18n ? window.EduI18n.t('quizzes.generate.elapsedTime') : 'Elapsed time: {0}s';
+                        elapsedTimer.innerText = template.replace('{0}', secondsElapsed);
 
                         // Show long wait message after 15s
                         if (secondsElapsed >= 15) {
+                            if (window.EduI18n) {
+                                longWaitMessage.innerText = window.EduI18n.t('quizzes.generate.longWait');
+                            }
                             longWaitMessage.style.display = 'block';
                         }
                     }, 1000);

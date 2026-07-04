@@ -38,7 +38,7 @@ public class UploadModel : PageModel
     public IFormFile? DocumentFile { get; set; }
 
     [BindProperty]
-    public int CourseId { get; set; }
+    public int? CourseId { get; set; }
 
     public async Task OnGetAsync()
     {
@@ -47,18 +47,34 @@ public class UploadModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (CourseId <= 0)
+        var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
+        if (!CourseId.HasValue || CourseId.Value <= 0)
         {
-            ModelState.AddModelError(nameof(CourseId), "Please select a course.");
+            ModelState.AddModelError(nameof(CourseId), "Please select a course context.");
         }
 
-        if (DocumentFile == null)
+        if (DocumentFile == null || DocumentFile.Length == 0)
         {
-            ModelState.AddModelError(nameof(DocumentFile), "Please select a PDF or DOCX file.");
+            ModelState.AddModelError(nameof(DocumentFile), "Please select a PDF or DOCX file to upload.");
         }
 
         if (!ModelState.IsValid)
         {
+            if (isAjax)
+            {
+                var errorMessages = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(m => !string.IsNullOrWhiteSpace(m));
+
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = string.Join(" ", errorMessages)
+                });
+            }
+
             await LoadCoursesAsync();
             return Page();
         }
@@ -73,10 +89,19 @@ public class UploadModel : PageModel
             uploadedBy,
             User.FindFirstValue(ClaimTypes.NameIdentifier),
             _webHostEnvironment.WebRootPath,
-            CourseId);
+            CourseId!.Value);
 
         if (!result.IsSuccess)
         {
+            if (isAjax)
+            {
+                return new JsonResult(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
             ModelState.AddModelError(string.Empty, result.Message);
             await LoadCoursesAsync();
             return Page();
@@ -95,6 +120,15 @@ public class UploadModel : PageModel
                 CourseCode = result.CourseCode ?? string.Empty,
                 CourseName = result.CourseName ?? string.Empty,
                 FileName = result.FileName ?? string.Empty
+            });
+        }
+
+        if (isAjax)
+        {
+            return new JsonResult(new
+            {
+                success = true,
+                redirectUrl = Url.Page("/Documents/Index") ?? "/Documents/Index"
             });
         }
 

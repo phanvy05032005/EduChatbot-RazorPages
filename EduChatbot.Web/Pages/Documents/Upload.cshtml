@@ -216,6 +216,89 @@
         border-color: #008cd4;
         color: #ffffff;
     }
+
+    /* Progress Overlay */
+    .upload-progress-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(17, 24, 39, 0.96);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 24px;
+        padding: 2rem;
+    }
+
+    .upload-progress-card {
+        width: 100%;
+        max-width: 480px;
+        text-align: center;
+    }
+
+    .upload-status-icon-box {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .upload-progress-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.35rem;
+    }
+
+    .upload-progress-status {
+        font-size: 0.9rem;
+        color: var(--edu-muted);
+        margin-bottom: 1.5rem;
+        min-height: 1.4rem;
+    }
+
+    .upload-percent-text {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0ea5e9;
+    }
+
+    .upload-meta-text {
+        font-size: 0.8rem;
+        color: var(--edu-muted);
+        font-weight: 600;
+    }
+
+    .upload-progress-bar-container {
+        height: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .upload-long-wait-alert {
+        margin-top: 1.5rem;
+        background: rgba(14, 165, 233, 0.08);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        font-size: 0.82rem;
+        color: #e0f2fe;
+        text-align: left;
+        line-height: 1.4;
+    }
 </style>
 
 <div class="lecturer-upload-container">
@@ -294,6 +377,30 @@
                     <button type="submit" class="btn-action-upload" id="submitBtn" data-i18n="docs.upload.startUpload">Start Upload</button>
                 </div>
             </form>
+
+            <!-- Upload Progress Panel Overlay -->
+            <div id="uploadProgressPanel" class="upload-progress-panel d-none">
+                <div class="upload-progress-card">
+                    <div class="upload-status-icon-box" id="uploadStatusIcon">
+                        <i class="bi bi-cloud-upload-fill text-info"></i>
+                    </div>
+                    <h3 id="uploadProgressTitle" class="upload-progress-title">Uploading document...</h3>
+                    <p id="uploadProgressStatus" class="upload-progress-status">Uploading file to server...</p>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span id="uploadPercent" class="upload-percent-text">0%</span>
+                        <span id="uploadProgressMeta" class="upload-meta-text">0 MB / 0 MB</span>
+                    </div>
+                    <div class="progress upload-progress-bar-container">
+                        <div id="uploadProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <div id="uploadLongWaitMessage" class="upload-long-wait-alert d-none">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <span>This is taking longer than usual depending on file size and AI processing. Please do not close or reload this page.</span>
+                    </div>
+                </div>
+            </div>
         }
     </div>
 </div>
@@ -309,6 +416,33 @@
         const removeFileBtn = document.getElementById('removeFile');
         const validationMessage = document.getElementById('documentFileValidation');
         const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.querySelector('.btn-action-cancel');
+        const formErrorSummary = document.querySelector('.role-form-errors');
+        const courseSelect = document.getElementById('courseId');
+        const form = document.querySelector('form.lecturer-upload-form');
+
+        const progressPanel = document.getElementById('uploadProgressPanel');
+        const progressTitle = document.getElementById('uploadProgressTitle');
+        const progressStatus = document.getElementById('uploadProgressStatus');
+        const percentDisplay = document.getElementById('uploadPercent');
+        const progressMeta = document.getElementById('uploadProgressMeta');
+        const progressBar = document.getElementById('uploadProgressBar');
+        const longWaitAlert = document.getElementById('uploadLongWaitMessage');
+        const statusIconBox = document.getElementById('uploadStatusIcon');
+
+        let isUploading = false;
+        let rotateInterval = null;
+        let longWaitTimeout = null;
+
+        function getStatusMessages() {
+            return [
+                window.EduI18n ? window.EduI18n.t('docs.upload.status0') : "Upload complete. Processing document...",
+                window.EduI18n ? window.EduI18n.t('docs.upload.status1') : "Extracting text from document...",
+                window.EduI18n ? window.EduI18n.t('docs.upload.status2') : "Splitting content into searchable chunks...",
+                window.EduI18n ? window.EduI18n.t('docs.upload.status3') : "Preparing document for chatbot retrieval...",
+                window.EduI18n ? window.EduI18n.t('docs.upload.status4') : "Finalizing document setup..."
+            ];
+        }
 
         if (dropZone) {
             // Trigger file dialog on dropzone click
@@ -362,7 +496,7 @@
 
                 // Client-side file size validate
                 if (file.size > maxSize) {
-                    validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 50 MB.';
+                    validationMessage.textContent = window.EduI18n ? window.EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 50 MB.';
                     clearSelectedFile();
                     return;
                 }
@@ -394,28 +528,191 @@
                 document.getElementById('dropZoneDesc').style.display = 'block';
             }
 
-            // Form Submit loader validation
-            document.querySelector('form.lecturer-upload-form').addEventListener('submit', function(e) {
-                const file = fileInput.files[0];
-                const maxSize = Number(fileInput.dataset.maxSize);
+            function validateForm() {
+                let isValid = true;
+                if (formErrorSummary) formErrorSummary.innerHTML = '';
+                if (validationMessage) validationMessage.textContent = '';
 
+                const courseVal = courseSelect ? courseSelect.value : '';
+                if (!courseVal || Number(courseVal) <= 0) {
+                    if (formErrorSummary) {
+                        const errMsg = window.EduI18n ? window.EduI18n.t('docs.upload.courseSelectError') : 'Please select a course context.';
+                        formErrorSummary.innerHTML = `<div class="alert alert-danger mb-0">${errMsg}</div>`;
+                    }
+                    isValid = false;
+                }
+
+                const file = fileInput ? fileInput.files[0] : null;
                 if (!file) {
-                    e.preventDefault();
-                    validationMessage.textContent = 'Please select a PDF or DOCX file to upload.';
-                    return;
+                    if (validationMessage) {
+                        validationMessage.textContent = window.EduI18n ? window.EduI18n.t('docs.upload.fileSelectError') : 'Please select a PDF or DOCX file to upload.';
+                    }
+                    isValid = false;
+                } else {
+                    const maxSize = Number(fileInput.dataset.maxSize || 52428800);
+                    if (file.size > maxSize) {
+                        if (validationMessage) {
+                            validationMessage.textContent = window.EduI18n ? window.EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 50 MB.';
+                        }
+                        isValid = false;
+                    }
+
+                    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                    if (ext !== '.pdf' && ext !== '.docx') {
+                        if (validationMessage) {
+                            validationMessage.textContent = 'Only PDF and DOCX files are supported.';
+                        }
+                        isValid = false;
+                    }
                 }
 
-                if (file.size > maxSize) {
-                    e.preventDefault();
-                    validationMessage.textContent = window.EduI18n ? EduI18n.t('docs.upload.fileTooLarge') : 'File size cannot exceed 50 MB.';
-                    return;
-                }
+                return isValid;
+            }
 
-                // Visual loading state
-                submitBtn.disabled = true;
-                submitBtn.style.opacity = '0.7';
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Uploading & processing...';
-            });
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (isUploading) return;
+
+                    // 1. Validate form FIRST
+                    if (!validateForm()) {
+                        return;
+                    }
+
+                    // 2. Build FormData BEFORE disabling controls
+                    const formData = new FormData(form);
+
+                    // 3. Set uploading state & UI
+                    isUploading = true;
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.7';
+                    if (cancelBtn) cancelBtn.style.pointerEvents = 'none';
+
+                    // Reset & show progress panel
+                    progressBar.style.width = '0%';
+                    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                    percentDisplay.textContent = '0%';
+                    progressMeta.textContent = '0 MB / 0 MB';
+                    progressTitle.textContent = window.EduI18n ? window.EduI18n.t('docs.upload.progressTitle') : 'Uploading document...';
+                    progressStatus.textContent = window.EduI18n ? window.EduI18n.t('docs.upload.uploadingStatus') : 'Uploading file to server...';
+                    longWaitAlert.classList.add('d-none');
+                    statusIconBox.innerHTML = '<i class="bi bi-cloud-upload-fill text-info"></i>';
+                    progressPanel.classList.remove('d-none');
+
+                    // 4. Send XHR request
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', form.action || window.location.href, true);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    if (token) {
+                        xhr.setRequestHeader('RequestVerificationToken', token);
+                    }
+
+                    let hasSwitchedToProcessing = false;
+
+                    xhr.upload.onprogress = function(event) {
+                        if (event.lengthComputable) {
+                            const percent = Math.round((event.loaded / event.total) * 100);
+                            progressBar.style.width = percent + '%';
+                            percentDisplay.textContent = percent + '%';
+
+                            const loadedMb = (event.loaded / (1024 * 1024)).toFixed(1);
+                            const totalMb = (event.total / (1024 * 1024)).toFixed(1);
+                            progressMeta.textContent = `${loadedMb} MB / ${totalMb} MB`;
+                            progressStatus.textContent = `${window.EduI18n ? window.EduI18n.t('docs.upload.uploadingStatus') : 'Uploading file...'} ${percent}%`;
+
+                            if (percent >= 100 && !hasSwitchedToProcessing) {
+                                hasSwitchedToProcessing = true;
+                                switchToProcessingState();
+                            }
+                        }
+                    };
+
+                    function switchToProcessingState() {
+                        progressTitle.textContent = window.EduI18n ? window.EduI18n.t('docs.upload.processingTitle') : 'Processing document...';
+                        percentDisplay.textContent = '100%';
+                        statusIconBox.innerHTML = '<div class="spinner-border text-info" role="status"></div>';
+                        progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+
+                        const messages = getStatusMessages();
+                        let msgIndex = 0;
+                        progressStatus.textContent = messages[msgIndex];
+
+                        rotateInterval = setInterval(() => {
+                            msgIndex = (msgIndex + 1) % messages.length;
+                            progressStatus.textContent = messages[msgIndex];
+                        }, 3500);
+
+                        longWaitTimeout = setTimeout(() => {
+                            longWaitAlert.classList.remove('d-none');
+                        }, 15000);
+                    }
+
+                    xhr.onload = function() {
+                        stopTimers();
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                if (response.success) {
+                                    window.location.href = response.redirectUrl || '/Documents/Index';
+                                } else {
+                                    restoreUploadUi();
+                                    showError(response.message || 'Upload failed.');
+                                }
+                            } catch (err) {
+                                restoreUploadUi();
+                                showError('Unexpected response format from server.');
+                            }
+                        } else {
+                            restoreUploadUi();
+                            showError(`Server error (${xhr.status}). Please try again.`);
+                        }
+                    };
+
+                    xhr.onerror = function() {
+                        stopTimers();
+                        restoreUploadUi();
+                        showError('Network error. Please check your internet connection and try again.');
+                    };
+
+                    xhr.ontimeout = function() {
+                        stopTimers();
+                        restoreUploadUi();
+                        showError('Request timed out. Please try uploading again.');
+                    };
+
+                    xhr.send(formData);
+                });
+            }
+        }
+
+        function stopTimers() {
+            if (rotateInterval) {
+                clearInterval(rotateInterval);
+                rotateInterval = null;
+            }
+            if (longWaitTimeout) {
+                clearTimeout(longWaitTimeout);
+                longWaitTimeout = null;
+            }
+        }
+
+        function restoreUploadUi() {
+            isUploading = false;
+            progressPanel.classList.add('d-none');
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            if (cancelBtn) cancelBtn.style.pointerEvents = 'auto';
+        }
+
+        function showError(msg) {
+            if (formErrorSummary) {
+                formErrorSummary.innerHTML = `<div class="alert alert-danger mb-0">${msg}</div>`;
+            } else {
+                alert(msg);
+            }
         }
     </script>
 }
+
