@@ -136,7 +136,9 @@ public class DocumentService : IDocumentService
         string webRootPath,
         int courseId)
     {
-        var safeOriginalFileName = Path.GetFileName(originalFileName)?.Trim() ?? string.Empty;
+        var safeOriginalFileName = (Path.GetFileName(originalFileName)?.Trim() ?? string.Empty)
+            .Replace("\0", string.Empty)
+            .Replace("\u0000", string.Empty);
         var validationMessage = ValidateFile(safeOriginalFileName, fileSize);
         if (!string.IsNullOrWhiteSpace(validationMessage))
         {
@@ -521,7 +523,15 @@ public class DocumentService : IDocumentService
 
     private static string NormalizeExtractedText(string text)
     {
-        var lines = text
+        if (string.IsNullOrEmpty(text))
+        {
+            return string.Empty;
+        }
+
+        // PostgreSQL text columns reject NUL bytes (0x00 / \0) extracted from certain PDF/DOCX encodings
+        var sanitized = text.Replace("\0", string.Empty).Replace("\u0000", string.Empty);
+
+        var lines = sanitized
             .Replace("\r", "\n")
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(line => !string.IsNullOrWhiteSpace(line));
