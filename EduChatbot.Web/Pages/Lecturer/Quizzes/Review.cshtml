@@ -30,7 +30,7 @@
             @if (isPublished)
             {
                 <form method="post" asp-page-handler="Archive" asp-route-id="@Model.Quiz.Id" style="display: inline;">
-                    <button type="submit" class="role-primary-btn" style="background: #dc3545; border-color: #dc3545;" data-i18n="quizzes.lecturer.rev.archiveBtn" data-i18n-confirm="quizzes.lecturer.rev.archiveConfirm" data-i18n-confirm-en="Are you sure you want to archive this quiz? Students will no longer see this quiz for new attempts, but existing attempts and results will be kept.">Archive Quiz</button>
+                    <button type="submit" class="role-primary-btn" style="background: #dc3545; border-color: #dc3545; color: #ffffff;" data-i18n="quizzes.lecturer.rev.archiveBtn" data-i18n-confirm="quizzes.lecturer.rev.archiveConfirm" data-i18n-confirm-en="Are you sure you want to archive this quiz? Students will no longer see this quiz for new attempts, but existing attempts and results will be kept.">Archive Quiz</button>
                 </form>
             }
             @if (isPublished || isArchived)
@@ -39,16 +39,16 @@
             }
         </div>
     </header>
-
+ 
     <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn">← Back to Quizzes</a>
         @if (isDraft)
         {
             <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="role-primary-btn" style="background: #28a745; border-color: #28a745;" data-bs-toggle="modal" data-bs-target="#addQuestionModal" data-i18n="quizzes.lecturer.rev.addQuestion">
+                <button type="button" class="role-primary-btn" style="background: #28a745; border-color: #28a745; color: #ffffff;" data-bs-toggle="modal" data-bs-target="#addQuestionModal" data-i18n="quizzes.lecturer.rev.addQuestion">
                     + Add Question Manually
                 </button>
-                <button type="button" class="role-primary-btn" style="background: var(--edu-primary);" data-bs-toggle="collapse" data-bs-target="#generateMoreCollapse" aria-expanded="false" aria-controls="generateMoreCollapse" data-i18n="quizzes.lecturer.rev.generateMore">
+                <button type="button" class="role-primary-btn" style="background: #0ea5e9; border-color: #0ea5e9; color: #ffffff;" data-bs-toggle="collapse" data-bs-target="#generateMoreCollapse" aria-expanded="false" aria-controls="generateMoreCollapse" data-i18n="quizzes.lecturer.rev.generateMore">
                     ⚡ Generate More with AI
                 </button>
             </div>
