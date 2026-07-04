@@ -111,7 +111,7 @@ public class LecturerQuizService : ILecturerQuizService
                 DocumentId = input.DocumentId,
                 Title = input.Title,
                 Difficulty = input.Difficulty,
-                AdditionalInstruction = input.AdditionalInstruction,
+                AdditionalInstruction = input.AdditionalInstruction ?? string.Empty,
                 NumberOfQuestions = aiQuestions.Count,
                 TimeLimitMinutes = input.TimeLimitMinutes,
                 MaxAttempts = input.MaxAttempts,
@@ -609,7 +609,7 @@ RÀNG BUỘC QUAN TRỌNG:
 
         var existingQuestions = quiz.Questions.Select(q => q.QuestionText).ToList();
 
-        List<AiQuizQuestion> aiQuestions = await GenerateMoreAiQuestionsWithRetryAsync(input.AdditionalQuestionCount, input.AdditionalInstruction, docContext, existingQuestions);
+        List<AiQuizQuestion> aiQuestions = await GenerateMoreAiQuestionsWithRetryAsync(input.AdditionalQuestionCount, input.AdditionalInstruction ?? string.Empty, docContext, existingQuestions);
 
         if (aiQuestions == null || aiQuestions.Count == 0)
         {
@@ -817,9 +817,15 @@ RÀNG BUỘC QUAN TRỌNG:
         return cleaned;
     }
 
+    private void ApplyArchiveQuiz(Quiz quiz)
+    {
+        quiz.Status = QuizStatuses.Archived;
+        quiz.UpdatedAt = DateTime.UtcNow;
+    }
+
     public async Task ArchiveQuizAsync(int quizId, string lecturerId)
     {
-        var quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId);
+        var quiz = await _quizRepository.GetByIdAsync(quizId);
         if (quiz == null)
         {
             throw new KeyNotFoundException("Quiz not found.");
@@ -830,21 +836,155 @@ RÀNG BUỘC QUAN TRỌNG:
             throw new UnauthorizedAccessException("Access denied. You do not own this quiz.");
         }
 
-        if (quiz.Status == QuizStatuses.Draft)
-        {
-            throw new InvalidOperationException("Draft quiz should be edited or deleted, not archived.");
-        }
-
         if (quiz.Status == QuizStatuses.Archived)
         {
-            return; // Controlled pass
+            return;
         }
 
-        if (quiz.Status == QuizStatuses.Published)
+        ApplyArchiveQuiz(quiz);
+        await _quizRepository.SaveChangesAsync();
+    }
+
+    public async Task<QuizDeleteImpactDto> GetDeleteImpactAsync(int quizId, string lecturerId, bool isAdmin)
+    {
+        var quiz = await _quizRepository.GetByIdAsync(quizId);
+        if (quiz == null)
         {
-            quiz.Status = QuizStatuses.Archived;
-            quiz.UpdatedAt = DateTime.UtcNow;
-            await _quizRepository.SaveChangesAsync();
+            throw new KeyNotFoundException("Quiz không tồn tại.");
+        }
+
+        if (!isAdmin && quiz.CreatedByLecturerId != lecturerId)
+        {
+            throw new UnauthorizedAccessException("Bạn không có quyền thực hiện trên Quiz này.");
+        }
+
+        var totalAttempts = await _quizRepository.GetStudentAttemptsCountAsync(quizId);
+        
+        bool canHardDelete = quiz.Status == QuizStatuses.Draft && totalAttempts == 0;
+        var recommendedAction = canHardDelete ? QuizDeleteActions.HardDelete : QuizDeleteActions.Archive;
+
+        string warningMessage = string.Empty;
+        if (quiz.Status == QuizStatuses.Archived)
+        {
+            warningMessage = "Bài trắc nghiệm này đã được lưu trữ trước đó.";
+        }
+        else if (totalAttempts > 0)
+        {
+            warningMessage = $"Bài trắc nghiệm này đã có {totalAttempts} lượt làm bài của sinh viên. Để bảo vệ kết quả của học sinh, bài viết sẽ được chuyển sang Lưu trữ.";
+        }
+        else if (quiz.Status == QuizStatuses.Published)
+        {
+            warningMessage = "Bài trắc nghiệm này đã được phát hành cho học sinh. Không nên xóa trực tiếp, hệ thống sẽ thực hiện Lưu trữ.";
+        }
+        else
+        {
+            warningMessage = "Bài trắc nghiệm nháp chưa có lượt làm bài nào. Xóa bài trắc nghiệm này sẽ xóa vĩnh viễn toàn bộ câu hỏi và đáp án liên quan.";
+        }
+
+        return new QuizDeleteImpactDto
+        {
+            QuizId = quizId,
+            Title = quiz.Title,
+            Status = quiz.Status,
+            TotalAttempts = totalAttempts,
+            CanHardDelete = canHardDelete,
+            RecommendedAction = recommendedAction,
+            WarningMessage = warningMessage
+        };
+    }
+
+    public async Task<QuizDeleteResultDto> ExecuteDeleteOrArchiveAsync(int quizId, string action, string lecturerId, bool isAdmin)
+    {
+        if (action != QuizDeleteActions.HardDelete && action != QuizDeleteActions.Archive)
+        {
+            return new QuizDeleteResultDto
+            {
+                IsSuccess = false,
+                Message = "Hành động không hợp lệ.",
+                ExecutedAction = action
+            };
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var quiz = await _quizRepository.GetByIdAsync(quizId);
+            if (quiz == null)
+            {
+                return new QuizDeleteResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Quiz không tồn tại.",
+                    ExecutedAction = action
+                };
+            }
+
+            if (!isAdmin && quiz.CreatedByLecturerId != lecturerId)
+            {
+                return new QuizDeleteResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Bạn không có quyền thực hiện hành động này.",
+                    ExecutedAction = action
+                };
+            }
+
+            if (quiz.Status == QuizStatuses.Archived)
+            {
+                return new QuizDeleteResultDto
+                {
+                    IsSuccess = true,
+                    Message = "Quiz đã được lưu trữ từ trước.",
+                    ExecutedAction = QuizDeleteActions.Archive
+                };
+            }
+
+            var totalAttempts = await _quizRepository.GetStudentAttemptsCountAsync(quizId);
+            
+            bool canHardDelete = quiz.Status == QuizStatuses.Draft && totalAttempts == 0;
+            
+            var finalAction = action;
+            if (action == QuizDeleteActions.HardDelete && !canHardDelete)
+            {
+                finalAction = QuizDeleteActions.Archive;
+            }
+
+            if (finalAction == QuizDeleteActions.HardDelete)
+            {
+                await _quizRepository.DeleteAsync(quiz);
+                await transaction.CommitAsync();
+
+                return new QuizDeleteResultDto
+                {
+                    IsSuccess = true,
+                    Message = "Xóa bài trắc nghiệm nháp thành công.",
+                    ExecutedAction = QuizDeleteActions.HardDelete
+                };
+            }
+            else
+            {
+                ApplyArchiveQuiz(quiz);
+                await _quizRepository.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new QuizDeleteResultDto
+                {
+                    IsSuccess = true,
+                    Message = "Lưu trữ bài trắc nghiệm thành công.",
+                    ExecutedAction = QuizDeleteActions.Archive
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Lỗi xảy ra khi xử lý xóa/lưu trữ Quiz ID = {Id}", quizId);
+            return new QuizDeleteResultDto
+            {
+                IsSuccess = false,
+                Message = $"Có lỗi xảy ra: {ex.Message}",
+                ExecutedAction = action
+            };
         }
     }
 

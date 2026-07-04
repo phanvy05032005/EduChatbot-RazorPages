@@ -17,5 +17,12 @@ public interface IQuizRepository
     Task<QuizAttempt?> GetInProgressAttemptAsync(int quizId, string studentId);
     Task AddQuizAsync(Quiz quiz);
     Task AddAttemptAsync(QuizAttempt attempt);
+    Task<List<Quiz>> GetQuizzesByDocumentIdAsync(int documentId);
+    Task<int> GetQuizzesCountByDocumentIdAsync(int documentId, string? status = null);
+    Task<int> GetStudentAttemptsCountByDocumentIdAsync(int documentId);
+    Task DeleteQuizzesRangeAsync(List<int> quizIds);
+    Task<Quiz?> GetByIdAsync(int id);
+    Task DeleteAsync(Quiz quiz);
+    Task<int> GetStudentAttemptsCountAsync(int quizId);
     Task SaveChangesAsync();
 }

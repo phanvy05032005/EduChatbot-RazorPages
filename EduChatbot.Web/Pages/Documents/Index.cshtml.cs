@@ -54,4 +54,36 @@ public class IndexModel : PageModel
 
         return RedirectToPage();
     }
+
+    public async Task<IActionResult> OnGetDeleteImpactAsync(int id)
+    {
+        try
+        {
+            var impact = await _documentService.GetDeleteImpactAsync(
+                id,
+                User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+                User.IsInRole(ApplicationRoles.Admin));
+
+            return new JsonResult(impact);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    public async Task<IActionResult> OnPostDeleteConfirmAsync(int id, string action)
+    {
+        var result = await _documentService.ExecuteDeleteOrArchiveAsync(
+            id,
+            action,
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+            User.IsInRole(ApplicationRoles.Admin));
+
+        return new JsonResult(new { success = result.IsSuccess, message = result.Message, action = result.ExecutedAction });
+    }
 }

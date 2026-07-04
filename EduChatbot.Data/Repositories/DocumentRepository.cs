@@ -12,10 +12,15 @@ public class DocumentRepository : IDocumentRepository
         _context = context;
     }
 
-    public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null, int? courseId = null)
+    public async Task<List<Document>> GetAllAsync(string? searchTerm = null, string? uploadedById = null, int? courseId = null, bool includeArchived = false)
     {
         // Repository là nơi đọc dữ liệu từ database, Presentation layer không gọi DbContext trực tiếp.
         var query = _context.Documents.Include(document => document.Course).AsQueryable();
+
+        if (!includeArchived)
+        {
+            query = query.Where(document => document.Status != DocumentStatuses.Archived);
+        }
 
         if (!string.IsNullOrWhiteSpace(uploadedById))
         {

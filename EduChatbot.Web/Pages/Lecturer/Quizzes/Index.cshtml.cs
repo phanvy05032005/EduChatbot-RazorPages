@@ -43,4 +43,44 @@ public class IndexModel : PageModel
             return RedirectToPage();
         }
     }
+
+    public async Task<IActionResult> OnGetDeleteImpactAsync(int id)
+    {
+        var lecturerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(lecturerId))
+        {
+            return Challenge();
+        }
+
+        try
+        {
+            var isAdmin = User.IsInRole(ApplicationRoles.Admin);
+            var impact = await _lecturerQuizService.GetDeleteImpactAsync(id, lecturerId, isAdmin);
+            return new JsonResult(impact);
+        }
+        catch (System.Exception ex)
+        {
+            return new JsonResult(new { error = ex.Message }) { StatusCode = 400 };
+        }
+    }
+
+    public async Task<IActionResult> OnPostDeleteConfirmAsync(int id, string action)
+    {
+        var lecturerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(lecturerId))
+        {
+            return Challenge();
+        }
+
+        try
+        {
+            var isAdmin = User.IsInRole(ApplicationRoles.Admin);
+            var result = await _lecturerQuizService.ExecuteDeleteOrArchiveAsync(id, action, lecturerId, isAdmin);
+            return new JsonResult(result);
+        }
+        catch (System.Exception ex)
+        {
+            return new JsonResult(new { error = ex.Message }) { StatusCode = 400 };
+        }
+    }
 }

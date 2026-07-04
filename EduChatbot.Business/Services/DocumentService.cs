@@ -23,6 +23,9 @@ public class DocumentService : IDocumentService
     private readonly ILogger<DocumentService> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IRealtimeService _realtimeService;
+    private readonly ICloudStorageService _cloudStorageService;
+    private readonly IQuizRepository _quizRepository;
+    private readonly EduChatbot.Data.ApplicationDbContext _context;
 
     private static readonly System.Text.RegularExpressions.Regex CjkRegex = new(
         @"[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF]",
@@ -35,7 +38,10 @@ public class DocumentService : IDocumentService
         IEmbeddingService embeddingService,
         ILogger<DocumentService> logger,
         UserManager<ApplicationUser> userManager,
-        IRealtimeService realtimeService)
+        IRealtimeService realtimeService,
+        ICloudStorageService cloudStorageService,
+        IQuizRepository quizRepository,
+        EduChatbot.Data.ApplicationDbContext context)
     {
         _documentRepository = documentRepository;
         _courseRepository = courseRepository;
@@ -44,6 +50,9 @@ public class DocumentService : IDocumentService
         _logger = logger;
         _userManager = userManager;
         _realtimeService = realtimeService;
+        _cloudStorageService = cloudStorageService;
+        _quizRepository = quizRepository;
+        _context = context;
     }
 
     public async Task<DocumentListResult> GetDocumentsAsync(string? searchTerm = null, string? currentUserId = null, bool isAdmin = false, int? courseId = null)
@@ -196,25 +205,25 @@ public class DocumentService : IDocumentService
             };
         }
 
-        string? physicalFilePath = null;
+        string? tempFilePath = null;
+        string? uploadedPublicId = null;
         try
         {
-            var uploadFolder = Path.Combine(webRootPath, "uploads", "documents");
-            Directory.CreateDirectory(uploadFolder);
-
             var extension = Path.GetExtension(safeOriginalFileName).ToLowerInvariant();
-            var storedFileName = $"{Guid.NewGuid():N}{extension}";
-            physicalFilePath = Path.Combine(uploadFolder, storedFileName);
+            tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}{extension}");
 
-            await using (var outputStream = File.Create(physicalFilePath))
+            await using (var outputStream = File.Create(tempFilePath))
             {
                 await fileStream.CopyToAsync(outputStream);
             }
 
-            var extractedText = ExtractText(physicalFilePath, extension);
+            var extractedText = ExtractText(tempFilePath, extension);
             if (string.IsNullOrWhiteSpace(extractedText))
             {
-                File.Delete(physicalFilePath);
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
                 return new DocumentUploadResult
                 {
                     IsSuccess = false,
@@ -241,11 +250,19 @@ public class DocumentService : IDocumentService
                 }
             }
 
+            // Upload the temp file stream to Cloudinary
+            CloudUploadResultDto cloudResult;
+            await using (var uploadStream = File.OpenRead(tempFilePath))
+            {
+                cloudResult = await _cloudStorageService.UploadFileAsync(uploadStream, safeOriginalFileName, contentType);
+            }
+            uploadedPublicId = cloudResult.PublicId;
+
             var document = new Document
             {
                 FileName = safeOriginalFileName,
-                StoredFileName = storedFileName,
-                FilePath = $"/uploads/documents/{storedFileName}",
+                StoredFileName = cloudResult.PublicId, // Cloudinary PublicId
+                FilePath = cloudResult.Url,          // Cloudinary HTTPS URL
                 UploadedBy = NormalizeUploadedBy(uploadedBy),
                 UploadedById = uploadedById,
                 ContentType = contentType,
@@ -287,9 +304,17 @@ public class DocumentService : IDocumentService
         {
             _logger.LogError(ex, "Document upload/indexing failed for {FileName}", safeOriginalFileName);
 
-            if (!string.IsNullOrWhiteSpace(physicalFilePath) && File.Exists(physicalFilePath))
+            // Clean up Cloudinary file if it was uploaded but saving failed
+            if (!string.IsNullOrWhiteSpace(uploadedPublicId))
             {
-                File.Delete(physicalFilePath);
+                try
+                {
+                    await _cloudStorageService.DeleteFileAsync(uploadedPublicId);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.LogError(cleanupEx, "Failed to clean up orphaned Cloudinary file: {PublicId}", uploadedPublicId);
+                }
             }
 
             var message = ex is InvalidOperationException or ArgumentException
@@ -302,6 +327,21 @@ public class DocumentService : IDocumentService
                 Message = message,
                 Status = DocumentStatuses.Failed
             };
+        }
+        finally
+        {
+            // Always delete the local temp file
+            if (!string.IsNullOrWhiteSpace(tempFilePath) && File.Exists(tempFilePath))
+            {
+                try
+                {
+                    File.Delete(tempFilePath);
+                }
+                catch (Exception deleteEx)
+                {
+                    _logger.LogError(deleteEx, "Failed to delete temporary file: {TempPath}", tempFilePath);
+                }
+            }
         }
     }
 
@@ -341,11 +381,36 @@ public class DocumentService : IDocumentService
 
         await _documentRepository.DeleteAsync(document);
 
-        var physicalFilePath = Path.Combine(webRootPath, document.FilePath.TrimStart('/'));
-        if (File.Exists(physicalFilePath))
+        // Delete from Cloudinary if it's a Cloudinary file with valid PublicId (Condition 2 & 8)
+        if (!string.IsNullOrWhiteSpace(document.FilePath) && 
+            (document.FilePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
+             document.FilePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) &&
+            !string.IsNullOrWhiteSpace(document.StoredFileName))
         {
-            // Xóa file vật lý sau khi database đã xóa thành công.
-            File.Delete(physicalFilePath);
+            try
+            {
+                await _cloudStorageService.DeleteFileAsync(document.StoredFileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete file from Cloudinary: {PublicId}", document.StoredFileName);
+            }
+        }
+        else
+        {
+            // Fallback: Delete local file
+            var physicalFilePath = Path.Combine(webRootPath, document.FilePath.TrimStart('/'));
+            if (File.Exists(physicalFilePath))
+            {
+                try
+                {
+                    File.Delete(physicalFilePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to delete local file: {Path}", physicalFilePath);
+                }
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(uploadedById))
@@ -514,5 +579,161 @@ public class DocumentService : IDocumentService
             return document;
         }
         return null;
+    }
+
+    public async Task<DocumentDeleteImpactDto> GetDeleteImpactAsync(int id, string currentUserId, bool isAdmin)
+    {
+        var ownerFilter = isAdmin ? null : currentUserId;
+        var document = await _documentRepository.GetByIdAsync(id, ownerFilter);
+        if (document == null)
+        {
+            throw new UnauthorizedAccessException("Tài liệu không tồn tại hoặc bạn không có quyền truy cập.");
+        }
+
+        var totalQuizzes = await _quizRepository.GetQuizzesCountByDocumentIdAsync(id);
+        var activeQuizzes = await _quizRepository.GetQuizzesCountByDocumentIdAsync(id, QuizStatuses.Published);
+        var totalAttempts = await _quizRepository.GetStudentAttemptsCountByDocumentIdAsync(id);
+
+        var canHardDelete = totalAttempts == 0 && activeQuizzes == 0;
+        var recommendedAction = canHardDelete ? DocumentDeleteActions.HardDelete : DocumentDeleteActions.Archive;
+
+        string warningMessage = string.Empty;
+        if (totalAttempts > 0)
+        {
+            warningMessage = $"Tài liệu này đã được sử dụng và có {totalAttempts} lượt làm bài của sinh viên. Không thể xóa để bảo toàn lịch sử học tập.";
+        }
+        else if (activeQuizzes > 0)
+        {
+            warningMessage = $"Tài liệu này đang liên kết với {activeQuizzes} bài Quiz đang hoạt động (Published). Không thể xóa trực tiếp.";
+        }
+        else if (totalQuizzes > 0)
+        {
+            warningMessage = $"Tài liệu này đang có {totalQuizzes} bài Quiz nháp (Draft) chưa có lượt làm bài. Xóa tài liệu sẽ xóa cả bài Quiz nháp này.";
+        }
+
+        return new DocumentDeleteImpactDto
+        {
+            DocumentId = id,
+            FileName = document.FileName,
+            TotalQuizzes = totalQuizzes,
+            ActiveQuizzes = activeQuizzes,
+            TotalAttempts = totalAttempts,
+            RecommendedAction = recommendedAction,
+            WarningMessage = warningMessage
+        };
+    }
+
+    public async Task<DocumentDeleteResultDto> ExecuteDeleteOrArchiveAsync(int id, string action, string currentUserId, bool isAdmin)
+    {
+        if (action != DocumentDeleteActions.HardDelete && action != DocumentDeleteActions.Archive)
+        {
+            return new DocumentDeleteResultDto
+            {
+                IsSuccess = false,
+                Message = "Hành động không hợp lệ.",
+                ExecutedAction = action
+            };
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var ownerFilter = isAdmin ? null : currentUserId;
+            var document = await _documentRepository.GetByIdAsync(id, ownerFilter);
+            if (document == null)
+            {
+                return new DocumentDeleteResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Tài liệu không tồn tại hoặc bạn không có quyền thực hiện.",
+                    ExecutedAction = action
+                };
+            }
+
+            var totalQuizzes = await _quizRepository.GetQuizzesCountByDocumentIdAsync(id);
+            var activeQuizzes = await _quizRepository.GetQuizzesCountByDocumentIdAsync(id, QuizStatuses.Published);
+            var totalAttempts = await _quizRepository.GetStudentAttemptsCountByDocumentIdAsync(id);
+
+            var actualCanHardDelete = totalAttempts == 0 && activeQuizzes == 0;
+
+            var finalAction = action;
+            if (action == DocumentDeleteActions.HardDelete && !actualCanHardDelete)
+            {
+                finalAction = DocumentDeleteActions.Archive;
+            }
+
+            if (finalAction == DocumentDeleteActions.HardDelete)
+            {
+                var quizzes = await _quizRepository.GetQuizzesByDocumentIdAsync(id);
+                if (quizzes.Any())
+                {
+                    var quizIds = quizzes.Select(q => q.Id).ToList();
+                    await _quizRepository.DeleteQuizzesRangeAsync(quizIds);
+                }
+
+                await _documentRepository.DeleteAsync(document);
+                await transaction.CommitAsync();
+
+                if (!string.IsNullOrWhiteSpace(document.FilePath) &&
+                    (document.FilePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                     document.FilePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) &&
+                    !string.IsNullOrWhiteSpace(document.StoredFileName))
+                {
+                    try
+                    {
+                        await _cloudStorageService.DeleteFileAsync(document.StoredFileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Database deleted successfully, but failed to clean up Cloudinary file: {PublicId}", document.StoredFileName);
+                        return new DocumentDeleteResultDto
+                        {
+                            IsSuccess = true,
+                            Message = "Tài liệu đã được xóa khỏi hệ thống, nhưng không thể xóa tệp tin trên dịch vụ lưu trữ đám mây.",
+                            ExecutedAction = DocumentDeleteActions.HardDelete
+                        };
+                    }
+                }
+
+                return new DocumentDeleteResultDto
+                {
+                    IsSuccess = true,
+                    Message = "Xóa tài liệu và các dữ liệu liên quan thành công.",
+                    ExecutedAction = DocumentDeleteActions.HardDelete
+                };
+            }
+            else
+            {
+                document.Status = DocumentStatuses.Archived;
+                await _documentRepository.UpdateAsync(document);
+
+                var quizzes = await _quizRepository.GetQuizzesByDocumentIdAsync(id);
+                foreach (var quiz in quizzes)
+                {
+                    quiz.Status = QuizStatuses.Archived;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new DocumentDeleteResultDto
+                {
+                    IsSuccess = true,
+                    Message = "Lưu trữ tài liệu và các bài Quiz liên quan thành công.",
+                    ExecutedAction = DocumentDeleteActions.Archive
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Lỗi xảy ra trong quá trình xóa/lưu trữ tài liệu ID = {Id}", id);
+            return new DocumentDeleteResultDto
+            {
+                IsSuccess = false,
+                Message = $"Có lỗi xảy ra: {ex.Message}",
+                ExecutedAction = action
+            };
+        }
     }
 }

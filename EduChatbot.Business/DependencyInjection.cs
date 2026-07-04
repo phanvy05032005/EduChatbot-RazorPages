@@ -83,6 +83,11 @@ public static class DependencyInjection
         services.AddScoped<IPayOSPaymentService, PayOSPaymentService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
+
+        // Register Cloudinary Settings & Service
+        services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
+        services.AddScoped<ICloudStorageService, CloudinaryStorageService>();
+
         return services;
     }
 
