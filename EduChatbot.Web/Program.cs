@@ -48,6 +48,27 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Intercept requests for dynamic uploads to show friendly errors if they are missing (Condition 7 & 12)
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/uploads/documents/", StringComparison.OrdinalIgnoreCase))
+    {
+        var webHost = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var physicalPath = Path.Combine(webHost.WebRootPath, path.TrimStart('/'));
+        if (!System.IO.File.Exists(physicalPath))
+        {
+            context.Response.ContentType = "text/html; charset=utf-8";
+            context.Response.StatusCode = 404;
+            await context.Response.WriteAsync("<html><head><meta charset='utf-8'/><title>Tài liệu không khả dụng</title><style>body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background-color: #12141c; color: #fff; margin: 0; } .card { background: #1a1d26; padding: 2rem; border-radius: 12px; border: 1px solid #2d313f; text-align: center; max-width: 450px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); } h2 { color: #ff4a5a; margin-top: 0; } p { color: #a0aec0; line-height: 1.5; margin-bottom: 1.5rem; } .btn { display: inline-block; background: #007bff; color: #fff; text-decoration: none; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 500; transition: background 0.2s; } .btn:hover { background: #0056b3; }</style></head><body><div class='card'><h2>Tài liệu không còn tồn tại</h2><p>Tài liệu gốc lưu trên máy chủ tạm thời của Render đã bị xóa do hệ thống khởi động lại. Vui lòng liên hệ giảng viên để tải lên lại tài liệu này.</p><a href='javascript:history.back()' class='btn'>Quay lại</a></div></body></html>");
+            return;
+        }
+    }
+    await next();
+});
+
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();

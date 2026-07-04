@@ -33,7 +33,7 @@ public class LecturerGenerateQuizInput
     [Range(1, 10, ErrorMessage = "Max attempts must be between 1 and 10")]
     public int MaxAttempts { get; set; } = 1;
 
-    public string AdditionalInstruction { get; set; } = string.Empty;
+    public string? AdditionalInstruction { get; set; }
 }
 
 public class GenerateMoreQuestionsInput
@@ -42,7 +42,7 @@ public class GenerateMoreQuestionsInput
     [Range(1, 10, ErrorMessage = "Can only generate between 1 and 10 questions at a time.")]
     public int AdditionalQuestionCount { get; set; } = 5;
 
-    public string AdditionalInstruction { get; set; } = string.Empty;
+    public string? AdditionalInstruction { get; set; }
 }
 
 public class LecturerSaveQuestionInput

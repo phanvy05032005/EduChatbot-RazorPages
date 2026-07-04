@@ -402,17 +402,17 @@
                                         <a asp-page="/Lecturer/Quizzes/Attempts" asp-route-id="@quiz.Id" class="quiz-action-btn" title="Attempts" data-i18n-title="quizzes.lecturer.attempts">
                                             <i class="bi bi-bar-chart-line"></i>
                                         </a>
-                                        @if (quiz.Status == QuizStatuses.Published)
+                                        @if (quiz.Status == QuizStatuses.Draft)
                                         {
-                                            <form method="post" asp-page-handler="Archive" asp-route-id="@quiz.Id" style="display: inline;">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="quiz-action-btn btn-archive" title="Archive" 
-                                                        data-i18n-title="quizzes.lecturer.rev.archiveBtn"
-                                                        data-i18n-confirm="quizzes.lecturer.rev.archiveConfirm"
-                                                        data-i18n-confirm-en="Are you sure you want to archive this quiz? Students will no longer see this quiz for new attempts, but existing attempts and results will be kept.">
-                                                    <i class="bi bi-archive"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" class="quiz-action-btn btn-delete-quiz-ajax" data-id="@quiz.Id" data-title="@quiz.Title" title="Delete Draft" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); background: transparent;">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                        else if (quiz.Status == QuizStatuses.Published)
+                                        {
+                                            <button type="button" class="quiz-action-btn btn-archive-quiz-ajax" data-id="@quiz.Id" data-title="@quiz.Title" title="Archive Quiz" style="color: #0ea5e9; border-color: rgba(14, 165, 233, 0.2); background: transparent;">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
                                         }
                                     </div>
                                 </td>
@@ -424,3 +424,190 @@
         </div>
     }
 </section>
+
+@Html.AntiForgeryToken()
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const actionButtons = document.querySelectorAll('.btn-delete-quiz-ajax, .btn-archive-quiz-ajax');
+        
+        actionButtons.forEach(button => {
+            button.addEventListener('click', async function (e) {
+                e.preventDefault();
+                const quizId = button.getAttribute('data-id');
+                const quizTitle = button.getAttribute('data-title');
+                
+                const currentLang = (typeof EduI18n !== 'undefined' && typeof EduI18n.getLang === 'function') 
+                    ? EduI18n.getLang() 
+                    : 'en';
+
+                try {
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: currentLang === 'vi' ? 'Đang kiểm tra...' : 'Checking impact...',
+                            text: currentLang === 'vi' ? 'Vui lòng chờ trong giây lát.' : 'Please wait a moment.',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            },
+                            background: '#181c26',
+                            color: '#fff'
+                        });
+                    }
+
+                    const response = await fetch(`?handler=DeleteImpact&id=${quizId}`);
+                    if (!response.ok) {
+                        throw new Error(currentLang === 'vi' ? 'Không thể kiểm tra ảnh hưởng.' : 'Failed to retrieve impact data.');
+                    }
+                    const impact = await response.json();
+
+                    if (!window.Swal) {
+                        const basicConfirmText = currentLang === 'vi' 
+                            ? `Bạn có chắc muốn thực hiện hành động trên bài trắc nghiệm "${quizTitle}"?` 
+                            : `Are you sure you want to perform this action on "${quizTitle}"?`;
+                        if (confirm(basicConfirmText)) {
+                            submitQuizDeletePost(quizId, impact.recommendedAction, currentLang);
+                        }
+                        return;
+                    }
+
+                    let title = "";
+                    let text = "";
+                    let icon = "warning";
+                    let confirmButtonText = "";
+                    let confirmButtonColor = "#ef4444";
+                    let action = impact.recommendedAction;
+
+                    if (impact.status === "Draft") {
+                        if (impact.totalAttempts > 0) {
+                            title = currentLang === 'vi' ? 'Lưu trữ bài trắc nghiệm?' : 'Archive Quiz?';
+                            text = currentLang === 'vi'
+                                ? `Bài trắc nghiệm nháp này đã có ${impact.totalAttempts} lượt làm bài của sinh viên. Để bảo vệ kết quả và điểm số, bài viết không thể bị xóa mà sẽ được chuyển sang Lưu trữ.`
+                                : `This draft quiz has student attempts (${impact.totalAttempts} attempt(s)). To protect student grades and learning history, it cannot be deleted and will be archived instead.`;
+                            icon = "info";
+                            confirmButtonText = currentLang === 'vi' ? 'Lưu trữ bài trắc nghiệm' : 'Archive Quiz';
+                            confirmButtonColor = "#0ea5e9";
+                            action = "Archive";
+                        } else {
+                            title = currentLang === 'vi' ? 'Xóa bài trắc nghiệm nháp?' : 'Delete Draft Quiz?';
+                            text = currentLang === 'vi'
+                                ? `Bài trắc nghiệm nháp này chưa có lượt làm bài nào. Xóa bài trắc nghiệm này sẽ xóa vĩnh viễn toàn bộ câu hỏi và đáp án liên quan. Hành động này không thể hoàn tác.`
+                                : `This draft quiz has no student attempts. Deleting it will permanently remove all questions and options. This action cannot be undone.`;
+                            icon = "warning";
+                            confirmButtonText = currentLang === 'vi' ? 'Đồng ý xóa' : 'Yes, Delete Quiz';
+                            confirmButtonColor = "#ef4444";
+                            action = "HardDelete";
+                        }
+                    } else if (impact.status === "Published") {
+                        title = currentLang === 'vi' ? 'Lưu trữ bài trắc nghiệm?' : 'Archive Quiz?';
+                        text = currentLang === 'vi'
+                            ? `Bài trắc nghiệm này đang hoạt động. Lưu trữ sẽ ẩn bài trắc nghiệm khỏi bảng điều khiển của sinh viên để không thể làm bài mới. Toàn bộ lịch sử điểm số sẽ được giữ nguyên.`
+                            : `This quiz is active. Archiving it will hide it from the active student dashboard so no new attempts can be started. Existing attempts and scores will be preserved.`;
+                        icon = "info";
+                        confirmButtonText = currentLang === 'vi' ? 'Lưu trữ bài trắc nghiệm' : 'Archive Quiz';
+                        confirmButtonColor = "#0ea5e9";
+                        action = "Archive";
+                    }
+
+                    Swal.fire({
+                        title: title,
+                        text: text,
+                        icon: icon,
+                        showCancelButton: true,
+                        confirmButtonColor: confirmButtonColor,
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: confirmButtonText,
+                        cancelButtonText: currentLang === 'vi' ? 'Hủy' : 'Cancel',
+                        background: '#181c26',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'swal2-dark-custom shadow border'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitQuizDeletePost(quizId, action, currentLang);
+                        }
+                    });
+
+                } catch (error) {
+                    console.error(error);
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: currentLang === 'vi' ? 'Lỗi' : 'Error',
+                            text: error.message,
+                            icon: 'error',
+                            background: '#181c26',
+                            color: '#fff'
+                        });
+                    } else {
+                        alert(error.message);
+                    }
+                }
+            });
+        });
+
+        async function submitQuizDeletePost(quizId, action, currentLang) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            
+            try {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: currentLang === 'vi' ? 'Đang thực hiện...' : 'Processing...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                        background: '#181c26',
+                        color: '#fff'
+                    });
+                }
+
+                const response = await fetch(`?handler=DeleteConfirm&id=${quizId}&action=${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': token,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(currentLang === 'vi' ? 'Yêu cầu thất bại.' : 'Request failed.');
+                }
+
+                const result = await response.json();
+
+                if (window.Swal) {
+                    Swal.fire({
+                        title: result.isSuccess ? (currentLang === 'vi' ? 'Thành công' : 'Success') : (currentLang === 'vi' ? 'Thất bại' : 'Failed'),
+                        text: result.message,
+                        icon: result.isSuccess ? 'success' : 'error',
+                        background: '#181c26',
+                        color: '#fff'
+                    }).then(() => {
+                        if (result.isSuccess) {
+                            window.location.reload();
+                        }
+                    });
+                } else {
+                    alert(result.message);
+                    if (result.isSuccess) {
+                        window.location.reload();
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                if (window.Swal) {
+                    Swal.fire({
+                        title: currentLang === 'vi' ? 'Lỗi hệ thống' : 'System Error',
+                        text: error.message,
+                        icon: 'error',
+                        background: '#181c26',
+                        color: '#fff'
+                    });
+                } else {
+                    alert(error.message);
+                }
+            }
+        }
+    });
+</script>

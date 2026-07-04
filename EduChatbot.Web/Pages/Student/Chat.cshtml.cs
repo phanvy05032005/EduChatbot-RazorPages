@@ -322,13 +322,23 @@ namespace EduChatbot.Web.Pages.Student
                 return Forbid();
             }
 
+            // If absolute Cloudinary URL, redirect directly (Condition 6 & 12)
+            if (!string.IsNullOrWhiteSpace(doc.FilePath) && 
+                (doc.FilePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
+                 doc.FilePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+            {
+                return Redirect(doc.FilePath);
+            }
+
+            // Fallback for local files (Condition 6 & 7)
             var physicalPath = Path.Combine(_webHostEnvironment.WebRootPath, doc.FilePath.TrimStart('/'));
             if (!System.IO.File.Exists(physicalPath))
             {
-                return NotFound("The requested document file does not exist on disk.");
+                return Content("<html><head><meta charset='utf-8'/><title>Tài liệu không khả dụng</title><style>body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background-color: #12141c; color: #fff; margin: 0; } .card { background: #1a1d26; padding: 2rem; border-radius: 12px; border: 1px solid #2d313f; text-align: center; max-width: 450px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); } h2 { color: #ff4a5a; margin-top: 0; } p { color: #a0aec0; line-height: 1.5; margin-bottom: 1.5rem; } .btn { display: inline-block; background: #007bff; color: #fff; text-decoration: none; padding: 0.6rem 1.5rem; border-radius: 20px; font-weight: 500; transition: background 0.2s; } .btn:hover { background: #0056b3; }</style></head><body><div class='card'><h2>Tài liệu không còn tồn tại</h2><p>Tài liệu gốc lưu trên máy chủ tạm thời của Render đã bị xóa do hệ thống khởi động lại. Vui lòng liên hệ giảng viên để tải lên lại tài liệu này.</p><a href='javascript:history.back()' class='btn'>Quay lại</a></div></body></html>", "text/html; charset=utf-8");
             }
 
-            return PhysicalFile(physicalPath, doc.ContentType, doc.FileName);
+            var contentType = doc.ContentType ?? "application/octet-stream";
+            return PhysicalFile(physicalPath, contentType, doc.FileName);
         }
 
         private static async Task WriteSSEAsync(HttpResponse response, string data)

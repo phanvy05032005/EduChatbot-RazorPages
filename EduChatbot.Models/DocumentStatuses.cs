@@ -6,4 +6,5 @@ public static class DocumentStatuses
     public const string Rejected = "Rejected";
     public const string Processing = "Processing";
     public const string Failed = "Failed";
+    public const string Archived = "Archived";
 }

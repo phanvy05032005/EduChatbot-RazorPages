@@ -31,4 +31,8 @@ public interface IDocumentService
     Task<List<Course>> GetAvailableCoursesForUserAsync(string userId, bool isAdmin);
 
     Task<Document?> GetApprovedDocumentForStudentAsync(int id);
+
+    Task<DocumentDeleteImpactDto> GetDeleteImpactAsync(int id, string currentUserId, bool isAdmin);
+
+    Task<DocumentDeleteResultDto> ExecuteDeleteOrArchiveAsync(int id, string action, string currentUserId, bool isAdmin);
 }

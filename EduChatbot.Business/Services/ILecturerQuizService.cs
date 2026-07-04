@@ -17,4 +17,6 @@ public interface ILecturerQuizService
     Task<QuizQuestion> AddQuestionAsync(int quizId, string lecturerId, LecturerSaveQuestionInput input);
     Task<List<QuizQuestion>> GenerateMoreQuestionsAsync(int quizId, string lecturerId, GenerateMoreQuestionsInput input);
     Task ArchiveQuizAsync(int quizId, string lecturerId);
+    Task<QuizDeleteImpactDto> GetDeleteImpactAsync(int quizId, string lecturerId, bool isAdmin);
+    Task<QuizDeleteResultDto> ExecuteDeleteOrArchiveAsync(int quizId, string action, string lecturerId, bool isAdmin);
 }

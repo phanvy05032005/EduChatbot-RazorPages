@@ -103,6 +103,59 @@ public class QuizRepository : IQuizRepository
         await _context.QuizAttempts.AddAsync(attempt);
     }
 
+    public async Task<List<Quiz>> GetQuizzesByDocumentIdAsync(int documentId)
+    {
+        return await _context.Quizzes
+            .Where(q => q.DocumentId == documentId)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetQuizzesCountByDocumentIdAsync(int documentId, string? status = null)
+    {
+        var query = _context.Quizzes.Where(q => q.DocumentId == documentId);
+        if (!string.IsNullOrEmpty(status))
+        {
+            query = query.Where(q => q.Status == status);
+        }
+        return await query.CountAsync();
+    }
+
+    public async Task<int> GetStudentAttemptsCountByDocumentIdAsync(int documentId)
+    {
+        return await _context.QuizAttempts
+            .CountAsync(a => a.Quiz != null && a.Quiz.DocumentId == documentId);
+    }
+
+    public async Task DeleteQuizzesRangeAsync(List<int> quizIds)
+    {
+        var quizzes = await _context.Quizzes
+            .Where(q => quizIds.Contains(q.Id))
+            .ToListAsync();
+        if (quizzes.Any())
+        {
+            _context.Quizzes.RemoveRange(quizzes);
+        }
+    }
+
+    public async Task<Quiz?> GetByIdAsync(int id)
+    {
+        return await _context.Quizzes
+            .Include(q => q.Course)
+            .Include(q => q.Document)
+            .FirstOrDefaultAsync(q => q.Id == id);
+    }
+
+    public async Task DeleteAsync(Quiz quiz)
+    {
+        _context.Quizzes.Remove(quiz);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> GetStudentAttemptsCountAsync(int quizId)
+    {
+        return await _context.QuizAttempts.CountAsync(a => a.QuizId == quizId);
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
