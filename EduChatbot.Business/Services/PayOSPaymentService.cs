@@ -77,6 +77,7 @@ public class PayOSPaymentService : IPayOSPaymentService
                 // Mark stale payment as FAILED
                 pt.Status = PaymentStatus.FAILED;
                 pt.UpdatedAt = now;
+                pt.StatusReason = "Payment link expired before completion.";
 
                 // Mark related pending Premium subscription as CANCELLED
                 if (pt.SubscriptionId.HasValue)
@@ -162,7 +163,8 @@ public class PayOSPaymentService : IPayOSPaymentService
             CheckoutUrl = paymentLink.CheckoutUrl,
             PayOSPaymentLinkId = paymentLink.PaymentLinkId,
             SubscriptionId = premiumSubscription.Id,
-            CreatedAt = now
+            CreatedAt = now,
+            StatusReason = null
         };
 
         _context.PaymentTransactions.Add(transaction);
@@ -269,6 +271,7 @@ public class PayOSPaymentService : IPayOSPaymentService
                     transaction.Status = PaymentStatus.SUCCESS;
                     transaction.PaidAt = now;
                     transaction.UpdatedAt = now;
+                    transaction.StatusReason = null;
 
                     // Upgrade Premium subscription
                     Subscription? premiumSub = transaction.Subscription;
@@ -329,6 +332,7 @@ public class PayOSPaymentService : IPayOSPaymentService
                 {
                     transaction.Status = PaymentStatus.CANCELLED;
                     transaction.UpdatedAt = now;
+                    transaction.StatusReason = "Payment was cancelled by the user or provider.";
 
                     // Mark related Premium subscription as CANCELLED
                     Subscription? premiumSub = transaction.Subscription;
@@ -358,6 +362,7 @@ public class PayOSPaymentService : IPayOSPaymentService
                     {
                         transaction.Status = PaymentStatus.FAILED;
                         transaction.UpdatedAt = now;
+                        transaction.StatusReason = $"Payment verification returned non-success status: {paymentStatus}.";
 
                         Subscription? premiumSub = transaction.Subscription;
                         if (premiumSub != null)

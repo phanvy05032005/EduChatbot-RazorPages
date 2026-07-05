@@ -1,0 +1,153 @@
+@page
+@model EduChatbot.Web.Pages.Subscription.HistoryModel
+
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Purchase History";
+    ViewData["BodyClass"] = "subscription-shell";
+
+    string StatusClass(string status) => status switch
+    {
+        "Paid" => "is-paid",
+        "Expired" => "is-expired",
+        "Pending" => "is-pending",
+        "Failed" => "is-failed",
+        "Cancelled" => "is-cancelled",
+        _ => string.Empty
+    };
+}
+
+<link rel="stylesheet" href="~/css/subscription.css" asp-append-version="true" />
+
+<section class="sub-page">
+    <header class="sub-hero">
+        <div class="sub-kicker">Subscription</div>
+        <h1>Purchase History</h1>
+        <p>Review every Premium payment, track payment outcomes, and check when each package expires.</p>
+        <div class="sub-hero-links">
+            <a asp-page="/Subscription/Me" class="sub-link-btn">My Subscription</a>
+            <a asp-page="/Subscription/Plans" class="sub-link-btn">Plans</a>
+        </div>
+    </header>
+
+    <section class="sub-history-card">
+        <div class="sub-history-card-header">
+            <div>
+                <h2>My Transactions</h2>
+                <p>@Model.History.TotalCount transaction(s) found</p>
+            </div>
+            <div class="sub-history-meta">
+                <span>Page @Model.History.Page / @Model.History.TotalPages</span>
+            </div>
+        </div>
+
+        @if (!Model.History.Items.Any())
+        {
+            <div class="sub-history-empty">
+                <h3>No purchase history yet</h3>
+                <p>Your successful, pending, failed, and cancelled Premium payments will appear here.</p>
+                <a asp-page="/Subscription/Plans" class="sub-link-btn primary">Browse Plans</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="sub-history-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <button type="button" class="sub-sort-btn" data-sort-key="created" data-default-dir="desc">Created At</button>
+                            </th>
+                            <th>Package</th>
+                            <th>
+                                <button type="button" class="sub-sort-btn" data-sort-key="amount" data-default-dir="desc">Amount</button>
+                            </th>
+                            <th>Payment Method</th>
+                            <th>Order Code</th>
+                            <th>Status</th>
+                            <th>
+                                <button type="button" class="sub-sort-btn" data-sort-key="paid" data-default-dir="desc">Paid At</button>
+                            </th>
+                            <th>Expired At</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.History.Items)
+                        {
+                            <tr>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@item.PackageName</td>
+                                <td>@item.Amount.ToString("N0") @item.Currency</td>
+                                <td>@item.PaymentMethod</td>
+                                <td><code>@item.OrderCode</code></td>
+                                <td>
+                                    <span class="sub-status-badge @StatusClass(item.DisplayStatus)">@item.DisplayStatus</span>
+                                </td>
+                                <td>@(item.PaidAt.HasValue ? item.PaidAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                <td>@(item.ExpiredAt.HasValue ? item.ExpiredAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                <td class="sub-note-cell">@(string.IsNullOrWhiteSpace(item.StatusReason) ? "-" : item.StatusReason)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sub-pagination">
+                <button type="button" class="sub-page-btn" data-page="@(Model.History.Page - 1)" @(Model.History.HasPreviousPage ? null : "disabled")>
+                    Previous
+                </button>
+                <span>Showing page @Model.History.Page of @Model.History.TotalPages</span>
+                <button type="button" class="sub-page-btn" data-page="@(Model.History.Page + 1)" @(Model.History.HasNextPage ? null : "disabled")>
+                    Next
+                </button>
+            </div>
+        }
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const navigateWithQuery = (changes) => {
+                const url = new URL(window.location.href);
+                Object.entries(changes).forEach(([key, value]) => {
+                    if (value === null || value === undefined || value === "") {
+                        url.searchParams.delete(key);
+                    } else {
+                        url.searchParams.set(key, value);
+                    }
+                });
+
+                window.location.href = url.toString();
+            };
+
+            document.querySelectorAll("[data-sort-key]").forEach(button => {
+                button.addEventListener("click", function () {
+                    const key = this.getAttribute("data-sort-key");
+                    const defaultDir = this.getAttribute("data-default-dir") || "desc";
+                    const currentSort = new URL(window.location.href).searchParams.get("sort");
+                    let nextSort = `${key}_${defaultDir}`;
+
+                    if (currentSort === `${key}_desc`) {
+                        nextSort = `${key}_asc`;
+                    } else if (currentSort === `${key}_asc`) {
+                        nextSort = `${key}_desc`;
+                    }
+
+                    navigateWithQuery({ sort: nextSort, pageNumber: 1 });
+                });
+            });
+
+            document.querySelectorAll("[data-page]").forEach(button => {
+                button.addEventListener("click", function () {
+                    if (this.hasAttribute("disabled")) {
+                        return;
+                    }
+
+                    navigateWithQuery({ pageNumber: this.getAttribute("data-page") });
+                });
+            });
+        });
+    </script>
+}

@@ -81,6 +81,7 @@ public static class DependencyInjection
 
         services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
         services.AddScoped<IPayOSPaymentService, PayOSPaymentService>();
+        services.AddScoped<IPaymentHistoryService, PaymentHistoryService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
 

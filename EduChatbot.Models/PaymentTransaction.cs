@@ -23,11 +23,15 @@ public class PaymentTransaction
 
     public string? PayOSPaymentLinkId { get; set; }
 
+    public string? ProviderTransactionCode { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? PaidAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public string? StatusReason { get; set; }
 
     public int? SubscriptionId { get; set; }
 

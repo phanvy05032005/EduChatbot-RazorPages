@@ -1,0 +1,385 @@
+@page
+@model EduChatbot.Web.Pages.Admin.PaymentHistoryModel
+
+@{
+    ViewData["Title"] = "Payment Management";
+
+    string? Selected(string? current, string expected) => string.Equals(current, expected, StringComparison.OrdinalIgnoreCase) ? "selected" : null;
+
+    string BadgeStyle(string status) => status switch
+    {
+        "Paid" => "background: rgba(52, 211, 153, 0.12); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.2);",
+        "Expired" => "background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2);",
+        "Pending" => "background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.2);",
+        "Failed" => "background: rgba(248, 113, 113, 0.12); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2);",
+        "Cancelled" => "background: rgba(148, 163, 184, 0.14); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.2);",
+        _ => "background: rgba(228, 240, 246, 0.08); color: #e4f0f6; border: 1px solid rgba(228, 240, 246, 0.12);"
+    };
+}
+
+<style>
+    .admin-page-header h1,
+    .admin-page-header p,
+    .admin-kicker,
+    .payment-filter-header h2,
+    .payment-filter-header p,
+    .payment-toolbar-field .form-label,
+    .payment-filter-note,
+    .admin-table thead th,
+    .admin-table thead th .btn-link,
+    .admin-table tbody td,
+    .admin-table tbody td code {
+        color: #f8fafc;
+    }
+
+    .payment-soft-text {
+        color: rgba(248, 250, 252, 0.74) !important;
+    }
+
+    .payment-filter-card {
+        padding: 1.15rem !important;
+    }
+
+    .payment-filter-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .payment-filter-header h2 {
+        margin: 0;
+        font-size: 1.02rem;
+    }
+
+    .payment-filter-header p {
+        margin: 0.2rem 0 0;
+        font-size: 0.78rem;
+    }
+
+    .payment-toolbar {
+        display: grid;
+        grid-template-columns: minmax(320px, 2.5fr) repeat(3, minmax(150px, 1fr));
+        gap: 0.7rem;
+        align-items: end;
+    }
+
+    .payment-toolbar-field .form-label {
+        margin-bottom: 0.35rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .payment-search-input {
+        position: relative;
+    }
+
+    .payment-search-icon {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(228, 240, 246, 0.45);
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .payment-search-input .form-control {
+        padding-left: 2.45rem;
+    }
+
+    .payment-toolbar .form-control,
+    .payment-toolbar .form-select {
+        min-height: 42px;
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+        color: #f8fafc;
+    }
+
+    .payment-toolbar .form-control::placeholder {
+        color: rgba(248, 250, 252, 0.55);
+    }
+
+    .payment-filter-note {
+        margin-top: 0.7rem;
+        color: rgba(228, 240, 246, 0.52);
+        font-size: 0.76rem;
+    }
+
+    .payment-filter-reset {
+        color: rgba(228, 240, 246, 0.72);
+        font-size: 0.82rem;
+        text-decoration: none;
+    }
+
+    .payment-filter-reset:hover {
+        color: #ffffff;
+    }
+
+    .payment-student-col {
+        min-width: 180px;
+    }
+
+    .payment-student-name {
+        white-space: nowrap;
+    }
+
+    @@media (max-width: 1399.98px) {
+        .payment-toolbar {
+            grid-template-columns: minmax(280px, 2fr) repeat(3, minmax(140px, 1fr));
+        }
+    }
+
+    @@media (max-width: 1199.98px) {
+        .payment-toolbar {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .payment-filter-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .payment-toolbar {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="admin-page text-start">
+    <div class="admin-page-header mb-4">
+        <div>
+            <div class="admin-kicker">
+                <span>EDUCHATBOT</span> &middot;
+                <span>ADMIN</span> &middot;
+                <span>PAYMENTS</span>
+            </div>
+            <h1>Payment Management</h1>
+            <p>Inspect every Premium transaction, audit payment outcomes, and review revenue-ready paid records.</p>
+        </div>
+    </div>
+
+    <section class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-2">
+            <div class="admin-card p-3 h-100">
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Total Transactions</div>
+                <div class="fw-bold mt-2" style="font-size: 1.75rem;">@Model.Summary.TotalTransactions.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-2">
+            <div class="admin-card p-3 h-100">
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Paid Transactions</div>
+                <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #34d399;">@Model.Summary.PaidTransactions.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-card p-3 h-100">
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Total Revenue</div>
+                <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #f8fafc;">@Model.Summary.TotalRevenue.ToString("N0") VND</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-2">
+            <div class="admin-card p-3 h-100">
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Pending</div>
+                <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #60a5fa;">@Model.Summary.PendingTransactions.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-card p-3 h-100">
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Failed / Cancelled</div>
+                <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #f87171;">@Model.Summary.FailedOrCancelledTransactions.ToString("N0")</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-card rounded-xl mb-4 payment-filter-card">
+        <div class="payment-filter-header">
+            <div>
+                <h2>Filters</h2>
+                <p class="payment-soft-text">Compact server-side filters for fast transaction lookup.</p>
+            </div>
+            <a asp-page="/Admin/PaymentHistory" class="payment-filter-reset">Clear all</a>
+        </div>
+
+        <form method="get" id="paymentHistoryFilters">
+            <input type="hidden" name="sort" value="@Model.Sort" />
+
+            <div class="payment-toolbar">
+                <div class="payment-toolbar-field">
+                    <label class="form-label">Search</label>
+                    <div class="payment-search-input">
+                        <span class="payment-search-icon">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="search" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Student, email, package, order code..." />
+                    </div>
+                </div>
+
+                <div class="payment-toolbar-field">
+                    <label class="form-label">Method</label>
+                    <select name="PaymentMethod" class="form-select">
+                        <option value="">All</option>
+                        <option value="PAYOS" selected="@Selected(Model.PaymentMethod, "PAYOS")">PayOS</option>
+                    </select>
+                </div>
+
+                <div class="payment-toolbar-field">
+                    <label class="form-label">Status</label>
+                    <select name="DisplayStatus" class="form-select">
+                        <option value="">All</option>
+                        <option value="Pending" selected="@Selected(Model.DisplayStatus, "Pending")">Pending</option>
+                        <option value="Paid" selected="@Selected(Model.DisplayStatus, "Paid")">Paid</option>
+                        <option value="Expired" selected="@Selected(Model.DisplayStatus, "Expired")">Expired</option>
+                        <option value="Failed" selected="@Selected(Model.DisplayStatus, "Failed")">Failed</option>
+                        <option value="Cancelled" selected="@Selected(Model.DisplayStatus, "Cancelled")">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="payment-toolbar-field">
+                    <label class="form-label">Quick Range</label>
+                    <select name="PresetRange" class="form-select">
+                        <option value="">None</option>
+                        <option value="Today" selected="@Selected(Model.PresetRange, "Today")">Today</option>
+                        <option value="ThisWeek" selected="@Selected(Model.PresetRange, "ThisWeek")">This Week</option>
+                        <option value="ThisMonth" selected="@Selected(Model.PresetRange, "ThisMonth")">This Month</option>
+                        <option value="Last30Days" selected="@Selected(Model.PresetRange, "Last30Days")">Last 30 Days</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="payment-filter-note">
+                Search covers student name, email, package, and order code. Press Enter in the search box. Select filters apply on change.
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-card rounded-xl overflow-hidden shadow-sm">
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="payment-student-col"><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="student" data-default-dir="asc">Student</button></th>
+                        <th>Email</th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="package" data-default-dir="asc">Package</button></th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="amount" data-default-dir="desc">Amount</button></th>
+                        <th>Method</th>
+                        <th>Order Code</th>
+                        <th>Status</th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="created" data-default-dir="desc">Created At</button></th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="paid" data-default-dir="desc">Paid At</button></th>
+                        <th>Expired At</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.History.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="11" class="text-center py-5 payment-soft-text">No transactions match the current filters.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.History.Items)
+                        {
+                            <tr>
+                                <td class="payment-student-col">
+                                    <div class="fw-semibold payment-student-name">@item.StudentName</div>
+                                </td>
+                                <td>@item.StudentEmail</td>
+                                <td>@item.PackageName</td>
+                                <td>@item.Amount.ToString("N0") @item.Currency</td>
+                                <td>@item.PaymentMethod</td>
+                                <td><code>@item.OrderCode</code></td>
+                                <td>
+                                    <span class="d-inline-flex align-items-center px-2 py-1 rounded-pill" style="@BadgeStyle(item.DisplayStatus)">
+                                        @item.DisplayStatus
+                                    </span>
+                                </td>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(item.PaidAt.HasValue ? item.PaidAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                <td>@(item.ExpiredAt.HasValue ? item.ExpiredAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                                <td class="text-wrap" style="min-width: 220px;">@(string.IsNullOrWhiteSpace(item.StatusReason) ? "-" : item.StatusReason)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.History.Items.Any())
+        {
+            <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top" style="border-color: rgba(228, 240, 246, 0.08) !important;">
+                <span class="payment-soft-text small">Page @Model.History.Page of @Model.History.TotalPages</span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="admin-secondary-btn page-trigger" data-page="@(Model.History.Page - 1)" @(Model.History.HasPreviousPage ? null : "disabled")>Previous</button>
+                    <button type="button" class="admin-secondary-btn page-trigger" data-page="@(Model.History.Page + 1)" @(Model.History.HasNextPage ? null : "disabled")>Next</button>
+                </div>
+            </div>
+        }
+    </section>
+</div>
+
+<script>
+    (() => {
+        const form = document.getElementById('paymentHistoryFilters');
+        if (!form) {
+            return;
+        }
+
+        const autoSubmitSelectors = 'select';
+        form.querySelectorAll(autoSubmitSelectors).forEach((field) => {
+            field.addEventListener('change', () => form.requestSubmit());
+        });
+    })();
+</script>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const navigateWithParams = (changes) => {
+                const url = new URL(window.location.href);
+                Object.entries(changes).forEach(([key, value]) => {
+                    if (value === null || value === undefined || value === "") {
+                        url.searchParams.delete(key);
+                    } else {
+                        url.searchParams.set(key, value);
+                    }
+                });
+
+                window.location.href = url.toString();
+            };
+
+            document.querySelectorAll(".sort-trigger").forEach(button => {
+                button.addEventListener("click", function () {
+                    const key = this.dataset.sortKey;
+                    const defaultDir = this.dataset.defaultDir || "desc";
+                    const currentSort = new URL(window.location.href).searchParams.get("sort");
+                    let nextSort = `${key}_${defaultDir}`;
+
+                    if (currentSort === `${key}_desc`) {
+                        nextSort = `${key}_asc`;
+                    } else if (currentSort === `${key}_asc`) {
+                        nextSort = `${key}_desc`;
+                    }
+
+                    navigateWithParams({ sort: nextSort, pageNumber: 1 });
+                });
+            });
+
+            document.querySelectorAll(".page-trigger").forEach(button => {
+                button.addEventListener("click", function () {
+                    if (this.hasAttribute("disabled")) {
+                        return;
+                    }
+
+                    navigateWithParams({ pageNumber: this.dataset.page });
+                });
+            });
+        });
+    </script>
+}

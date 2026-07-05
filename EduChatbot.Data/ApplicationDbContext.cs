@@ -204,6 +204,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasDefaultValue(PaymentStatus.PENDING);
             entity.Property(pt => pt.CheckoutUrl).HasColumnName("checkout_url").HasMaxLength(1000);
             entity.Property(pt => pt.PayOSPaymentLinkId).HasColumnName("payos_payment_link_id").HasMaxLength(255);
+            entity.Property(pt => pt.ProviderTransactionCode).HasColumnName("provider_transaction_code").HasMaxLength(255);
             entity.Property(pt => pt.CreatedAt)
                 .HasColumnName("created_at")
                 .HasColumnType("timestamp with time zone");
@@ -213,12 +214,17 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(pt => pt.UpdatedAt)
                 .HasColumnName("updated_at")
                 .HasColumnType("timestamp with time zone");
+            entity.Property(pt => pt.StatusReason).HasColumnName("status_reason").HasMaxLength(1000);
             entity.Property(pt => pt.SubscriptionId)
                 .HasColumnName("subscription_id");
 
             entity.HasIndex(pt => pt.OrderCode).IsUnique();
             entity.HasIndex(pt => pt.UserId);
             entity.HasIndex(pt => pt.SubscriptionId);
+            entity.HasIndex(pt => pt.Status);
+            entity.HasIndex(pt => pt.CreatedAt);
+            entity.HasIndex(pt => pt.PaidAt);
+            entity.HasIndex(pt => new { pt.UserId, pt.CreatedAt });
 
             entity.HasOne(pt => pt.User)
                 .WithMany()
