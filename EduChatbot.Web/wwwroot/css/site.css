@@ -149,7 +149,8 @@ body {
   overflow-wrap: anywhere;
 }
 
-code {
+.admin-shell code,
+.lecturer-shell code {
   color: #334155;
   background: #f1f5f9;
   border-radius: 4px;

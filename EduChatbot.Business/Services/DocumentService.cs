@@ -541,7 +541,7 @@ public class DocumentService : IDocumentService
 
     private static List<string> ChunkText(string text)
     {
-        const int wordsPerChunk = 220;
+        const int wordsPerChunk = 350;
 
         var words = text
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

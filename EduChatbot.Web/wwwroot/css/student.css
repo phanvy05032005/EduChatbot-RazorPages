@@ -397,6 +397,18 @@
 
 .student-shell .source-chip:hover {
     border-color: var(--student-primary) !important;
+    background: rgba(228, 240, 246, 0.08) !important;
+}
+
+.student-shell .source-chip-more {
+    opacity: 0.7;
+    border-style: dashed !important;
+}
+
+.student-shell .source-chip-more:hover {
+    opacity: 1;
+    border-style: solid !important;
+}
     background-color: rgba(228, 240, 246, 0.08) !important;
     color: var(--student-primary) !important;
 }
@@ -921,4 +933,43 @@
     }
 }
 
+/* Typing dots animation for AI waiting state */
+.student-shell .typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 2px;
+}
+
+.student-shell .typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(228, 240, 246, 0.5);
+    animation: studentDotBounce 1.2s ease-in-out infinite;
+}
+
+.student-shell .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.student-shell .typing-dots span:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes studentDotBounce {
+    0%, 40%, 100% { opacity: 0.3; transform: translateY(0); }
+    20% { opacity: 1; transform: translateY(-6px); }
+}
+
+/* Typing cursor for streaming text */
+.student-shell .typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    margin-left: 2px;
+    background: #6fa8c9;
+    vertical-align: text-bottom;
+    animation: cursorBlink 0.8s step-end infinite;
+}
+
+@keyframes cursorBlink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
 

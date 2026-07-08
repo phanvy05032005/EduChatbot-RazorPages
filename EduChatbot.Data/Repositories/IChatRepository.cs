@@ -14,11 +14,13 @@ public interface IChatRepository
 
     Task AddMessageAsync(ChatMessage message);
 
+    Task UpdateMessageAsync(ChatMessage message);
+
     Task UpdateConversationAsync(ChatConversation conversation);
 
     Task<bool> DeleteConversationAsync(int conversationId, string userId);
 
-    Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 5);
+    Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 10);
 
     Task<List<Course>> GetCoursesAsync();
 }
