@@ -23,7 +23,11 @@ public class OpenRouterEmbeddingService : IEmbeddingService
 
     public async Task<float[]> CreateEmbeddingAsync(string text)
     {
-        if (string.IsNullOrWhiteSpace(_openRouterSettings.ApiKey))
+        var apiKey = !string.IsNullOrWhiteSpace(_embeddingSettings.ApiKey)
+            ? _embeddingSettings.ApiKey
+            : _openRouterSettings.ApiKey;
+
+        if (string.IsNullOrWhiteSpace(apiKey))
         {
             throw new InvalidOperationException("OpenRouter API key chưa được cấu hình.");
         }
@@ -45,7 +49,7 @@ public class OpenRouterEmbeddingService : IEmbeddingService
         {
             Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _openRouterSettings.ApiKey);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
         using var response = await _httpClient.SendAsync(request);
         var responseBody = await response.Content.ReadAsStringAsync();
