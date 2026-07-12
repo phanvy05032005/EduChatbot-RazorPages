@@ -85,9 +85,18 @@ public static class DependencyInjection
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
 
-        // Register Cloudinary Settings & Service
-        services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
-        services.AddScoped<ICloudStorageService, CloudinaryStorageService>();
+        // Register Cloud Storage: Cloudinary if configured, otherwise local file storage
+        var cloudinarySection = configuration.GetSection("Cloudinary");
+        var cloudName = cloudinarySection["CloudName"];
+        if (!string.IsNullOrWhiteSpace(cloudName))
+        {
+            services.Configure<CloudinarySettings>(cloudinarySection);
+            services.AddScoped<ICloudStorageService, CloudinaryStorageService>();
+        }
+        else
+        {
+            services.AddScoped<ICloudStorageService, LocalFileStorageService>();
+        }
 
         return services;
     }

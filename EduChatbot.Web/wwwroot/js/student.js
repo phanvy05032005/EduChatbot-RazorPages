@@ -100,9 +100,15 @@
 
         function updateSendBtn() {
             sendBtn.disabled = isSending || !chatInput.value.trim();
+            chatInput.disabled = isSending;
         }
 
-        function scrollToBottom() {
+        function scrollToBottom(force) {
+            if (force === false) {
+                var threshold = 100;
+                var nearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < threshold;
+                if (!nearBottom) return;
+            }
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
@@ -182,7 +188,7 @@
 
             const bubble = document.createElement('div');
             bubble.className = 'chat-bubble ai';
-            bubble.innerHTML = '<span class="typing-cursor"></span>';
+            bubble.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
             contentDiv.appendChild(bubble);
             streamRow.appendChild(contentDiv);
             messagesContainer.appendChild(streamRow);
@@ -264,7 +270,7 @@
                             const data = JSON.parse(jsonStr);                             if (data.token) {
                                 accumulated += data.token;
                                 bubble.innerHTML = renderMarkdown(accumulated) + '<span class="typing-cursor"></span>';
-                                scrollToBottom();
+                                scrollToBottom(false);
                             } else if (data.outOfScope) {
                                 accumulated = data.content;
                                 avatar.textContent = '⚠';
@@ -279,9 +285,10 @@
                                 finishStream(bubble, "");
                             } else if (data.sources && data.sources.length > 0) {
                                 renderStreamSources(contentDiv, data.sources);
-                                scrollToBottom();
+                                scrollToBottom(false);
                             } else if (data.done) {
                                 finishStream(bubble, accumulated);
+                                scrollToBottom();
                             }
                         } catch (e) { /* ignore JSON parsing error */ }
                     }
@@ -311,22 +318,26 @@
         }
 
         function renderStreamSources(contentDiv, sources) {
-            const sourcesDiv = document.createElement('div');
+            if (!sources || sources.length === 0) return;
+
+            var sourcesDiv = document.createElement('div');
             sourcesDiv.className = 'd-flex flex-wrap gap-2 mt-2';
-            const sourcesLabel = window.EduI18n ? EduI18n.t('student.chat.sources') : 'Sources:';
+            var sourcesLabel = window.EduI18n ? EduI18n.t('student.chat.sources') : 'Sources:';
             sourcesDiv.innerHTML = '<div class="w-100 text-muted" style="font-size: 0.75rem;">' + sourcesLabel + '</div>';
 
-            const chunkLabel = window.EduI18n ? EduI18n.t('student.chat.chunk') : 'Chunk';
+            var chunkLabel = window.EduI18n ? EduI18n.t('student.chat.chunk') : 'Chunk';
+            var maxVisible = 3;
+            var visibleSources = sources.slice(0, maxVisible);
+            var hiddenSources = sources.slice(maxVisible);
 
-            sources.forEach(function (s) {
-                const btn = document.createElement('button');
+            function buildSourceChip(s) {
+                var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'source-chip';
                 btn.dataset.documentId = s.documentId;
                 btn.dataset.chunkIndex = s.chunk;
-                
-                // Parse score: convert similarity score from 0-1 to 0-100 range
-                let scorePercent = 0;
+
+                var scorePercent = 0;
                 if (s.score !== undefined && s.score !== null) {
                     scorePercent = s.score <= 1.0 ? Math.round(s.score * 100) : Math.round(s.score);
                 }
@@ -335,19 +346,42 @@
                 btn.setAttribute('data-bs-target', '#sourcePreviewModal');
                 btn.title = s.chunkPreview || '';
 
-                let inner = '<i class="bi bi-file-earmark-text"></i>' +
+                var inner = '<i class="bi bi-file-earmark-text"></i>' +
                     '<span class="source-file">' + escapeHtml(s.doc) + '</span>' +
                     '<span class="source-meta">· ' + chunkLabel + '</span> ' +
                     '<span class="source-chunk">' + s.chunk + '</span>';
 
                 if (scorePercent > 0) {
-                    const matchLabel = window.EduI18n ? EduI18n.t('student.chat.match') : 'match';
+                    var matchLabel = window.EduI18n ? EduI18n.t('student.chat.match') : 'match';
                     inner += '<span class="source-score">· ' + scorePercent + '% ' + matchLabel + '</span>';
                 }
-                
+
                 btn.innerHTML = inner;
-                sourcesDiv.appendChild(btn);
+                return btn;
+            }
+
+            visibleSources.forEach(function(s) {
+                sourcesDiv.appendChild(buildSourceChip(s));
             });
+
+            if (hiddenSources.length > 0) {
+                var moreBtn = document.createElement('button');
+                moreBtn.type = 'button';
+                moreBtn.className = 'source-chip source-chip-more';
+                var moreLabel = window.EduI18n && EduI18n.currentLang === 'vi'
+                    ? '+ ' + hiddenSources.length + ' nguồn khác'
+                    : '+ ' + hiddenSources.length + ' more sources';
+                moreBtn.innerHTML = '<i class="bi bi-three-dots"></i><span>' + moreLabel + '</span>';
+                moreBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    moreBtn.remove();
+                    hiddenSources.forEach(function(s) {
+                        sourcesDiv.appendChild(buildSourceChip(s));
+                    });
+                });
+                sourcesDiv.appendChild(moreBtn);
+            }
+
             contentDiv.appendChild(sourcesDiv);
         }
 
@@ -454,11 +488,11 @@
 
             // Code blocks
             html = html.replace(/```([\s\S]*?)```/g, function (_, code) {
-                return '<pre class="bg-light border rounded p-2 text-dark font-monospace" style="font-size: 0.85rem;"><code>' + code.trim() + '</code></pre>';
+                return '<pre style="background:#0d1117;color:#e6edf3;border:1px solid rgba(228,240,246,0.12);border-radius:8px;padding:14px 16px;font-size:0.85rem;overflow-x:auto;font-family:JetBrains Mono,Cascadia Code,Consolas,monospace;"><code style="background:transparent;color:inherit;padding:0;">' + code.trim() + '</code></pre>';
             });
 
             // Inline code, bold, italic
-            html = html.replace(/`([^`]+)`/g, '<code class="bg-light px-1 text-danger">$1</code>');
+            html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(111,168,201,0.14);color:#6fa8c9;border-radius:4px;padding:0.12rem 0.35rem;font-size:0.9em;">$1</code>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
 

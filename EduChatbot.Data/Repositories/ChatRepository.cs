@@ -73,6 +73,12 @@ public class ChatRepository : IChatRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateMessageAsync(ChatMessage message)
+    {
+        _context.ChatMessages.Update(message);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task UpdateConversationAsync(ChatConversation conversation)
     {
         _context.ChatConversations.Update(conversation);
@@ -93,7 +99,7 @@ public class ChatRepository : IChatRepository
         return true;
     }
 
-    public async Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 5)
+    public async Task<List<ChunkSearchResult>> SearchChunksAsync(float[] queryEmbedding, int? courseId, int topK = 10)
     {
         if (queryEmbedding.Length == 0)
         {

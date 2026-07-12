@@ -45,6 +45,7 @@
 
     function updateSendBtn() {
         sendBtn.disabled = busy || !chatInput.value.trim();
+        chatInput.disabled = busy;
     }
 
     function submitMessage() {
@@ -79,7 +80,7 @@
 
         var bubble = document.createElement('div');
         bubble.className = 'msg-bubble ai streaming-bubble';
-        bubble.innerHTML = '<span class="typing-cursor"></span>';
+        bubble.innerHTML = '<div class="loading-dots"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
         contentDiv.appendChild(bubble);
         streamRow.appendChild(contentDiv);
         ensureMessageStack().appendChild(streamRow);
@@ -119,23 +120,24 @@
                     try {
                         var data = JSON.parse(jsonStr);
 
-                        if (data.token) {
-                            accumulated += data.token;
-                            bubble.innerHTML = renderMarkdown(accumulated) + '<span class="typing-cursor"></span>';
-                            scrollToBottom();
-                        } else if (data.outOfScope) {
-                            accumulated = data.content;
-                            streamRow.classList.add('out-of-scope');
-                            avatar.textContent = '\u26a0';
-                            bubble.classList.add('out-of-scope-bubble');
-                            bubble.innerHTML = renderMarkdown(accumulated);
-                            scrollToBottom();
-                        } else if (data.sources && data.sources.length > 0) {
-                            renderStreamSources(contentDiv, data.sources);
-                            scrollToBottom();
-                        } else if (data.done) {
-                            finishStream(streamRow, contentDiv, bubble, accumulated);
-                        }
+                    if (data.token) {
+                        accumulated += data.token;
+                        bubble.innerHTML = renderMarkdown(accumulated) + '<span class="typing-cursor"></span>';
+                        scrollToBottom(false);
+                    } else if (data.outOfScope) {
+                        accumulated = data.content;
+                        streamRow.classList.add('out-of-scope');
+                        avatar.textContent = '\u26a0';
+                        bubble.classList.add('out-of-scope-bubble');
+                        bubble.innerHTML = renderMarkdown(accumulated);
+                        scrollToBottom();
+                    } else if (data.sources && data.sources.length > 0) {
+                        renderStreamSources(contentDiv, data.sources);
+                        scrollToBottom(false);
+                    } else if (data.done) {
+                        finishStream(streamRow, contentDiv, bubble, accumulated);
+                        scrollToBottom();
+                    }
                     } catch (e) { /* ignore parse errors */ }
                 }
 
@@ -164,13 +166,20 @@
     }
 
     function renderStreamSources(contentDiv, sources) {
+        if (!sources || sources.length === 0) return;
+
         var sourcesDiv = document.createElement('div');
         sourcesDiv.className = 'msg-sources';
         sourcesDiv.innerHTML = '<div class="sources-label">Sources</div>';
 
         var tagsDiv = document.createElement('div');
         tagsDiv.className = 'source-list';
-        sources.forEach(function (s) {
+
+        var maxVisible = 3;
+        var visibleSources = sources.slice(0, maxVisible);
+        var hiddenSources = sources.slice(maxVisible);
+
+        function buildSourceTag(s) {
             var scorePercent = Math.round((s.score || 0) * 100);
             var scoreClass = scorePercent >= 70 ? 'score-high' : scorePercent >= 50 ? 'score-medium' : 'score-low';
 
@@ -183,8 +192,28 @@
                 '</svg>' +
                 '<span>' + escapeHtml(s.doc) + '</span><i aria-hidden="true">&middot;</i><span>Chunk ' + s.chunk + '</span>' +
                 (scorePercent > 0 ? '<span class="source-score ' + scoreClass + '">' + scorePercent + '%</span>' : '');
-            tagsDiv.appendChild(tag);
+            return tag;
+        }
+
+        visibleSources.forEach(function(s) {
+            tagsDiv.appendChild(buildSourceTag(s));
         });
+
+        if (hiddenSources.length > 0) {
+            var moreBtn = document.createElement('span');
+            moreBtn.className = 'source-tag source-tag-more';
+            moreBtn.style.cursor = 'pointer';
+            moreBtn.textContent = '+ ' + hiddenSources.length + ' more';
+            moreBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                moreBtn.remove();
+                hiddenSources.forEach(function(s) {
+                    tagsDiv.appendChild(buildSourceTag(s));
+                });
+            });
+            tagsDiv.appendChild(moreBtn);
+        }
+
         sourcesDiv.appendChild(tagsDiv);
         contentDiv.appendChild(sourcesDiv);
     }
@@ -286,7 +315,12 @@
         if (el) el.remove();
     }
 
-    function scrollToBottom() {
+    function scrollToBottom(force) {
+        if (force === false) {
+            const threshold = 100;
+            const nearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < threshold;
+            if (!nearBottom) return;
+        }
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 

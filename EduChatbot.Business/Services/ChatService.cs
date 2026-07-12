@@ -1,12 +1,13 @@
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using EduChatbot.Data.Repositories;
 using EduChatbot.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Text.RegularExpressions;
 
 namespace EduChatbot.Business.Services;
 
@@ -143,13 +144,17 @@ public class ChatService : IChatService
 
             if (relevantResults.Count == 0)
             {
-                aiResponseText = _chatSettings.OutOfScopeMessage;
+                aiResponseText = targetLang == "en"
+                    ? "I could not find enough relevant information in the course documents to answer this question confidently. Please try asking a question related to the uploaded course materials."
+                    : _chatSettings.OutOfScopeMessage;
             }
             else
             {
-                var context = BuildPromptContext(relevantResults);
+                var deduped = DeduplicateChunks(relevantResults);
+                var ctxChunks = deduped.Take(8).ToList();
+                var context = BuildPromptContext(ctxChunks);
                 aiResponseText = await CallLlmAsync(question, context, targetLang);
-                resultsForCitation = relevantResults;
+                resultsForCitation = SelectDisplaySources(ctxChunks, maxDisplay: 3);
             }
         }
 
@@ -307,6 +312,11 @@ public class ChatService : IChatService
             .Where(r => r.SimilarityScore >= _chatSettings.SimilarityThreshold)
             .ToList();
 
+        // Step 6b: Deduplicate and diversify.
+        var dedupedResults = DeduplicateChunks(relevantResults);
+        var contextChunks = dedupedResults.Take(8).ToList();
+        var displaySources = SelectDisplaySources(contextChunks, maxDisplay: 3);
+
         // Safe developer logging of the flow metrics
         _logger.LogInformation("--- Chat Request Info ---");
         _logger.LogInformation("User Question: {Question}", question);
@@ -314,8 +324,8 @@ public class ChatService : IChatService
         _logger.LogInformation("Target Language: {Language}", targetLanguage);
 
         // Scan retrieved chunks for CJK and print metadata logs
-        _logger.LogInformation("Top retrieved chunks (Count: {Count}):", relevantResults.Count);
-        foreach (var r in relevantResults)
+        _logger.LogInformation("Top retrieved chunks (Count: {Count}):", dedupedResults.Count);
+        foreach (var r in dedupedResults)
         {
             var chunk = r.Chunk;
             bool hasCjk = CjkRegex.IsMatch(chunk.Content);
@@ -330,10 +340,12 @@ public class ChatService : IChatService
                 chunk.Document?.FileName ?? "Unknown", chunk.ChunkIndex, r.SimilarityScore, hasCjk, snippet);
         }
 
-        if (relevantResults.Count == 0)
+        if (dedupedResults.Count == 0)
         {
             // Out-of-scope: yield immediately, no streaming needed.
-            var outOfScopeMsg = _chatSettings.OutOfScopeMessage;
+            var outOfScopeMsg = targetLanguage == "en"
+                ? "I could not find enough relevant information in the course documents to answer this question confidently. Please try asking a question related to the uploaded course materials."
+                : _chatSettings.OutOfScopeMessage;
             yield return JsonSerializer.Serialize(new { outOfScope = true, content = outOfScopeMsg });
 
             // Save to DB.
@@ -357,8 +369,8 @@ public class ChatService : IChatService
             yield break;
         }
 
-        // Step 7: Build prompt context.
-        var context = BuildPromptContext(relevantResults);
+        // Step 7: Build prompt context from deduplicated, diverse chunks.
+        var context = BuildPromptContext(contextChunks);
 
         // Full prompt summary/context (only in Development environment)
         if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
@@ -369,7 +381,17 @@ public class ChatService : IChatService
             _logger.LogInformation("Context and Question:\n{ContextAndQuestion}", context);
         }
 
-        // Step 8: Stream LLM response token-by-token.
+        // Step 8: Save placeholder AI message BEFORE streaming (prevents orphan on cancel).
+        var aiMessage = new ChatMessage
+        {
+            ConversationId = conversationId,
+            Role = "ai",
+            Content = "AI is thinking...",
+            CreatedAt = DateTime.UtcNow
+        };
+        await _chatRepository.AddMessageAsync(aiMessage);
+
+        // Step 9: Stream LLM response token-by-token.
         var fullContent = new StringBuilder();
         await foreach (var token in CallLlmStreamAsync(question, context, targetLanguage, cancellationToken))
         {
@@ -388,24 +410,21 @@ public class ChatService : IChatService
             _logger.LogInformation("Final Model Response (No CJK detected): {ResponseText}", finalResponse);
         }
 
-        // Step 9: Build source citations.
-        var sourceCitations = BuildSourceCitations(relevantResults);
+        // Step 10: Build source citations from display sources.
+        var sourceCitations = BuildSourceCitations(displaySources);
 
-        // Step 10: Save complete AI response to DB.
-        var aiMessage = new ChatMessage
-        {
-            ConversationId = conversationId,
-            Role = "ai",
-            Content = finalResponse,
-            SourceChunks = sourceCitations.Count > 0
-                ? JsonSerializer.Serialize(sourceCitations)
-                : null,
-            CreatedAt = DateTime.UtcNow
-        };
-        await _chatRepository.AddMessageAsync(aiMessage);
+        // Step 11: Update placeholder with real response + sources.
+        aiMessage.Content = finalResponse;
+        aiMessage.SourceChunks = sourceCitations.Count > 0
+            ? JsonSerializer.Serialize(sourceCitations)
+            : null;
+        await _chatRepository.UpdateMessageAsync(aiMessage);
+
+        // Step 12: Re-check quota before consumption (TOCTOU fix).
+        await _accessService.CheckCanChatAsync(userId);
         await _accessService.ConsumeChatRequestAsync(userId);
 
-        // Step 11: Yield sources.
+        // Step 13: Yield sources.
         yield return JsonSerializer.Serialize(new { sources = sourceCitations });
 
         // Yield updated quota event
@@ -415,10 +434,10 @@ public class ChatService : IChatService
             yield return JsonSerializer.Serialize(new { type = "quota", remainingRequests = finalSub.RemainingRequests, requestLimit = finalSub.Plan.RequestLimit });
         }
 
-        // Step 12: Update conversation title.
+        // Step 14: Update conversation title.
         await UpdateConversationTitleAsync(conversationId, userId, question);
 
-        // Step 13: Yield done.
+        // Step 15: Yield done.
         yield return JsonSerializer.Serialize(new { done = true });
     }
 
@@ -478,16 +497,16 @@ public class ChatService : IChatService
         }
 
         var sb = new StringBuilder();
-        sb.AppendLine("Below are the relevant document segments found in the system:");
+        sb.AppendLine("Below are the relevant document segments found in the system. You may use information from one or multiple sources to answer comprehensively:");
         sb.AppendLine();
 
-        foreach (var result in results)
+        for (int i = 0; i < results.Count; i++)
         {
+            var result = results[i];
             var chunk = result.Chunk;
             var docName = chunk.Document?.FileName ?? "Unknown";
-            // Sanitize CJK characters from chunk content before adding to context
             var sanitizedContent = SanitizeCjkFromContext(chunk.Content);
-            sb.AppendLine($"--- Document: {docName} | Chunk #{chunk.ChunkIndex} | Relevance: {result.SimilarityScore:P0} ---");
+            sb.AppendLine($"[Source {i + 1}] Document: {docName} | Chunk #{chunk.ChunkIndex} | Relevance: {result.SimilarityScore:P0}");
             sb.AppendLine(sanitizedContent);
             sb.AppendLine();
         }
@@ -528,11 +547,16 @@ public class ChatService : IChatService
                 
                 === TASK ===
                 Answer the student's question based ONLY on the document context provided below.
+                - The context may come from MULTIPLE documents. If the question requires information from several sources, synthesize them into a coherent answer.
+                - Provide DETAILED, IN-DEPTH explanations. Go beyond surface-level definitions — explain the WHY, not just the WHAT.
+                - Structure your answer with clear sections when the topic is complex (e.g., overview, key concepts, practical steps, examples).
+                - Include concrete EXAMPLES or code snippets from the context when relevant.
+                - When appropriate, mention which documents or sources you are drawing from (e.g., "According to Lecture 03..." or "As covered in the EF Core document...").
                 - Do NOT use general knowledge outside the documents.
-                - If the documents do not contain the answer, say so clearly.
+                - If the documents do not contain sufficient information to answer, say so clearly rather than guessing.
                 - You may keep standard English technical terms (e.g. API, microservice, database, CI/CD, framework) even when the target language is Vietnamese.
-                - If the user's message is not a clear academic question or learning request, ask the user to clarify instead of answering directly, even if the message contains a keyword found in the documents. (Nếu tin nhắn của người dùng không phải là câu hỏi học tập hoặc yêu cầu học tập rõ ràng, hãy yêu cầu người dùng hỏi rõ hơn. Không trả lời trực tiếp chỉ vì tin nhắn có chứa từ khóa xuất hiện trong tài liệu.)
-                - Cite the source document name when possible.
+                - If the user's message is not a clear academic question or learning request, ask the user to clarify instead of answering directly. (Nếu tin nhắn của người dùng không phải là câu hỏi học tập hoặc yêu cầu học tập rõ ràng, hãy yêu cầu người dùng hỏi rõ hơn. Không trả lời trực tiếp chỉ vì tin nhắn có chứa từ khóa xuất hiện trong tài liệu.)
+                - Do NOT fabricate information. If the answer cannot be found in the provided context, state that clearly.
                 """
             },
             new
@@ -550,7 +574,7 @@ public class ChatService : IChatService
             var requestBody = new
             {
                 model = _settings.Model,
-                temperature = 0.2,
+                temperature = _settings.Temperature,
                 messages = BuildLlmMessages(question, context, targetLanguage)
             };
 
@@ -580,7 +604,8 @@ public class ChatService : IChatService
         }
         catch (Exception ex)
         {
-            return $"Sorry, could not connect to AI: {ex.Message}";
+            _logger.LogError(ex, "LLM API call failed");
+            return $"Sorry, could not connect to AI. Please try again later.";
         }
     }
 
@@ -592,29 +617,72 @@ public class ChatService : IChatService
         {
             model = _settings.Model,
             stream = true,
-            temperature = 0.2,
+            temperature = _settings.Temperature,
             messages = BuildLlmMessages(question, context, targetLanguage)
         };
 
         var json = JsonSerializer.Serialize(requestBody);
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, _settings.BaseUrl)
-        {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
 
+        const int maxRetries = 3;
         HttpResponseMessage? response = null;
+        string? errorMessage = null;
+
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, _settings.BaseUrl)
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+
+                response = await _httpClient.SendAsync(
+                    httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+                if ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
+                {
+                    if (attempt < maxRetries - 1)
+                    {
+                        var delay = (int)Math.Pow(2, attempt + 1) * 1000;
+                        _logger.LogWarning("LLM API returned {StatusCode}, retrying in {Delay}s (attempt {Attempt}/{MaxRetries})",
+                            (int)response.StatusCode, delay / 1000, attempt + 1, maxRetries);
+                        response.Dispose();
+                        response = null;
+                        await Task.Delay(delay, cancellationToken);
+                        continue;
+                    }
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("LLM API returned HTTP {StatusCode}", (int)response.StatusCode);
+                    errorMessage = $"Sorry, the AI system is experiencing issues (HTTP {(int)response.StatusCode}). Please try again later.";
+                    break;
+                }
+
+                break;
+            }
+            catch (HttpRequestException ex) when (attempt < maxRetries - 1)
+            {
+                _logger.LogWarning(ex, "LLM API request failed, retrying (attempt {Attempt}/{MaxRetries})", attempt + 1, maxRetries);
+                await Task.Delay(1000 * (attempt + 1), cancellationToken);
+            }
+        }
+
+        if (errorMessage != null)
+        {
+            yield return errorMessage;
+            yield break;
+        }
+
+        if (response == null || !response.IsSuccessStatusCode)
+        {
+            yield break;
+        }
+
         try
         {
-            response = await _httpClient.SendAsync(
-                httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                yield return $"Sorry, the AI system is experiencing issues (HTTP {(int)response.StatusCode}). Please try again later.";
-                yield break;
-            }
-
             using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var reader = new StreamReader(stream);
 
@@ -623,13 +691,11 @@ public class ChatService : IChatService
                 var line = await reader.ReadLineAsync(cancellationToken);
                 if (string.IsNullOrEmpty(line)) continue;
 
-                // SSE format: "data: {...}" or "data: [DONE]"
                 if (!line.StartsWith("data: ")) continue;
                 var data = line["data: ".Length..];
 
                 if (data == "[DONE]") break;
 
-                // Parse the SSE JSON chunk from OpenRouter.
                 using var chunkDoc = JsonDocument.Parse(data);
                 var choices = chunkDoc.RootElement.GetProperty("choices");
                 if (choices.GetArrayLength() == 0) continue;
@@ -852,5 +918,92 @@ public class ChatService : IChatService
         if (string.IsNullOrWhiteSpace(text)) return false;
         string viChars = "àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ";
         return text.ToLowerInvariant().Any(c => viChars.Contains(c));
+    }
+
+    /// <summary>
+    /// Removes near-duplicate chunks based on content word overlap.
+    /// When two chunks share >70% of their unique words, keep the one with higher score.
+    /// </summary>
+    private static List<ChunkSearchResult> DeduplicateChunks(List<ChunkSearchResult> results)
+    {
+        if (results.Count <= 1) return results;
+
+        var deduped = new List<ChunkSearchResult>();
+        var usedWordSets = new List<HashSet<string>>();
+
+        foreach (var result in results.OrderByDescending(r => r.SimilarityScore))
+        {
+            var words = result.Chunk.Content
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(w => w.Trim().ToLowerInvariant())
+                .Where(w => w.Length > 2)
+                .ToHashSet();
+
+            if (words.Count == 0)
+            {
+                deduped.Add(result);
+                continue;
+            }
+
+            bool isDuplicate = false;
+            foreach (var existing in usedWordSets)
+            {
+                var intersection = words.Intersect(existing).Count();
+                var union = words.Union(existing).Count();
+                var jaccard = (double)intersection / union;
+
+                if (jaccard > 0.7)
+                {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            if (!isDuplicate)
+            {
+                deduped.Add(result);
+                usedWordSets.Add(words);
+            }
+        }
+
+        return deduped;
+    }
+
+    /// <summary>
+    /// Selects display sources with document diversity.
+    /// Ensures at least 1 chunk from each unique document, limited to maxDisplay total.
+    /// </summary>
+    private static List<ChunkSearchResult> SelectDisplaySources(List<ChunkSearchResult> contextChunks, int maxDisplay)
+    {
+        if (contextChunks.Count == 0) return contextChunks;
+
+        var display = new List<ChunkSearchResult>();
+        var seenDocs = new HashSet<int>();
+
+        // Pass 1: pick best chunk from each unique document
+        foreach (var result in contextChunks.OrderByDescending(r => r.SimilarityScore))
+        {
+            var docId = result.Chunk.DocumentId;
+            if (!seenDocs.Contains(docId))
+            {
+                display.Add(result);
+                seenDocs.Add(docId);
+                if (display.Count >= maxDisplay) break;
+            }
+        }
+
+        // Pass 2: if we still have room, fill with best remaining chunks from already-seen docs
+        if (display.Count < maxDisplay)
+        {
+            foreach (var result in contextChunks
+                .Where(r => !display.Contains(r))
+                .OrderByDescending(r => r.SimilarityScore))
+            {
+                display.Add(result);
+                if (display.Count >= maxDisplay) break;
+            }
+        }
+
+        return display;
     }
 }

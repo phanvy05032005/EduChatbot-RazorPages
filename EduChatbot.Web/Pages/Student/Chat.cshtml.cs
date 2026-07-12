@@ -255,9 +255,12 @@ namespace EduChatbot.Web.Pages.Student
                     await WriteSSEAsync(httpResponse, data);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                await WriteSSEAsync(httpResponse, JsonSerializer.Serialize(new { done = true }));
+            }
             catch (Exception ex)
             {
-                // Send standard SSE error event so that frontend is notified and doesn't type indefinitely
                 var errorObj = new
                 {
                     type = "error",

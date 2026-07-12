@@ -91,9 +91,20 @@ public class ConversationModel : PageModel
             preferredLanguage = "vi";
         }
 
-        await foreach (var data in _chatService.SendMessageStreamAsync(conversationId, userId, message.Trim(), preferredLanguage, cancellationToken))
+        try
         {
-            await WriteSSEAsync(httpResponse, data);
+            await foreach (var data in _chatService.SendMessageStreamAsync(conversationId, userId, message.Trim(), preferredLanguage, cancellationToken))
+            {
+                await WriteSSEAsync(httpResponse, data);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            await WriteSSEAsync(httpResponse, JsonSerializer.Serialize(new { done = true }));
+        }
+        catch (Exception ex)
+        {
+            await WriteSSEAsync(httpResponse, JsonSerializer.Serialize(new { type = "error", message = ex.Message }));
         }
 
         return new EmptyResult();

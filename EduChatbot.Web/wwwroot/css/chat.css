@@ -730,6 +730,16 @@ body.chat-layout.chat-sidebar-ready .chat-main {
     background: rgba(228, 240, 246, 0.06);
 }
 
+.source-tag-more {
+    opacity: 0.6;
+    border-style: dashed;
+    transition: opacity 0.2s ease;
+}
+
+.source-tag-more:hover {
+    opacity: 1;
+}
+
 /* Out-of-scope message styling */
 .msg-row.out-of-scope .msg-avatar.ai {
     background: linear-gradient(135deg, #f59e0b, #d97706);
