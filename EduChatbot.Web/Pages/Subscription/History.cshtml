@@ -21,32 +21,32 @@
 
 <section class="sub-page">
     <header class="sub-hero">
-        <div class="sub-kicker">Subscription</div>
-        <h1>Purchase History</h1>
-        <p>Review every Premium payment, track payment outcomes, and check when each package expires.</p>
+        <div class="sub-kicker" data-i18n="subscription.kicker">Subscription</div>
+        <h1 data-i18n="subscription.history.title">Purchase History</h1>
+        <p data-i18n="subscription.history.subtitle">Review every Premium payment, track payment outcomes, and check when each package expires.</p>
         <div class="sub-hero-links">
-            <a asp-page="/Subscription/Me" class="sub-link-btn">My Subscription</a>
-            <a asp-page="/Subscription/Plans" class="sub-link-btn">Plans</a>
+            <a asp-page="/Subscription/Me" class="sub-link-btn" data-i18n="subscription.plans.viewMine">My Subscription</a>
+            <a asp-page="/Subscription/Plans" class="sub-link-btn" data-i18n="student.sidebar.subscription">Plans</a>
         </div>
     </header>
 
     <section class="sub-history-card">
         <div class="sub-history-card-header">
             <div>
-                <h2>My Transactions</h2>
-                <p>@Model.History.TotalCount transaction(s) found</p>
+                <h2 data-i18n="subscription.history.myTransactions">My Transactions</h2>
+                <p><span id="txCount">@Model.History.TotalCount</span> <span data-i18n="subscription.history.transactionsFound">transaction(s) found</span></p>
             </div>
             <div class="sub-history-meta">
-                <span>Page @Model.History.Page / @Model.History.TotalPages</span>
+                <span><span data-i18n="subscription.history.page">Page</span> @Model.History.Page / @Model.History.TotalPages</span>
             </div>
         </div>
 
         @if (!Model.History.Items.Any())
         {
             <div class="sub-history-empty">
-                <h3>No purchase history yet</h3>
-                <p>Your successful, pending, failed, and cancelled Premium payments will appear here.</p>
-                <a asp-page="/Subscription/Plans" class="sub-link-btn primary">Browse Plans</a>
+                <h3 data-i18n="subscription.history.emptyTitle">No purchase history yet</h3>
+                <p data-i18n="subscription.history.emptyDesc">Your successful, pending, failed, and cancelled Premium payments will appear here.</p>
+                <a asp-page="/Subscription/Plans" class="sub-link-btn primary" data-i18n="subscription.history.browsePlans">Browse Plans</a>
             </div>
         }
         else
@@ -56,20 +56,20 @@
                     <thead>
                         <tr>
                             <th>
-                                <button type="button" class="sub-sort-btn" data-sort-key="created" data-default-dir="desc">Created At</button>
+                                <button type="button" class="sub-sort-btn" data-sort-key="created" data-default-dir="desc" data-i18n="subscription.history.table.createdAt">Created At</button>
                             </th>
-                            <th>Package</th>
+                            <th data-i18n="subscription.history.table.package">Package</th>
                             <th>
-                                <button type="button" class="sub-sort-btn" data-sort-key="amount" data-default-dir="desc">Amount</button>
+                                <button type="button" class="sub-sort-btn" data-sort-key="amount" data-default-dir="desc" data-i18n="subscription.history.table.amount">Amount</button>
                             </th>
-                            <th>Payment Method</th>
-                            <th>Order Code</th>
-                            <th>Status</th>
+                            <th data-i18n="subscription.history.table.method">Payment Method</th>
+                            <th data-i18n="subscription.history.table.orderCode">Order Code</th>
+                            <th data-i18n="subscription.history.table.status">Status</th>
                             <th>
-                                <button type="button" class="sub-sort-btn" data-sort-key="paid" data-default-dir="desc">Paid At</button>
+                                <button type="button" class="sub-sort-btn" data-sort-key="paid" data-default-dir="desc" data-i18n="subscription.history.table.paidAt">Paid At</button>
                             </th>
-                            <th>Expired At</th>
-                            <th>Note</th>
+                            <th data-i18n="subscription.history.table.expiredAt">Expired At</th>
+                            <th data-i18n="subscription.history.table.note">Note</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,7 +82,7 @@
                                 <td>@item.PaymentMethod</td>
                                 <td><code>@item.OrderCode</code></td>
                                 <td>
-                                    <span class="sub-status-badge @StatusClass(item.DisplayStatus)">@item.DisplayStatus</span>
+                                    <span class="sub-status-badge @StatusClass(item.DisplayStatus)" data-i18n="subscription.status.@item.DisplayStatus.ToLower()">@item.DisplayStatus</span>
                                 </td>
                                 <td>@(item.PaidAt.HasValue ? item.PaidAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
                                 <td>@(item.ExpiredAt.HasValue ? item.ExpiredAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
@@ -94,11 +94,11 @@
             </div>
 
             <div class="sub-pagination">
-                <button type="button" class="sub-page-btn" data-page="@(Model.History.Page - 1)" @(Model.History.HasPreviousPage ? null : "disabled")>
+                <button type="button" class="sub-page-btn" data-page="@(Model.History.Page - 1)" @(Model.History.HasPreviousPage ? null : "disabled") data-i18n="subscription.history.prev">
                     Previous
                 </button>
-                <span>Showing page @Model.History.Page of @Model.History.TotalPages</span>
-                <button type="button" class="sub-page-btn" data-page="@(Model.History.Page + 1)" @(Model.History.HasNextPage ? null : "disabled")>
+                <span><span data-i18n="subscription.history.showingPage">Showing page</span> @Model.History.Page <span data-i18n="subscription.history.pageOf">of</span> @Model.History.TotalPages</span>
+                <button type="button" class="sub-page-btn" data-page="@(Model.History.Page + 1)" @(Model.History.HasNextPage ? null : "disabled") data-i18n="subscription.history.next">
                     Next
                 </button>
             </div>

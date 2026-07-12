@@ -155,41 +155,41 @@
             <div class="admin-kicker">
                 <span>EDUCHATBOT</span> &middot;
                 <span>ADMIN</span> &middot;
-                <span>PAYMENTS</span>
+                <span data-i18n="admin.sidebar.payments">PAYMENTS</span>
             </div>
-            <h1>Payment Management</h1>
-            <p>Inspect every Premium transaction, audit payment outcomes, and review revenue-ready paid records.</p>
+            <h1 data-i18n="admin.payments.title">Payment Management</h1>
+            <p data-i18n="admin.payments.subtitle">Inspect every Premium transaction, audit payment outcomes, and review revenue-ready paid records.</p>
         </div>
     </div>
 
     <section class="row g-3 mb-4">
         <div class="col-12 col-md-6 col-xl-2">
             <div class="admin-card p-3 h-100">
-                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Total Transactions</div>
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;" data-i18n="admin.payments.totalTransactions">Total Transactions</div>
                 <div class="fw-bold mt-2" style="font-size: 1.75rem;">@Model.Summary.TotalTransactions.ToString("N0")</div>
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-2">
             <div class="admin-card p-3 h-100">
-                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Paid Transactions</div>
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;" data-i18n="admin.payments.paidTransactions">Paid Transactions</div>
                 <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #34d399;">@Model.Summary.PaidTransactions.ToString("N0")</div>
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="admin-card p-3 h-100">
-                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Total Revenue</div>
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;" data-i18n="admin.payments.totalRevenue">Total Revenue</div>
                 <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #f8fafc;">@Model.Summary.TotalRevenue.ToString("N0") VND</div>
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-2">
             <div class="admin-card p-3 h-100">
-                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Pending</div>
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;" data-i18n="admin.payments.pending">Pending</div>
                 <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #60a5fa;">@Model.Summary.PendingTransactions.ToString("N0")</div>
             </div>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
             <div class="admin-card p-3 h-100">
-                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;">Failed / Cancelled</div>
+                <div class="text-uppercase payment-soft-text" style="font-size: 0.72rem;" data-i18n="admin.payments.failedOrCancelled">Failed / Cancelled</div>
                 <div class="fw-bold mt-2" style="font-size: 1.75rem; color: #f87171;">@Model.Summary.FailedOrCancelledTransactions.ToString("N0")</div>
             </div>
         </div>
@@ -198,10 +198,10 @@
     <section class="admin-card rounded-xl mb-4 payment-filter-card">
         <div class="payment-filter-header">
             <div>
-                <h2>Filters</h2>
-                <p class="payment-soft-text">Compact server-side filters for fast transaction lookup.</p>
+                <h2 data-i18n="admin.payments.filters">Filters</h2>
+                <p class="payment-soft-text" data-i18n="admin.payments.filtersDesc">Compact server-side filters for fast transaction lookup.</p>
             </div>
-            <a asp-page="/Admin/PaymentHistory" class="payment-filter-reset">Clear all</a>
+            <a asp-page="/Admin/PaymentHistory" class="payment-filter-reset" data-i18n="admin.payments.clearAll">Clear all</a>
         </div>
 
         <form method="get" id="paymentHistoryFilters">
@@ -209,49 +209,49 @@
 
             <div class="payment-toolbar">
                 <div class="payment-toolbar-field">
-                    <label class="form-label">Search</label>
+                    <label class="form-label" data-i18n="admin.payments.search">Search</label>
                     <div class="payment-search-input">
                         <span class="payment-search-icon">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="search" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Student, email, package, order code..." />
+                        <input type="search" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Student, email, package, order code..." data-i18n-placeholder="admin.payments.searchPlaceholder" />
                     </div>
                 </div>
 
                 <div class="payment-toolbar-field">
-                    <label class="form-label">Method</label>
+                    <label class="form-label" data-i18n="admin.payments.method">Method</label>
                     <select name="PaymentMethod" class="form-select">
-                        <option value="">All</option>
+                        <option value="" data-i18n="admin.payments.all">All</option>
                         <option value="PAYOS" selected="@Selected(Model.PaymentMethod, "PAYOS")">PayOS</option>
                     </select>
                 </div>
 
                 <div class="payment-toolbar-field">
-                    <label class="form-label">Status</label>
+                    <label class="form-label" data-i18n="admin.payments.status">Status</label>
                     <select name="DisplayStatus" class="form-select">
-                        <option value="">All</option>
-                        <option value="Pending" selected="@Selected(Model.DisplayStatus, "Pending")">Pending</option>
-                        <option value="Paid" selected="@Selected(Model.DisplayStatus, "Paid")">Paid</option>
-                        <option value="Expired" selected="@Selected(Model.DisplayStatus, "Expired")">Expired</option>
-                        <option value="Failed" selected="@Selected(Model.DisplayStatus, "Failed")">Failed</option>
-                        <option value="Cancelled" selected="@Selected(Model.DisplayStatus, "Cancelled")">Cancelled</option>
+                        <option value="" data-i18n="admin.payments.all">All</option>
+                        <option value="Pending" selected="@Selected(Model.DisplayStatus, "Pending")" data-i18n="subscription.status.pending">Pending</option>
+                        <option value="Paid" selected="@Selected(Model.DisplayStatus, "Paid")" data-i18n="subscription.status.paid">Paid</option>
+                        <option value="Expired" selected="@Selected(Model.DisplayStatus, "Expired")" data-i18n="subscription.status.expired">Expired</option>
+                        <option value="Failed" selected="@Selected(Model.DisplayStatus, "Failed")" data-i18n="subscription.status.failed">Failed</option>
+                        <option value="Cancelled" selected="@Selected(Model.DisplayStatus, "Cancelled")" data-i18n="subscription.status.cancelled">Cancelled</option>
                     </select>
                 </div>
 
                 <div class="payment-toolbar-field">
-                    <label class="form-label">Quick Range</label>
+                    <label class="form-label" data-i18n="admin.payments.quickRange">Quick Range</label>
                     <select name="PresetRange" class="form-select">
-                        <option value="">None</option>
-                        <option value="Today" selected="@Selected(Model.PresetRange, "Today")">Today</option>
-                        <option value="ThisWeek" selected="@Selected(Model.PresetRange, "ThisWeek")">This Week</option>
-                        <option value="ThisMonth" selected="@Selected(Model.PresetRange, "ThisMonth")">This Month</option>
-                        <option value="Last30Days" selected="@Selected(Model.PresetRange, "Last30Days")">Last 30 Days</option>
+                        <option value="" data-i18n="admin.payments.none">None</option>
+                        <option value="Today" selected="@Selected(Model.PresetRange, "Today")" data-i18n="admin.payments.today">Today</option>
+                        <option value="ThisWeek" selected="@Selected(Model.PresetRange, "ThisWeek")" data-i18n="admin.payments.thisWeek">This Week</option>
+                        <option value="ThisMonth" selected="@Selected(Model.PresetRange, "ThisMonth")" data-i18n="admin.payments.thisMonth">This Month</option>
+                        <option value="Last30Days" selected="@Selected(Model.PresetRange, "Last30Days")" data-i18n="admin.payments.last30Days">Last 30 Days</option>
                     </select>
                 </div>
 
             </div>
 
-            <div class="payment-filter-note">
+            <div class="payment-filter-note" data-i18n="admin.payments.filterNote">
                 Search covers student name, email, package, and order code. Press Enter in the search box. Select filters apply on change.
             </div>
         </form>
@@ -262,24 +262,24 @@
             <table class="table admin-table mb-0">
                 <thead>
                     <tr>
-                        <th class="payment-student-col"><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="student" data-default-dir="asc">Student</button></th>
-                        <th>Email</th>
-                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="package" data-default-dir="asc">Package</button></th>
-                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="amount" data-default-dir="desc">Amount</button></th>
-                        <th>Method</th>
-                        <th>Order Code</th>
-                        <th>Status</th>
-                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="created" data-default-dir="desc">Created At</button></th>
-                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="paid" data-default-dir="desc">Paid At</button></th>
-                        <th>Expired At</th>
-                        <th>Note</th>
+                        <th class="payment-student-col"><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="student" data-default-dir="asc" data-i18n="admin.payments.table.student">Student</button></th>
+                        <th data-i18n="admin.payments.table.email">Email</th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="package" data-default-dir="asc" data-i18n="subscription.history.table.package">Package</button></th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="amount" data-default-dir="desc" data-i18n="subscription.history.table.amount">Amount</button></th>
+                        <th data-i18n="subscription.history.table.method">Method</th>
+                        <th data-i18n="subscription.history.table.orderCode">Order Code</th>
+                        <th data-i18n="subscription.history.table.status">Status</th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="created" data-default-dir="desc" data-i18n="subscription.history.table.createdAt">Created At</button></th>
+                        <th><button type="button" class="btn btn-link p-0 text-decoration-none text-reset sort-trigger" data-sort-key="paid" data-default-dir="desc" data-i18n="subscription.history.table.paidAt">Paid At</button></th>
+                        <th data-i18n="subscription.history.table.expiredAt">Expired At</th>
+                        <th data-i18n="subscription.history.table.note">Note</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (!Model.History.Items.Any())
                     {
                         <tr>
-                            <td colspan="11" class="text-center py-5 payment-soft-text">No transactions match the current filters.</td>
+                            <td colspan="11" class="text-center py-5 payment-soft-text" data-i18n="admin.payments.noTransactions">No transactions match the current filters.</td>
                         </tr>
                     }
                     else
@@ -296,7 +296,7 @@
                                 <td>@item.PaymentMethod</td>
                                 <td><code>@item.OrderCode</code></td>
                                 <td>
-                                    <span class="d-inline-flex align-items-center px-2 py-1 rounded-pill" style="@BadgeStyle(item.DisplayStatus)">
+                                    <span class="d-inline-flex align-items-center px-2 py-1 rounded-pill" style="@BadgeStyle(item.DisplayStatus)" data-i18n="subscription.status.@item.DisplayStatus.ToLower()">
                                         @item.DisplayStatus
                                     </span>
                                 </td>
@@ -314,10 +314,10 @@
         @if (Model.History.Items.Any())
         {
             <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top" style="border-color: rgba(228, 240, 246, 0.08) !important;">
-                <span class="payment-soft-text small">Page @Model.History.Page of @Model.History.TotalPages</span>
+                <span class="payment-soft-text small"><span data-i18n="subscription.history.showingPage">Page</span> @Model.History.Page <span data-i18n="subscription.history.pageOf">of</span> @Model.History.TotalPages</span>
                 <div class="d-flex gap-2">
-                    <button type="button" class="admin-secondary-btn page-trigger" data-page="@(Model.History.Page - 1)" @(Model.History.HasPreviousPage ? null : "disabled")>Previous</button>
-                    <button type="button" class="admin-secondary-btn page-trigger" data-page="@(Model.History.Page + 1)" @(Model.History.HasNextPage ? null : "disabled")>Next</button>
+                    <button type="button" class="admin-secondary-btn page-trigger" data-page="@(Model.History.Page - 1)" @(Model.History.HasPreviousPage ? null : "disabled") data-i18n="subscription.history.prev">Previous</button>
+                    <button type="button" class="admin-secondary-btn page-trigger" data-page="@(Model.History.Page + 1)" @(Model.History.HasNextPage ? null : "disabled") data-i18n="subscription.history.next">Next</button>
                 </div>
             </div>
         }
