@@ -101,9 +101,16 @@
 
     <div class="row g-4" style="margin-top: 1rem;">
         <div class="col-md-12">
-            <h3 class="fw-bold mb-3" style="font-size: 1.25rem; border-bottom: 2px solid var(--edu-border); padding-bottom: 0.5rem; color: var(--edu-text);">
-                <span data-i18n="quizzes.lecturer.rev.questionsList">Questions List</span> (@Model.Quiz.Questions.Count)
-            </h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--edu-border); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+                <h3 class="fw-bold m-0" style="font-size: 1.25rem; color: var(--edu-text);">
+                    <span data-i18n="quizzes.lecturer.rev.questionsList">Questions List</span> (@Model.Quiz.Questions.Count)
+                </h3>
+                <form id="saveToBankForm" method="post" asp-page-handler="SaveToBank" asp-route-id="@Model.Quiz.Id" style="display: none;">
+                    <button type="submit" class="role-primary-btn" style="background: #10b981; border-color: #10b981; color: #fff;">
+                        <i class="bi bi-save"></i> Save Selected to Question Bank (<span id="selected-bank-count">0</span>)
+                    </button>
+                </form>
+            </div>
 
             @if (!Model.Quiz.Questions.Any())
             {
@@ -117,9 +124,12 @@
                 {
                     <div class="role-table-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 12px; background: rgba(228, 240, 246, 0.02); border: 1px solid var(--edu-border);">
                         <div class="d-flex justify-content-between align-items-start mb-3" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div>
-                                <span style="font-weight: bold; color: var(--edu-primary); font-size: 1.1rem; margin-right: 0.5rem;">Q@(q.QuestionOrder).</span>
-                                <span style="font-size: 1.1rem; font-weight: 500; color: var(--edu-text);">@q.QuestionText</span>
+                            <div style="display: flex; align-items: flex-start; gap: 0.8rem;">
+                                <input type="checkbox" class="form-check-input question-bank-checkbox" value="@q.Id" style="margin-top: 0.3rem;" onclick="updateBankSelectionCount()" />
+                                <div>
+                                    <span style="font-weight: bold; color: var(--edu-primary); font-size: 1.1rem; margin-right: 0.5rem;">Q@(q.QuestionOrder).</span>
+                                    <span style="font-size: 1.1rem; font-weight: 500; color: var(--edu-text);">@q.QuestionText</span>
+                                </div>
                             </div>
                             @if (isDraft)
                             {
@@ -294,6 +304,39 @@
                 });
             }
         });
+
+        function updateBankSelectionCount() {
+            const checkboxes = document.querySelectorAll('.question-bank-checkbox:checked');
+            const count = checkboxes.length;
+            const form = document.getElementById('saveToBankForm');
+            const countSpan = document.getElementById('selected-bank-count');
+            
+            if (count > 0) {
+                form.style.display = 'block';
+                countSpan.textContent = count;
+            } else {
+                form.style.display = 'none';
+            }
+        }
+
+        // Hook saveToBankForm submit to append selected checkboxes
+        const saveForm = document.getElementById('saveToBankForm');
+        if (saveForm) {
+            saveForm.addEventListener('submit', function (e) {
+                const checkboxes = document.querySelectorAll('.question-bank-checkbox:checked');
+                // Remove existing dynamic inputs
+                const existing = saveForm.querySelectorAll('input[name="selectedQuizQuestionIds"]');
+                existing.forEach(el => el.remove());
+                
+                checkboxes.forEach(cb => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'selectedQuizQuestionIds';
+                    input.value = cb.value;
+                    saveForm.appendChild(input);
+                });
+            });
+        }
     </script>
 }
 

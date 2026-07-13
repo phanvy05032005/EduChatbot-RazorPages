@@ -13,16 +13,21 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EduChatbot.Web.Pages.Lecturer.Quizzes;
 
-[Authorize(Roles = ApplicationRoles.DocumentManagers)]
+[Authorize(Roles = ApplicationRoles.AdminAndLecturer)]
 public class ReviewModel : PageModel
 {
     private readonly ILecturerQuizService _lecturerQuizService;
     private readonly IStudentRealtimeNotifier _studentRealtimeNotifier; // SignalR optional
+    private readonly IQuestionBankService _questionBankService;
 
-    public ReviewModel(ILecturerQuizService lecturerQuizService, IStudentRealtimeNotifier studentRealtimeNotifier)
+    public ReviewModel(
+        ILecturerQuizService lecturerQuizService, 
+        IStudentRealtimeNotifier studentRealtimeNotifier,
+        IQuestionBankService questionBankService)
     {
         _lecturerQuizService = lecturerQuizService;
         _studentRealtimeNotifier = studentRealtimeNotifier;
+        _questionBankService = questionBankService;
     }
 
     public Quiz Quiz { get; set; } = null!;
@@ -170,5 +175,27 @@ public class ReviewModel : PageModel
             TempData["ErrorMessage"] = ex.Message;
             return RedirectToPage(new { id });
         }
+    }
+
+    public async Task<IActionResult> OnPostSaveToBankAsync(int id, List<int> selectedQuizQuestionIds)
+    {
+        var lecturerId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (selectedQuizQuestionIds == null || !selectedQuizQuestionIds.Any())
+        {
+            TempData["ErrorMessage"] = "No questions selected to save to Question Bank.";
+            return RedirectToPage(new { id });
+        }
+
+        try
+        {
+            var (savedCount, skippedCount) = await _questionBankService.SaveToBankFromQuizQuestionsAsync(selectedQuizQuestionIds, lecturerId);
+            TempData["SuccessMessage"] = $"Lưu thành công {savedCount} câu hỏi vào ngân hàng (bỏ qua {skippedCount} câu trùng lặp).";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToPage(new { id });
     }
 }

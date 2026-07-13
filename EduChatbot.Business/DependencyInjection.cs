@@ -51,6 +51,9 @@ public static class DependencyInjection
         services.AddScoped<IQuizRepository, QuizRepository>();
         services.AddHttpClient<ILecturerQuizService, LecturerQuizService>();
         services.AddScoped<IStudentQuizService, StudentQuizService>();
+        services.AddScoped<IQuestionBankRepository, QuestionBankRepository>();
+        services.AddScoped<IQuestionBankService, QuestionBankService>();
+
 
         services.AddScoped<IChatRepository, ChatRepository>();
         services.AddScoped<IChatService, ChatService>();

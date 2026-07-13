@@ -223,6 +223,7 @@ else
                     <a asp-page="/Documents/Index" data-i18n="nav.learningMaterials" class="@(currentRolePage == "/Documents/Index" ? "active" : "")">Learning Materials</a>
                     <a asp-page="/Documents/Upload" data-i18n="nav.uploadDocument" class="@(currentRolePage == "/Documents/Upload" ? "active" : "")">Upload Document</a>
                     <a asp-page="/Lecturer/Quizzes/Index" data-i18n="nav.quizzesManagement" class="@(currentRolePage != null && currentRolePage.StartsWith("/Lecturer/Quizzes") ? "active" : "")">Quizzes Management</a>
+                    <a asp-page="/Lecturer/QuestionBank/Index" data-i18n="nav.questionBank" class="@(currentRolePage != null && currentRolePage.StartsWith("/Lecturer/QuestionBank") ? "active" : "")">Question Bank</a>
                     <a asp-page="/Account/Profile" data-i18n="nav.profile" class="@(currentRolePage == "/Account/Profile" ? "active" : "")">Profile</a>
                 </nav>
                 <div class="role-sidebar-footer sidebar-footer pt-3 mt-auto border-top">

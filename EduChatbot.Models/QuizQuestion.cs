@@ -23,5 +23,10 @@ public class QuizQuestion
 
     public DocumentChunk? SourceChunk { get; set; }
 
+    public int? SourceQuestionBankItemId { get; set; }
+
+    public QuestionBankItem? SourceQuestionBankItem { get; set; }
+
     public List<QuizOption> Options { get; set; } = [];
 }
+

@@ -128,7 +128,6 @@ await app.Services.MigrateDatabaseAsync();
 
 await app.Services.SeedEduChatbotIdentityAsync();
 await EduChatbot.Business.Services.SubscriptionSeeder.SeedAsync(app.Services);
-
 app.Run();
 
 static async Task ConfirmPayOSWebhookAsync(IServiceProvider services, ILogger logger)

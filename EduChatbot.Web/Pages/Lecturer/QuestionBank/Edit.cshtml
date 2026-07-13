@@ -1,0 +1,140 @@
+@page
+@model EduChatbot.Web.Pages.Lecturer.QuestionBank.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa câu hỏi";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Breadcrumbs -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-page="./Index">Ngân hàng câu hỏi</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa câu hỏi</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow border-0 overflow-hidden bg-white">
+                <div class="card-header bg-light py-3 border-0">
+                    <h4 class="m-0 fw-bold text-gray-900"><i class="bi bi-pencil-square text-warning"></i> Chỉnh sửa câu hỏi</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        <input type="hidden" asp-for="Input.Id" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 font-sm"></div>
+
+                        <!-- Read-only Course info -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted">Môn học</label>
+                                <input type="text" class="form-control bg-light" value="@Model.QuestionDetails.CourseCode" readonly />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted">Tài liệu nguồn</label>
+                                <input type="text" class="form-control bg-light" value="@(string.IsNullOrEmpty(Model.QuestionDetails.DocumentName) ? "(Không liên kết)" : Model.QuestionDetails.DocumentName)" readonly />
+                            </div>
+                        </div>
+
+                        <!-- Difficulty & Status & Tags -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="Input.Difficulty" class="form-label fw-semibold">Độ khó <span class="text-danger">*</span></label>
+                                <select asp-for="Input.Difficulty" class="form-select bg-light">
+                                    <option value="Easy">Dễ (Easy)</option>
+                                    <option value="Medium">Trung bình (Medium)</option>
+                                    <option value="Hard">Khó (Hard)</option>
+                                </select>
+                                <span asp-validation-for="Input.Difficulty" class="text-danger font-sm"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="Input.Status" class="form-label fw-semibold">Trạng thái <span class="text-danger">*</span></label>
+                                <select asp-for="Input.Status" class="form-select bg-light">
+                                    <option value="Approved">Đã duyệt (Approved)</option>
+                                    <option value="Draft">Bản nháp (Draft)</option>
+                                </select>
+                                <span asp-validation-for="Input.Status" class="text-danger font-sm"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="Input.Tags" class="form-label fw-semibold">Tags (Phân tách bằng dấu phẩy)</label>
+                                <input asp-for="Input.Tags" type="text" class="form-control bg-light" placeholder="Ví dụ: RAG, AI, DI" />
+                                <span asp-validation-for="Input.Tags" class="text-danger font-sm"></span>
+                            </div>
+                        </div>
+
+                        <!-- Question Text -->
+                        <div class="mb-4">
+                            <label asp-for="Input.QuestionText" class="form-label fw-semibold">Nội dung câu hỏi <span class="text-danger">*</span></label>
+                            <textarea asp-for="Input.QuestionText" class="form-control bg-light" rows="3" placeholder="Nhập nội dung câu hỏi trắc nghiệm..."></textarea>
+                            <span asp-validation-for="Input.QuestionText" class="text-danger font-sm"></span>
+                        </div>
+
+                        <!-- Options Header -->
+                        <h5 class="fw-bold text-gray-800 border-bottom pb-2 mb-3">Phương án trả lời (4 phương án)</h5>
+                        <p class="text-muted font-sm mb-3">Nhập nội dung cho 4 đáp án và tích chọn một đáp án đúng nhất.</p>
+
+                        <!-- Option A -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2">
+                                <input type="radio" asp-for="CorrectOption" value="A" class="form-check-input" />
+                                <span>Phương án A (Đáp án đúng)</span>
+                            </label>
+                            <input asp-for="OptionA" type="text" class="form-control bg-light" placeholder="Nhập phương án A..." />
+                            <span asp-validation-for="OptionA" class="text-danger font-sm"></span>
+                        </div>
+
+                        <!-- Option B -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2">
+                                <input type="radio" asp-for="CorrectOption" value="B" class="form-check-input" />
+                                <span>Phương án B (Đáp án đúng)</span>
+                            </label>
+                            <input asp-for="OptionB" type="text" class="form-control bg-light" placeholder="Nhập phương án B..." />
+                            <span asp-validation-for="OptionB" class="text-danger font-sm"></span>
+                        </div>
+
+                        <!-- Option C -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2">
+                                <input type="radio" asp-for="CorrectOption" value="C" class="form-check-input" />
+                                <span>Phương án C (Đáp án đúng)</span>
+                            </label>
+                            <input asp-for="OptionC" type="text" class="form-control bg-light" placeholder="Nhập phương án C..." />
+                            <span asp-validation-for="OptionC" class="text-danger font-sm"></span>
+                        </div>
+
+                        <!-- Option D -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold d-flex align-items-center gap-2">
+                                <input type="radio" asp-for="CorrectOption" value="D" class="form-check-input" />
+                                <span>Phương án D (Đáp án đúng)</span>
+                            </label>
+                            <input asp-for="OptionD" type="text" class="form-control bg-light" placeholder="Nhập phương án D..." />
+                            <span asp-validation-for="OptionD" class="text-danger font-sm"></span>
+                        </div>
+
+                        <!-- Explanation -->
+                        <div class="mb-4">
+                            <label asp-for="Input.Explanation" class="form-label fw-semibold">Giải thích đáp án</label>
+                            <textarea asp-for="Input.Explanation" class="form-control bg-light" rows="3" placeholder="Giải thích chi tiết vì sao đáp án đã chọn lại chính xác..."></textarea>
+                            <span asp-validation-for="Input.Explanation" class="text-danger font-sm"></span>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-end gap-2 border-top pt-4">
+                            <a asp-page="./Index" class="btn btn-outline-secondary px-4">Hủy</a>
+                            <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

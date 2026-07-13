@@ -40,6 +40,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
 
+    public DbSet<QuestionBankItem> QuestionBankItems => Set<QuestionBankItem>();
+
+    public DbSet<QuestionBankOption> QuestionBankOptions => Set<QuestionBankOption>();
+
+
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
 
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -386,6 +391,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(q => q.QuestionText).HasColumnName("question_text").IsRequired();
             entity.Property(q => q.Explanation).HasColumnName("explanation");
             entity.Property(q => q.SourceChunkId).HasColumnName("source_chunk_id");
+            entity.Property(q => q.SourceQuestionBankItemId).HasColumnName("source_question_bank_item_id");
 
             entity.HasOne(q => q.Quiz)
                 .WithMany(qz => qz.Questions)
@@ -395,6 +401,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(q => q.SourceChunk)
                 .WithMany()
                 .HasForeignKey(q => q.SourceChunkId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(q => q.SourceQuestionBankItem)
+                .WithMany()
+                .HasForeignKey(q => q.SourceQuestionBankItemId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -465,5 +476,64 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(aa => aa.SelectedOptionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<QuestionBankItem>(entity =>
+        {
+            entity.ToTable("question_bank_items");
+            entity.HasKey(q => q.Id);
+            entity.Property(q => q.Id).HasColumnName("id");
+            entity.Property(q => q.CourseId).HasColumnName("course_id");
+            entity.Property(q => q.DocumentId).HasColumnName("document_id");
+            entity.Property(q => q.SourceChunkId).HasColumnName("source_chunk_id");
+            entity.Property(q => q.QuestionText).HasColumnName("question_text").IsRequired();
+            entity.Property(q => q.QuestionTextHash).HasColumnName("question_text_hash").IsRequired().HasMaxLength(64);
+            entity.Property(q => q.Explanation).HasColumnName("explanation");
+            entity.Property(q => q.Difficulty).HasColumnName("difficulty").IsRequired().HasMaxLength(50);
+            entity.Property(q => q.Status).HasColumnName("status").IsRequired().HasMaxLength(50);
+            entity.Property(q => q.SourceType).HasColumnName("source_type").IsRequired().HasMaxLength(50);
+            entity.Property(q => q.QuestionType).HasColumnName("question_type").IsRequired().HasMaxLength(50);
+            entity.Property(q => q.CreatedByLecturerId).HasColumnName("created_by_lecturer_id").IsRequired().HasMaxLength(450);
+            entity.Property(q => q.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp with time zone");
+            entity.Property(q => q.UpdatedAt).HasColumnName("updated_at").HasColumnType("timestamp with time zone");
+            entity.Property(q => q.Tags).HasColumnName("tags");
+
+            entity.HasOne(q => q.Course)
+                .WithMany()
+                .HasForeignKey(q => q.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(q => q.Document)
+                .WithMany()
+                .HasForeignKey(q => q.DocumentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(q => q.SourceChunk)
+                .WithMany()
+                .HasForeignKey(q => q.SourceChunkId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(q => q.CreatedByLecturer)
+                .WithMany()
+                .HasForeignKey(q => q.CreatedByLecturerId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<QuestionBankOption>(entity =>
+        {
+            entity.ToTable("question_bank_options");
+            entity.HasKey(o => o.Id);
+            entity.Property(o => o.Id).HasColumnName("id");
+            entity.Property(o => o.QuestionBankItemId).HasColumnName("question_bank_item_id");
+            entity.Property(o => o.OptionOrder).HasColumnName("option_order");
+            entity.Property(o => o.Label).HasColumnName("label").IsRequired().HasMaxLength(10);
+            entity.Property(o => o.OptionText).HasColumnName("option_text").IsRequired();
+            entity.Property(o => o.IsCorrect).HasColumnName("is_correct");
+
+            entity.HasOne(o => o.Question)
+                .WithMany(q => q.Options)
+                .HasForeignKey(o => o.QuestionBankItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
+

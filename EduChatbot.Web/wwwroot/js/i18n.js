@@ -26,6 +26,8 @@
         'student.sidebar.subscription': 'Gói dịch vụ',
         'nav.quizzesManagement': 'Quản lý trắc nghiệm',
         'nav.quizzes': 'Trắc nghiệm',
+        'nav.questionBank': 'Ngân hàng câu hỏi',
+
 
         /* ---- Quizzes Shared ---- */
         'quizzes.title': 'Đề trắc nghiệm AI',
