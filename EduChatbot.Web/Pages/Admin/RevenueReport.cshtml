@@ -1,0 +1,524 @@
+@page
+@model EduChatbot.Web.Pages.Admin.RevenueReportModel
+@using EduChatbot.Models.Enums
+@{
+    ViewData["Title"] = "Revenue Report";
+
+    string? SelectedStatus(PaymentStatus? current, PaymentStatus expected) => current == expected ? "selected" : null;
+    string? SelectedPlan(int? current, int expected) => current == expected ? "selected" : null;
+
+    string FormatCurrency(decimal amount) => amount.ToString("N0") + " VND";
+}
+
+<style>
+    .revenue-page-header h1,
+    .revenue-page-header p,
+    .revenue-kicker,
+    .revenue-filter-header h2,
+    .revenue-filter-header p,
+    .revenue-toolbar-field .form-label,
+    .revenue-table thead th,
+    .revenue-table tbody td {
+        color: #f8fafc;
+    }
+
+    .revenue-soft-text {
+        color: rgba(248, 250, 252, 0.74) !important;
+    }
+
+    .admin-page .text-muted {
+        color: rgba(228, 240, 246, 0.65) !important;
+    }
+
+    .revenue-card {
+        background: rgba(228, 240, 246, 0.02) !important;
+        border: 1px solid rgba(228, 240, 246, 0.08) !important;
+        border-radius: 16px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        backdrop-filter: blur(12px);
+    }
+
+    .revenue-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        border-color: rgba(248, 113, 113, 0.15) !important;
+    }
+
+    .revenue-card-glow-green:hover {
+        border-color: rgba(52, 211, 153, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(52, 211, 153, 0.05);
+    }
+
+    .revenue-card-glow-blue:hover {
+        border-color: rgba(96, 165, 250, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(96, 165, 250, 0.05);
+    }
+
+    .revenue-card-glow-orange:hover {
+        border-color: rgba(249, 115, 22, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(249, 115, 22, 0.05);
+    }
+
+    .revenue-card-glow-red:hover {
+        border-color: rgba(248, 113, 113, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(248, 113, 113, 0.05);
+    }
+
+    .revenue-filter-card {
+        padding: 1.25rem !important;
+        background: rgba(228, 240, 246, 0.03) !important;
+        border: 1px solid rgba(228, 240, 246, 0.08) !important;
+        border-radius: 16px;
+    }
+
+    .revenue-toolbar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
+        gap: 0.8rem;
+        align-items: end;
+    }
+
+    .revenue-toolbar-field .form-label {
+        margin-bottom: 0.35rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .revenue-toolbar .form-control,
+    .revenue-toolbar .form-select {
+        min-height: 42px;
+        background-color: rgba(228, 240, 246, 0.04);
+        border: 1px solid rgba(228, 240, 246, 0.12);
+        color: #f8fafc;
+        border-radius: 8px;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.88rem;
+    }
+
+    .revenue-toolbar .form-control:focus,
+    .revenue-toolbar .form-select:focus {
+        background-color: rgba(228, 240, 246, 0.08);
+        border-color: rgba(228, 240, 246, 0.3);
+        box-shadow: none;
+        color: #fff;
+    }
+
+    .btn-revenue-filter {
+        min-height: 42px;
+        background: linear-gradient(135deg, #f97316, #c2410c) !important;
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.55rem 1.5rem;
+        border-radius: 8px;
+        transition: opacity 0.2s ease;
+    }
+
+    .btn-revenue-filter:hover {
+        opacity: 0.9;
+        color: #fff;
+    }
+
+    .revenue-table {
+        background: transparent !important;
+        margin-bottom: 0;
+    }
+
+    .revenue-table thead th {
+        background: rgba(228, 240, 246, 0.04) !important;
+        border-bottom: 1px solid rgba(228, 240, 246, 0.08) !important;
+        padding: 0.85rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .revenue-table tbody td {
+        padding: 0.95rem 1rem;
+        border-bottom: 1px solid rgba(228, 240, 246, 0.05) !important;
+        font-size: 0.88rem;
+        vertical-align: middle;
+    }
+
+    .revenue-table tbody tr:hover td {
+        background: rgba(228, 240, 246, 0.02) !important;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .status-badge.success {
+        background: rgba(52, 211, 153, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.2);
+    }
+
+    @@media (max-width: 991.98px) {
+        .revenue-toolbar {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .btn-revenue-filter {
+            grid-column: span 2;
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .revenue-toolbar {
+            grid-template-columns: 1fr;
+        }
+        .btn-revenue-filter {
+            grid-column: span 1;
+        }
+    }
+</style>
+
+<div class="admin-page text-start">
+    <!-- Header Section -->
+    <div class="revenue-page-header mb-4">
+        <div>
+            <div class="revenue-kicker">
+                <span>EDUCHATBOT</span> &middot;
+                <span>ADMIN</span> &middot;
+                <span data-i18n="admin.sidebar.revenueReport">REVENUE REPORT</span>
+            </div>
+            <h1 data-i18n="admin.revenue.title" class="fw-bold mt-1">Revenue Report</h1>
+            <p data-i18n="admin.revenue.subtitle" class="text-muted mb-0">Monitor financial status, order progress, and Premium student growth.</p>
+        </div>
+    </div>
+
+    <!-- Filters Form -->
+    <div class="revenue-filter-card mb-4">
+        <form method="get" class="revenue-toolbar">
+            <div class="revenue-toolbar-field">
+                <label class="form-label text-uppercase text-xs" data-i18n="admin.revenue.filter.from">From Date</label>
+                <input type="date" asp-for="FromDate" class="form-control" />
+            </div>
+
+            <div class="revenue-toolbar-field">
+                <label class="form-label text-uppercase text-xs" data-i18n="admin.revenue.filter.to">To Date</label>
+                <input type="date" asp-for="ToDate" class="form-control" />
+            </div>
+
+            <div class="revenue-toolbar-field">
+                <label class="form-label text-uppercase text-xs" data-i18n="admin.revenue.filter.package">Package</label>
+                <select asp-for="SubscriptionPlanId" class="form-select">
+                    <option value="" data-i18n="admin.revenue.filter.all">-- All --</option>
+                    @foreach (var plan in Model.SubscriptionPlans)
+                    {
+                        <option value="@plan.Id" selected="@SelectedPlan(Model.SubscriptionPlanId, plan.Id)">@plan.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="revenue-toolbar-field">
+                <label class="form-label text-uppercase text-xs" data-i18n="admin.revenue.filter.status">Status</label>
+                <select asp-for="Status" class="form-select">
+                    <option value="" data-i18n="admin.revenue.filter.all">-- All --</option>
+                    <option value="PENDING" selected="@SelectedStatus(Model.Status, PaymentStatus.PENDING)">PENDING</option>
+                    <option value="SUCCESS" selected="@SelectedStatus(Model.Status, PaymentStatus.SUCCESS)">SUCCESS / PAID</option>
+                    <option value="CANCELLED" selected="@SelectedStatus(Model.Status, PaymentStatus.CANCELLED)">CANCELLED</option>
+                    <option value="FAILED" selected="@SelectedStatus(Model.Status, PaymentStatus.FAILED)">FAILED</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-revenue-filter" data-i18n="admin.revenue.filter.btn">Filter Results</button>
+        </form>
+    </div>
+
+    <!-- Summary Metrics Grid -->
+    <div class="row g-3 mb-4">
+        <!-- Card 1: Total Revenue -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card revenue-card revenue-card-glow-green p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.72rem; font-weight: 700;" data-i18n="admin.revenue.total">Total Revenue</div>
+                <div class="fw-bold mt-2" style="font-size: 1.55rem; color: #34d399;">@FormatCurrency(Model.Stats.TotalRevenue)</div>
+            </div>
+        </div>
+        <!-- Card 2: Today Revenue -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card revenue-card revenue-card-glow-green p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.72rem; font-weight: 700;" data-i18n="admin.revenue.today">Revenue Today</div>
+                <div class="fw-bold mt-2" style="font-size: 1.55rem; color: #34d399;">@FormatCurrency(Model.Stats.RevenueToday)</div>
+            </div>
+        </div>
+        <!-- Card 3: Month Revenue -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card revenue-card revenue-card-glow-green p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.72rem; font-weight: 700;" data-i18n="admin.revenue.thisMonth">Revenue This Month</div>
+                <div class="fw-bold mt-2" style="font-size: 1.55rem; color: #34d399;">@FormatCurrency(Model.Stats.RevenueThisMonth)</div>
+            </div>
+        </div>
+        <!-- Card 4: Year Revenue -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-card revenue-card revenue-card-glow-green p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.72rem; font-weight: 700;" data-i18n="admin.revenue.thisYear">Revenue This Year</div>
+                <div class="fw-bold mt-2" style="font-size: 1.55rem; color: #34d399;">@FormatCurrency(Model.Stats.RevenueThisYear)</div>
+            </div>
+        </div>
+
+        <!-- Card 5: Paid Orders -->
+        <div class="col-6 col-md-3 col-lg-2">
+            <div class="admin-card revenue-card revenue-card-glow-green p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.68rem; font-weight: 700;" data-i18n="admin.revenue.paidOrders">Paid Orders</div>
+                <div class="fw-bold mt-2" style="font-size: 1.45rem; color: #34d399;">@Model.Stats.TotalPaidOrders</div>
+            </div>
+        </div>
+        <!-- Card 6: Pending Orders -->
+        <div class="col-6 col-md-3 col-lg-2">
+            <div class="admin-card revenue-card revenue-card-glow-blue p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.68rem; font-weight: 700;" data-i18n="admin.revenue.pendingOrders">Pending Orders</div>
+                <div class="fw-bold mt-2" style="font-size: 1.45rem; color: #60a5fa;">@Model.Stats.TotalPendingOrders</div>
+            </div>
+        </div>
+        <!-- Card 7: Cancelled Orders -->
+        <div class="col-6 col-md-3 col-lg-2">
+            <div class="admin-card revenue-card revenue-card-glow-orange p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.68rem; font-weight: 700;" data-i18n="admin.revenue.cancelledOrders">Cancelled Orders</div>
+                <div class="fw-bold mt-2" style="font-size: 1.45rem; color: #cbd5e1;">@Model.Stats.TotalCancelledOrders</div>
+            </div>
+        </div>
+        <!-- Card 8: Failed Orders -->
+        <div class="col-6 col-md-3 col-lg-2">
+            <div class="admin-card revenue-card revenue-card-glow-red p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.68rem; font-weight: 700;" data-i18n="admin.revenue.failedOrders">Failed Orders</div>
+                <div class="fw-bold mt-2" style="font-size: 1.45rem; color: #f87171;">@Model.Stats.TotalFailedOrders</div>
+            </div>
+        </div>
+
+        <!-- Card 9: Active Premium Students -->
+        <div class="col-12 col-md-6 col-lg-2">
+            <div class="admin-card revenue-card revenue-card-glow-green p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.68rem; font-weight: 700;" data-i18n="admin.revenue.activePremium">Active Premium Students</div>
+                <div class="fw-bold mt-2" style="font-size: 1.45rem; color: #34d399;">@Model.Stats.ActivePremiumStudents</div>
+            </div>
+        </div>
+        <!-- Card 10: Expired Premium Subscriptions -->
+        <div class="col-12 col-md-6 col-lg-2">
+            <div class="admin-card revenue-card revenue-card-glow-orange p-3 h-100">
+                <div class="text-uppercase revenue-soft-text" style="font-size: 0.68rem; font-weight: 700;" data-i18n="admin.revenue.expiredPremium">Expired Premium Subscriptions</div>
+                <div class="fw-bold mt-2" style="font-size: 1.45rem; color: #fbbf24;">@Model.Stats.ExpiredPremiumSubscriptions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Revenue Chart -->
+        <div class="col-12 col-xl-8">
+            <section class="admin-card p-4 rounded-xl h-100">
+                <div class="admin-card-header mb-3 p-0 pb-3">
+                    <h2 class="mb-0" style="font-size: 1.1rem;" data-i18n="admin.revenue.chart.monthly">Monthly Revenue Trend</h2>
+                </div>
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="monthlyRevenueChart"></canvas>
+                </div>
+            </section>
+        </div>
+
+        <!-- Order Status Distribution -->
+        <div class="col-12 col-xl-4">
+            <section class="admin-card p-4 rounded-xl h-100">
+                <div class="admin-card-header mb-3 p-0 pb-3">
+                    <h2 class="mb-0" style="font-size: 1.1rem;" data-i18n="admin.revenue.chart.status">Order Status Distribution</h2>
+                </div>
+                <div style="position: relative; height: 320px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <section class="admin-card p-4 rounded-xl">
+        <div class="admin-card-header mb-3 p-0 pb-3 d-flex justify-content-between align-items-center">
+            <h2 class="mb-0" style="font-size: 1.1rem;" data-i18n="admin.revenue.recentPaid">Recent Paid Transactions</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="table revenue-table align-middle">
+                <thead>
+                    <tr>
+                        <th data-i18n="admin.payments.table.student">Student</th>
+                        <th data-i18n="admin.payments.table.email">Email</th>
+                        <th data-i18n="subscription.history.table.package">Package</th>
+                        <th data-i18n="subscription.history.table.amount">Amount</th>
+                        <th data-i18n="subscription.history.table.status">Status</th>
+                        <th data-i18n="subscription.history.table.createdAt">Created At</th>
+                        <th data-i18n="subscription.history.table.paidAt">Paid At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentPayments == null || !Model.RecentPayments.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted" data-i18n="admin.payments.noTransactions">
+                                No transactions match the current filters.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.RecentPayments)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.StudentName</td>
+                                <td class="text-muted">@item.StudentEmail</td>
+                                <td>@item.PackageName</td>
+                                <td class="fw-bold">@FormatCurrency(item.Amount)</td>
+                                <td>
+                                    <span class="status-badge success">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        <span data-i18n="subscription.status.paid">Paid</span>
+                                    </span>
+                                </td>
+                                <td class="text-muted">@item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    @(item.PaidAt.HasValue ? item.PaidAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-")
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- Load Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Render Monthly Revenue Line Chart
+        var monthlyLabels = [];
+        var monthlyData = [];
+        
+        @foreach (var item in Model.MonthlyRevenue)
+        {
+            @:monthlyLabels.push('@item.MonthLabel');
+            @:monthlyData.push(@item.Revenue);
+        }
+
+        var ctxLine = document.getElementById('monthlyRevenueChart').getContext('2d');
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Revenue (VND)',
+                    data: monthlyData,
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.05)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: '#34d399',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.6)', font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            font: { size: 11 },
+                            callback: function(value) {
+                                return value.toLocaleString() + ' ₫';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Render Order Status Distribution Doughnut Chart
+        var statusLabels = [];
+        var statusData = [];
+        var statusColors = [];
+
+        @foreach (var item in Model.StatusDistribution)
+        {
+            @:statusLabels.push('@item.Status');
+            @:statusData.push(@item.Count);
+            if (item.Status == "SUCCESS")
+            {
+                @:statusColors.push('#34d399');
+            }
+            else if (item.Status == "PENDING")
+            {
+                @:statusColors.push('#60a5fa');
+            }
+            else if (item.Status == "CANCELLED")
+            {
+                @:statusColors.push('#cbd5e1');
+            }
+            else if (item.Status == "FAILED")
+            {
+                @:statusColors.push('#f87171');
+            }
+            else
+            {
+                @:statusColors.push('#a78bfa');
+            }
+        }
+
+        // Handle case of empty status data to show a placeholder arc
+        if (statusData.length === 0) {
+            statusLabels.push('No Orders');
+            statusData.push(1);
+            statusColors.push('rgba(255, 255, 255, 0.05)');
+        }
+
+        var ctxPie = document.getElementById('orderStatusChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: statusColors,
+                    borderColor: '#181c26',
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            font: { size: 11 },
+                            padding: 15
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+</script>

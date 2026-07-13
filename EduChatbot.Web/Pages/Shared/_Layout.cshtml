@@ -116,6 +116,10 @@
                     <span class="admin-menu-icon">◫</span>
                     <span data-i18n="admin.sidebar.payments">Payment Management</span>
                 </a>
+                <a asp-page="/Admin/RevenueReport" class="admin-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/RevenueReport" ? "active" : "")">
+                    <span class="admin-menu-icon">📊</span>
+                    <span data-i18n="admin.sidebar.revenueReport">Revenue Report</span>
+                </a>
             </nav>
             <div class="admin-sidebar-footer sidebar-footer pt-3 mt-auto border-top">
                 @{

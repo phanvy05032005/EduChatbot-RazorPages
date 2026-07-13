@@ -134,6 +134,26 @@ if (args.Contains("--cleanup-seeded-data"))
     Environment.Exit(0);
 }
 
+if (args.Contains("--verify-revenue"))
+{
+    if (app.Environment.IsDevelopment())
+    {
+        // Ensure migrations are run first so the tables exist
+        await app.Services.MigrateDatabaseAsync();
+        using (var scope = app.Services.CreateScope())
+        {
+            var service = scope.ServiceProvider.GetRequiredService<IRevenueReportService>();
+            var report = await service.GetVerificationReportAsync();
+            Console.WriteLine(report);
+        }
+    }
+    else
+    {
+        app.Logger.LogWarning("The --verify-revenue diagnostic command is only allowed in the Development environment.");
+    }
+    Environment.Exit(0);
+}
+
 await app.Services.MigrateDatabaseAsync();
 
 await app.Services.SeedEduChatbotIdentityAsync();

@@ -87,6 +87,8 @@ public static class DependencyInjection
         services.AddScoped<IPaymentHistoryService, PaymentHistoryService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
+        services.AddScoped<IRevenueReportRepository, RevenueReportRepository>();
+        services.AddScoped<IRevenueReportService, RevenueReportService>();
 
         // Register Cloud Storage: Cloudinary if configured, otherwise local file storage
         var cloudinarySection = configuration.GetSection("Cloudinary");
