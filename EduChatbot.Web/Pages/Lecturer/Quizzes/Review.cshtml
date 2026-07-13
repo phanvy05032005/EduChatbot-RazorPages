@@ -464,8 +464,8 @@
                 </div>
                 <form method="post" asp-page-handler="AddQuestionsFromBank" asp-route-id="@Model.Quiz.Id">
                     <div class="modal-body" style="padding: 1.5rem;">
-                        <p class="text-muted mb-3" style="font-size: 0.9rem;">
-                            Chọn các câu hỏi đã duyệt (Approved) trong ngân hàng câu hỏi của môn học này để thêm vào đề thi nháp hiện tại.
+                        <p class="mb-3" style="color: var(--edu-muted) !important; font-size: 0.9rem;" data-i18n="quizzes.lecturer.rev.bankModalDesc">
+                            Select approved questions (Approved) from the question bank of this course to add to the current draft quiz.
                         </p>
                         @if (Model.AvailableBankQuestions == null || !Model.AvailableBankQuestions.Any())
                         {

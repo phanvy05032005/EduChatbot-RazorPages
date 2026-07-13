@@ -156,6 +156,7 @@
         'quizzes.lecturer.rev.deleteConfirm': 'Bạn có chắc chắn muốn xóa câu hỏi này?',
         'quizzes.lecturer.rev.addFromBank': '📚 Thêm từ Ngân hàng câu hỏi',
         'quizzes.lecturer.rev.bankModalTitle': 'Thêm câu hỏi từ Ngân hàng câu hỏi',
+        'quizzes.lecturer.rev.bankModalDesc': 'Chọn các câu hỏi đã duyệt (Approved) trong ngân hàng câu hỏi của môn học này để thêm vào đề thi nháp hiện tại.',
         'quizzes.lecturer.rev.noBankQuestions': 'Không tìm thấy câu hỏi đã duyệt (Approved) nào trong Ngân hàng câu hỏi của môn học này.',
         'quizzes.lecturer.rev.bankColQuestion': 'Nội dung câu hỏi',
         'quizzes.lecturer.rev.bankColDiff': 'Độ khó',
@@ -1074,7 +1075,8 @@
         'questionBank.createQuiz.maxAttemptsLabel': 'Max Attempts',
         'questionBank.createQuiz.selectedQuestionsTitle': 'Selected Questions',
         'questionBank.createQuiz.cancelBtn': 'Cancel',
-        'questionBank.createQuiz.submitBtn': 'Create Quiz'
+        'questionBank.createQuiz.submitBtn': 'Create Quiz',
+        'quizzes.lecturer.rev.bankModalDesc': 'Select approved questions (Approved) from the question bank of this course to add to the current draft quiz.'
     };
 
     /* ---------- Core logic ---------- */
