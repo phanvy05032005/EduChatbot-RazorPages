@@ -44,6 +44,10 @@
         'quizzes.actions': 'Thao tác',
         'quizzes.difficulty': 'Độ khó',
         'quizzes.minutes': 'phút',
+        'quizzes.questions.qsSuffix': 'câu',
+        'quizzes.lecturer.activeTracking': 'Theo dõi hoạt động',
+        'quizzes.lecturer.att.back': '← Quay lại danh sách đề thi',
+        'quizzes.lecturer.att.attemptsFor': 'Lượt làm bài của',
 
         /* ---- Lecturer Quizzes ---- */
         'quizzes.lecturer.kicker': 'Đánh giá học tập',
@@ -150,6 +154,22 @@
         'quizzes.lecturer.rev.closeBtn': 'Đóng',
         'quizzes.lecturer.rev.saveChanges': 'Lưu thay đổi',
         'quizzes.lecturer.rev.deleteConfirm': 'Bạn có chắc chắn muốn xóa câu hỏi này?',
+        'quizzes.lecturer.rev.addFromBank': '📚 Thêm từ Ngân hàng câu hỏi',
+        'quizzes.lecturer.rev.bankModalTitle': 'Thêm câu hỏi từ Ngân hàng câu hỏi',
+        'quizzes.lecturer.rev.noBankQuestions': 'Không tìm thấy câu hỏi đã duyệt (Approved) nào trong Ngân hàng câu hỏi của môn học này.',
+        'quizzes.lecturer.rev.bankColQuestion': 'Nội dung câu hỏi',
+        'quizzes.lecturer.rev.bankColDiff': 'Độ khó',
+        'quizzes.lecturer.rev.bankColTags': 'Thẻ (Tags)',
+        'quizzes.lecturer.rev.importBtn': 'Nhập các câu hỏi đã chọn',
+        'quizzes.lecturer.rev.draftAutoSaved': 'Nháp · Đã lưu tự động',
+        'quizzes.lecturer.rev.autoSaveMsg': 'Bài trắc nghiệm được tự động lưu ở dạng nháp. Bạn có thể xem lại, chỉnh sửa và xuất bản khi sẵn sàng.',
+        'quizzes.lecturer.rev.selectAll': 'Chọn tất cả',
+        'quizzes.lecturer.rev.alreadyAdded': 'Đã thêm',
+        'quizzes.lecturer.rev.totalAvailable': 'Tổng số câu hỏi',
+        'quizzes.lecturer.rev.alreadyAddedCount': 'Đã có trong đề',
+        'quizzes.lecturer.rev.selectedImport': 'Đang chọn',
+        'quizzes.lecturer.rev.noAvailableQuestions': 'Không còn câu hỏi đã duyệt nào khả dụng trong Ngân hàng câu hỏi của môn học này.',
+        'quizzes.lecturer.rev.saveSelectedBtn': 'Lưu các câu đã chọn vào Ngân hàng',
 
         /* ---- Lecturer Attempts ---- */
         'quizzes.lecturer.att.title': 'Báo cáo lượt làm bài',
@@ -794,7 +814,52 @@
         'admin.payments.filterNote': 'Tìm kiếm theo tên học sinh, email, gói cước và mã đơn hàng. Nhấn Enter để thực hiện. Các bộ lọc khác tự động áp dụng khi thay đổi.',
         'admin.payments.table.student': 'Học sinh',
         'admin.payments.table.email': 'Email',
-        'admin.payments.noTransactions': 'Không tìm thấy giao dịch nào khớp với bộ lọc hiện tại.'
+        'admin.payments.noTransactions': 'Không tìm thấy giao dịch nào khớp với bộ lọc hiện tại.',
+        'questionBank.kicker': 'PORTAL NGÂN HÀNG ĐỀ',
+        'questionBank.title': 'Ngân Hàng Câu Hỏi',
+        'questionBank.subtitle': 'Quản lý câu hỏi trắc nghiệm tự soạn hoặc được sinh tự động bằng AI từ tài liệu môn học.',
+        'questionBank.manageQuizzesBtn': 'Quản lý đề trắc nghiệm',
+        'questionBank.addManualBtn': 'Thêm câu hỏi thủ công',
+        'questionBank.searchLabel': 'Tìm kiếm câu hỏi',
+        'questionBank.searchPlaceholder': 'Từ khóa câu hỏi, giải thích...',
+        'questionBank.courseLabel': 'Môn học',
+        'questionBank.documentLabel': 'Tài liệu nguồn',
+        'questionBank.difficultyLabel': 'Độ khó',
+        'questionBank.statusLabel': 'Trạng thái',
+        'questionBank.filterBtn': 'Lọc',
+        'questionBank.listTitle': 'Danh sách câu hỏi',
+        'questionBank.createQuizBtn': 'Tạo bài trắc nghiệm từ câu hỏi đã chọn',
+        'questionBank.colQuestion': 'Nội dung câu hỏi',
+        'questionBank.colCourse': 'Môn học',
+        'questionBank.colDiff': 'Độ khó',
+        'questionBank.colStatus': 'Trạng thái',
+        'questionBank.colSource': 'Nguồn',
+        'questionBank.colActions': 'Hành động',
+        'questionBank.emptyState': 'Chưa có câu hỏi nào được chọn hoặc tìm thấy phù hợp.',
+        'questionBank.emptyStateDesc': 'Hãy tạo câu hỏi thủ công hoặc lưu câu hỏi từ Quiz Review vào Ngân hàng câu hỏi.',
+        'questionBank.modalTitle': 'Chi tiết câu hỏi',
+        'questionBank.modalClose': 'Đóng',
+        'questionBank.modalExplanation': 'Giải thích',
+        'questionBank.modalCorrect': 'Đúng',
+        'questionBank.modalQuestion': 'Câu hỏi',
+        'questionBank.modalAnswers': 'Các phương án trả lời',
+        'questionBank.modalCourse': 'Môn học',
+        'questionBank.modalDoc': 'Tài liệu',
+        'questionBank.modalDiff': 'Độ khó',
+        'questionBank.deleteConfirmTitle': 'Xác nhận xóa?',
+        'questionBank.deleteConfirmText': 'Hành động này sẽ xóa câu hỏi này khỏi ngân hàng câu hỏi. Nếu câu hỏi đã được dùng trong đề thi, hệ thống sẽ tự động hạ cấp xuống lưu trữ (Archived) để bảo toàn dữ liệu đề thi.',
+        'questionBank.deleteConfirmBtn': 'Đồng ý',
+        'questionBank.deleteCancelBtn': 'Hủy',
+        'questionBank.createQuiz.breadcrumb': 'Tạo đề thi',
+        'questionBank.createQuiz.header': 'Tạo đề trắc nghiệm mới',
+        'questionBank.createQuiz.titleLabel': 'Tiêu đề đề thi',
+        'questionBank.createQuiz.titlePlaceholder': 'Ví dụ: Kiểm tra giữa kỳ - Kỹ thuật lập trình',
+        'questionBank.createQuiz.selectCourseOption': '-- Chọn môn học --',
+        'questionBank.createQuiz.timeLimitLabel': 'Thời gian làm bài (Phút)',
+        'questionBank.createQuiz.maxAttemptsLabel': 'Số lượt thi tối đa',
+        'questionBank.createQuiz.selectedQuestionsTitle': 'Câu hỏi đã chọn',
+        'questionBank.createQuiz.cancelBtn': 'Hủy',
+        'questionBank.createQuiz.submitBtn': 'Tạo đề trắc nghiệm'
     };
 
     /* ---------- English translations for JS-generated text ---------- */
@@ -907,6 +972,10 @@
         'quizzes.lecturer.gen.loadingDesc': 'Please wait while the system processes the document and creates quiz questions.',
         'quizzes.generate.loadingTitle': 'Generating quiz...',
         'quizzes.generate.loadingDesc': 'Please wait while the system processes the document and creates quiz questions.',
+        'quizzes.questions.qsSuffix': 'Qs',
+        'quizzes.lecturer.activeTracking': 'Active tracking',
+        'quizzes.lecturer.att.back': '← Back to Quizzes',
+        'quizzes.lecturer.att.attemptsFor': 'Attempts for',
         /* ---- Purchase / Payment History ---- */
         'student.sidebar.purchaseHistory': 'Purchase History',
         'admin.sidebar.payments': 'Payment Management',
@@ -960,7 +1029,52 @@
         'admin.payments.filterNote': 'Search covers student name, email, package, and order code. Press Enter in the search box. Select filters apply on change.',
         'admin.payments.table.student': 'Student',
         'admin.payments.table.email': 'Email',
-        'admin.payments.noTransactions': 'No transactions match the current filters.'
+        'admin.payments.noTransactions': 'No transactions match the current filters.',
+        'questionBank.kicker': 'QUESTION BANK PORTAL',
+        'questionBank.title': 'Question Bank',
+        'questionBank.subtitle': 'Manage manually created or AI-generated quiz questions from course materials.',
+        'questionBank.manageQuizzesBtn': 'Manage Quizzes',
+        'questionBank.addManualBtn': 'Add Manual Question',
+        'questionBank.searchLabel': 'Search Questions',
+        'questionBank.searchPlaceholder': 'Keyword, explanation, etc...',
+        'questionBank.courseLabel': 'Course',
+        'questionBank.documentLabel': 'Source Document',
+        'questionBank.difficultyLabel': 'Difficulty',
+        'questionBank.statusLabel': 'Status',
+        'questionBank.filterBtn': 'Filter',
+        'questionBank.listTitle': 'Questions List',
+        'questionBank.createQuizBtn': 'Create Quiz from Selected Questions',
+        'questionBank.colQuestion': 'Question Text',
+        'questionBank.colCourse': 'Course',
+        'questionBank.colDiff': 'Difficulty',
+        'questionBank.colStatus': 'Status',
+        'questionBank.colSource': 'Source',
+        'questionBank.colActions': 'Actions',
+        'questionBank.emptyState': 'No questions selected or found matching the filters.',
+        'questionBank.emptyStateDesc': 'Create manual questions or save questions from Quiz Review to the Question Bank.',
+        'questionBank.modalTitle': 'Question Details',
+        'questionBank.modalClose': 'Close',
+        'questionBank.modalExplanation': 'Explanation',
+        'questionBank.modalCorrect': 'Correct',
+        'questionBank.modalQuestion': 'Question',
+        'questionBank.modalAnswers': 'Answer Options',
+        'questionBank.modalCourse': 'Course',
+        'questionBank.modalDoc': 'Document',
+        'questionBank.modalDiff': 'Difficulty',
+        'questionBank.deleteConfirmTitle': 'Confirm Delete?',
+        'questionBank.deleteConfirmText': 'This will delete the question from the question bank. If it is already used in a quiz, it will be archived to protect the quiz history.',
+        'questionBank.deleteConfirmBtn': 'Yes',
+        'questionBank.deleteCancelBtn': 'Cancel',
+        'questionBank.createQuiz.breadcrumb': 'Create Quiz',
+        'questionBank.createQuiz.header': 'Create New Quiz',
+        'questionBank.createQuiz.titleLabel': 'Quiz Title',
+        'questionBank.createQuiz.titlePlaceholder': 'e.g. Midterm Exam - Programming Techniques',
+        'questionBank.createQuiz.selectCourseOption': '-- Select Course --',
+        'questionBank.createQuiz.timeLimitLabel': 'Time Limit (Minutes)',
+        'questionBank.createQuiz.maxAttemptsLabel': 'Max Attempts',
+        'questionBank.createQuiz.selectedQuestionsTitle': 'Selected Questions',
+        'questionBank.createQuiz.cancelBtn': 'Cancel',
+        'questionBank.createQuiz.submitBtn': 'Create Quiz'
     };
 
     /* ---------- Core logic ---------- */
@@ -983,17 +1097,21 @@
         // Translate data-i18n elements
         document.querySelectorAll('[data-i18n]').forEach(function (el) {
             var key = el.getAttribute('data-i18n');
-            if (lang === 'vi' && VI[key]) {
-                // Store original English text
-                if (!el.hasAttribute('data-i18n-en')) {
-                    el.setAttribute('data-i18n-en', el.textContent);
+            if (lang === 'vi') {
+                if (VI[key]) {
+                    if (!el.hasAttribute('data-i18n-en')) {
+                        el.setAttribute('data-i18n-en', EN[key] || el.textContent);
+                    }
+                    el.textContent = VI[key];
                 }
-                el.textContent = VI[key];
             } else {
-                // Restore English
-                var en = el.getAttribute('data-i18n-en');
-                if (en !== null) {
-                    el.textContent = en;
+                if (EN[key]) {
+                    el.textContent = EN[key];
+                } else {
+                    var en = el.getAttribute('data-i18n-en');
+                    if (en !== null) {
+                        el.textContent = en;
+                    }
                 }
             }
         });
@@ -1001,15 +1119,21 @@
         // Translate data-i18n-placeholder
         document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
             var key = el.getAttribute('data-i18n-placeholder');
-            if (lang === 'vi' && VI[key]) {
-                if (!el.hasAttribute('data-i18n-placeholder-en')) {
-                    el.setAttribute('data-i18n-placeholder-en', el.placeholder);
+            if (lang === 'vi') {
+                if (VI[key]) {
+                    if (!el.hasAttribute('data-i18n-placeholder-en')) {
+                        el.setAttribute('data-i18n-placeholder-en', EN[key] || el.placeholder);
+                    }
+                    el.placeholder = VI[key];
                 }
-                el.placeholder = VI[key];
             } else {
-                var en = el.getAttribute('data-i18n-placeholder-en');
-                if (en !== null) {
-                    el.placeholder = en;
+                if (EN[key]) {
+                    el.placeholder = EN[key];
+                } else {
+                    var en = el.getAttribute('data-i18n-placeholder-en');
+                    if (en !== null) {
+                        el.placeholder = en;
+                    }
                 }
             }
         });
@@ -1099,6 +1223,7 @@
     window.EduI18n = {
         getLang: getLang,
         setLang: setLang,
+        applyLang: applyLang,
         toggle: function () {
             setLang(getLang() === 'en' ? 'vi' : 'en');
         },

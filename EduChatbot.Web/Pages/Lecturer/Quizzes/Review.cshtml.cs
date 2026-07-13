@@ -32,6 +32,18 @@ public class ReviewModel : PageModel
 
     public Quiz Quiz { get; set; } = null!;
 
+    public List<QuestionBankItemDto> AvailableBankQuestions { get; set; } = [];
+
+    public bool IsAlreadyAddedInQuiz(string questionText, int bankItemId)
+    {
+        if (Quiz == null) return false;
+        var normalizedInput = QuestionTextNormalizer.Normalize(questionText);
+        return Quiz.Questions.Any(q => 
+            q.SourceQuestionBankItemId == bankItemId || 
+            QuestionTextNormalizer.Normalize(q.QuestionText) == normalizedInput
+        );
+    }
+
     [BindProperty]
     public LecturerSaveQuestionInput SaveInput { get; set; } = new();
 
@@ -52,6 +64,19 @@ public class ReviewModel : PageModel
                 return NotFound("Quiz not found.");
             }
             Quiz = quiz;
+
+            // Load approved question bank items for this course to display in modal
+            var filter = new QuestionBankFilterDto
+            {
+                CourseId = quiz.CourseId,
+                Status = "Approved",
+                PageNumber = 1,
+                PageSize = 200
+            };
+            var isAdmin = User.IsInRole(ApplicationRoles.Admin);
+            var bankResult = await _questionBankService.GetQuestionsAsync(filter, lecturerId, isAdmin);
+            AvailableBankQuestions = bankResult.Items.ToList();
+
             return Page();
         }
         catch (UnauthorizedAccessException)
@@ -190,6 +215,47 @@ public class ReviewModel : PageModel
         {
             var (savedCount, skippedCount) = await _questionBankService.SaveToBankFromQuizQuestionsAsync(selectedQuizQuestionIds, lecturerId);
             TempData["SuccessMessage"] = $"Lưu thành công {savedCount} câu hỏi vào ngân hàng (bỏ qua {skippedCount} câu trùng lặp).";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+        }
+
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostAddQuestionsFromBankAsync(int id, List<int> selectedQuestionBankIds)
+    {
+        var lecturerId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (selectedQuestionBankIds == null || !selectedQuestionBankIds.Any())
+        {
+            TempData["ErrorMessage"] = "Không có câu hỏi nào được chọn từ Ngân hàng câu hỏi.";
+            return RedirectToPage(new { id });
+        }
+
+        try
+        {
+            var result = await _lecturerQuizService.AddQuestionsFromBankAsync(id, selectedQuestionBankIds, lecturerId);
+            if (result.ImportedCount > 0)
+            {
+                var msg = $"Lấy thành công {result.ImportedCount} câu hỏi từ Ngân hàng câu hỏi.";
+                if (result.SkippedDuplicateCount > 0)
+                {
+                    msg += $" Đã tự động bỏ qua {result.SkippedDuplicateCount} câu trùng lặp.";
+                }
+                TempData["SuccessMessage"] = msg;
+            }
+            else
+            {
+                if (result.SkippedDuplicateCount > 0)
+                {
+                    TempData["SuccessMessage"] = $"Không có câu hỏi mới nào được nhập (đã bỏ qua {result.SkippedDuplicateCount} câu trùng lặp đã tồn tại trong đề).";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] = "Không có câu hỏi mới nào được nhập.";
+                }
+            }
         }
         catch (Exception ex)
         {

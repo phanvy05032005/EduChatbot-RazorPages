@@ -281,7 +281,7 @@
             <div class="lecturer-stat-card-label" data-i18n="quizzes.lecturer.totalQuizzes">Total Quizzes</div>
             <div class="lecturer-stat-card-value">@totalQuizzes</div>
             <div class="lecturer-stat-card-footer" style="color: #10b981;">
-                <i class="bi bi-graph-up"></i> Active tracking
+                <i class="bi bi-graph-up"></i> <span data-i18n="quizzes.lecturer.activeTracking">Active tracking</span>
             </div>
         </div>
         <div class="lecturer-stat-card">
@@ -380,7 +380,7 @@
                                         <span class="text-muted">N/A</span>
                                     }
                                 </td>
-                                <td>@quiz.NumberOfQuestions Qs</td>
+                                <td>@quiz.NumberOfQuestions <span data-i18n="quizzes.questions.qsSuffix">Qs</span></td>
                                 <td>@quiz.TimeLimitMinutes <span data-i18n="quizzes.minutes">mins</span></td>
                                 <td>
                                     <span class="quiz-status-badge @statusClass" data-i18n="quizzes.status.@(quiz.Status.ToLower())">@quiz.Status</span>

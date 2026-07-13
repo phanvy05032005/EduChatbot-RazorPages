@@ -299,3 +299,11 @@ public class CreateQuizFromBankResultDto
     public int? QuizId { get; set; }
 }
 
+public class AddQuestionsFromBankResultDto
+{
+    public int ImportedCount { get; set; }
+    public int SkippedDuplicateCount { get; set; }
+    public int RejectedCount { get; set; }
+    public List<string> Messages { get; set; } = new();
+}
+

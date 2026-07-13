@@ -124,10 +124,21 @@ app.Lifetime.ApplicationStarted.Register(() =>
     });
 });
 
+if (args.Contains("--cleanup-seeded-data"))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var service = scope.ServiceProvider.GetRequiredService<IQuestionBankService>();
+        await service.CleanupSeededDataAsync();
+    }
+    Environment.Exit(0);
+}
+
 await app.Services.MigrateDatabaseAsync();
 
 await app.Services.SeedEduChatbotIdentityAsync();
 await EduChatbot.Business.Services.SubscriptionSeeder.SeedAsync(app.Services);
+
 app.Run();
 
 static async Task ConfirmPayOSWebhookAsync(IServiceProvider services, ILogger logger)

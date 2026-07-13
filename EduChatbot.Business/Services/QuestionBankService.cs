@@ -496,20 +496,96 @@ public class QuestionBankService : IQuestionBankService
 
     private static string ComputeNormalizedHash(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        return QuestionTextNormalizer.ComputeHash(text);
+    }
 
-        var sb = new StringBuilder();
-        foreach (char c in text)
+    public async Task CleanupSeededDataAsync()
+    {
+        // 1. Delete test question bank items matching specific text patterns
+        var testQuestionTexts = new[] { 
+            "Câu hỏi mẫu ngân hàng", 
+            "Câu hỏi thêm vào đề review", 
+            "Câu hỏi thuộc môn khác", 
+            "Nội dung câu hỏi số 1", 
+            "NỘI DUNG CÂU HỎI SỐ 1", 
+            "Đã sửa đổi nội dung gốc trong bank", 
+            "Nội dung câu hỏi số 2" 
+        };
+
+        var qbItems = await _context.QuestionBankItems
+            .Where(q => testQuestionTexts.Any(pattern => q.QuestionText.Contains(pattern)))
+            .ToListAsync();
+        
+        var qbItemIds = qbItems.Select(q => q.Id).ToList();
+
+        // 2. Delete test courses
+        var testCourseCodes = new List<string> { "TEST101", "TEST202", "TEST303", "OTHER303", "OTHER404" };
+        var courses = await _context.Courses.Where(c => testCourseCodes.Contains(c.Code)).ToListAsync();
+        var courseIds = courses.Select(c => c.Id).ToList();
+
+        // Also retrieve items belonging to those test courses
+        if (courseIds.Any())
         {
-            if (!char.IsWhiteSpace(c) && !char.IsPunctuation(c))
+            var courseQbItems = await _context.QuestionBankItems.Where(q => courseIds.Contains(q.CourseId)).ToListAsync();
+            foreach (var item in courseQbItems)
             {
-                sb.Append(char.ToLowerInvariant(c));
+                if (!qbItemIds.Contains(item.Id))
+                {
+                    qbItems.Add(item);
+                    qbItemIds.Add(item.Id);
+                }
             }
         }
 
-        var normalized = sb.ToString();
-        var bytes = Encoding.UTF8.GetBytes(normalized);
-        var hashBytes = SHA256.HashData(bytes);
-        return Convert.ToHexString(hashBytes).ToLowerInvariant();
+        // Delete question bank options
+        if (qbItemIds.Any())
+        {
+            var options = await _context.QuestionBankOptions.Where(o => qbItemIds.Contains(o.QuestionBankItemId)).ToListAsync();
+            _context.QuestionBankOptions.RemoveRange(options);
+            _context.QuestionBankItems.RemoveRange(qbItems);
+        }
+
+        // 3. Delete test quizzes
+        var testQuizTitles = new[] { 
+            "Đề thi từ ngân hàng", 
+            "Đề nháp Review", 
+            "Đề đã xuất bản", 
+            "Đề thi nháp Phase 3", 
+            "Đề thi đã xuất bản Phase 3" 
+        };
+
+        var quizzes = await _context.Quizzes
+            .Where(q => testQuizTitles.Any(pattern => q.Title.Contains(pattern)) || courseIds.Contains(q.CourseId))
+            .ToListAsync();
+        
+        var quizIds = quizzes.Select(q => q.Id).ToList();
+
+        if (quizIds.Any())
+        {
+            var attempts = await _context.QuizAttempts.Where(qa => quizIds.Contains(qa.QuizId)).ToListAsync();
+            _context.QuizAttempts.RemoveRange(attempts);
+
+            var questions = await _context.QuizQuestions.Where(qq => quizIds.Contains(qq.QuizId)).ToListAsync();
+            _context.QuizQuestions.RemoveRange(questions);
+
+            _context.Quizzes.RemoveRange(quizzes);
+        }
+
+        // 4. Delete documents
+        var docs = await _context.Documents
+            .Where(d => d.FileName.Contains("scenario_test_doc") || d.FileName.Contains("phase3_test_doc") || (d.CourseId != null && courseIds.Contains(d.CourseId.Value)))
+            .ToListAsync();
+        _context.Documents.RemoveRange(docs);
+
+        // 5. Delete course assignments
+        if (courseIds.Any())
+        {
+            var lcAssignments = await _context.LecturerCourses.Where(lc => courseIds.Contains(lc.CourseId)).ToListAsync();
+            _context.LecturerCourses.RemoveRange(lcAssignments);
+            _context.Courses.RemoveRange(courses);
+        }
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("SUCCESS: Seeded test data cleanup completed.");
     }
 }

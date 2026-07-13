@@ -996,6 +996,151 @@ RÀNG BUỘC QUAN TRỌNG:
         }
     }
 
+    public async Task<AddQuestionsFromBankResultDto> AddQuestionsFromBankAsync(int quizId, List<int> questionBankItemIds, string lecturerId)
+    {
+        var result = new AddQuestionsFromBankResultDto();
+
+        if (questionBankItemIds == null || !questionBankItemIds.Any())
+        {
+            result.Messages.Add("No question IDs provided.");
+            return result;
+        }
+
+        var quiz = await _quizRepository.GetByIdAsync(quizId);
+        if (quiz == null) throw new KeyNotFoundException("Quiz not found.");
+
+        var isAssigned = await _courseRepository.IsLecturerAssignedToCourseAsync(lecturerId, quiz.CourseId);
+        if (!isAssigned && quiz.CreatedByLecturerId != lecturerId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to this quiz.");
+        }
+
+        EnsureDraft(quiz, "add questions from bank");
+
+        var bankItems = await _context.QuestionBankItems
+            .Include(q => q.Options)
+            .Where(q => questionBankItemIds.Contains(q.Id))
+            .ToListAsync();
+
+        if (!bankItems.Any())
+        {
+            result.Messages.Add("Selected questions not found in the Question Bank.");
+            return result;
+        }
+
+        // Validation checks
+        foreach (var item in bankItems)
+        {
+            if (item.Status != "Approved")
+            {
+                throw new InvalidOperationException($"Question ID {item.Id} is not approved in the Question Bank.");
+            }
+            if (item.CourseId != quiz.CourseId)
+            {
+                throw new InvalidOperationException($"Question ID {item.Id} belongs to a different course.");
+            }
+        }
+
+        var existingQuestions = await _context.QuizQuestions
+            .Where(q => q.QuizId == quizId)
+            .Select(q => new { q.QuestionText, q.SourceQuestionBankItemId })
+            .ToListAsync();
+
+        var existingSourceBankIds = existingQuestions
+            .Where(q => q.SourceQuestionBankItemId.HasValue)
+            .Select(q => q.SourceQuestionBankItemId!.Value)
+            .ToHashSet();
+
+        var existingNormalizedTexts = existingQuestions
+            .Select(q => QuestionTextNormalizer.Normalize(q.QuestionText))
+            .Where(t => !string.IsNullOrEmpty(t))
+            .ToHashSet();
+
+        var itemsToImport = new List<QuestionBankItem>();
+        foreach (var item in bankItems)
+        {
+            if (existingSourceBankIds.Contains(item.Id))
+            {
+                result.SkippedDuplicateCount++;
+                continue;
+            }
+
+            var normalizedText = QuestionTextNormalizer.Normalize(item.QuestionText);
+            if (existingNormalizedTexts.Contains(normalizedText))
+            {
+                result.SkippedDuplicateCount++;
+                continue;
+            }
+
+            itemsToImport.Add(item);
+            existingNormalizedTexts.Add(normalizedText); // Prevent duplicates inside the selected list itself
+        }
+
+        if (!itemsToImport.Any())
+        {
+            result.Messages.Add("No new unique questions to import.");
+            return result;
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var currentMaxOrder = await _context.QuizQuestions
+                .Where(q => q.QuizId == quizId)
+                .Select(q => (int?)q.QuestionOrder)
+                .MaxAsync() ?? 0;
+
+            int order = currentMaxOrder + 1;
+            int copiedCount = 0;
+
+            foreach (var bankQ in itemsToImport)
+            {
+                var quizQuestion = new QuizQuestion
+                {
+                    QuizId = quizId,
+                    QuestionOrder = order++,
+                    QuestionText = bankQ.QuestionText,
+                    Explanation = bankQ.Explanation,
+                    SourceChunkId = bankQ.SourceChunkId,
+                    SourceQuestionBankItemId = bankQ.Id
+                };
+
+                _context.QuizQuestions.Add(quizQuestion);
+                await _context.SaveChangesAsync(); // Generate ID
+
+                int optionOrder = 1;
+                foreach (var bankOpt in bankQ.Options)
+                {
+                    var quizOption = new QuizOption
+                    {
+                        QuizQuestionId = quizQuestion.Id,
+                        OptionOrder = optionOrder++,
+                        Label = bankOpt.Label,
+                        OptionText = bankOpt.OptionText,
+                        IsCorrect = bankOpt.IsCorrect
+                    };
+                    _context.QuizOptions.Add(quizOption);
+                }
+                copiedCount++;
+            }
+
+            quiz.NumberOfQuestions += copiedCount;
+            _context.Quizzes.Update(quiz);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            result.ImportedCount = copiedCount;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Failed to import question bank items into quiz {QuizId}", quizId);
+            throw;
+        }
+    }
+
     private class AiQuizQuestion
     {
         public string question_text { get; set; } = string.Empty;

@@ -8,13 +8,13 @@
     <header class="role-hero compact">
         <div>
             <div class="role-kicker" data-i18n="quizzes.lecturer.att.title">Quiz Report</div>
-            <h1>Attempts for: @Model.Quiz.Title</h1>
+            <h1><span data-i18n="quizzes.lecturer.att.attemptsFor">Attempts for</span>: @Model.Quiz.Title</h1>
             <p><span data-i18n="quizzes.course">Course</span>: <strong>@(Model.Quiz.Course?.Code)</strong> | <span data-i18n="quizzes.lecturer.att.totalCount">Total Attempts</span>: <strong>@Model.Attempts.Count</strong></p>
         </div>
     </header>
 
     <div style="margin-bottom: 1.5rem;">
-        <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn">← Back to Quizzes</a>
+        <a asp-page="/Lecturer/Quizzes/Index" class="role-secondary-btn" data-i18n="quizzes.lecturer.att.back">← Back to Quizzes</a>
     </div>
 
     @if (!Model.Attempts.Any())

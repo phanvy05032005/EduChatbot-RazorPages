@@ -134,8 +134,8 @@ public class CreateQuizModel : PageModel
         try
         {
             var result = await _questionBankService.CreateQuizFromBankAsync(dto, lecturerId);
-            TempData["SuccessMessage"] = $"Quiz created successfully. Result: {result.Message}";
-            return RedirectToPage("/Lecturer/Quizzes/Index");
+            TempData["SuccessMessage"] = $"Tạo đề thi từ ngân hàng câu hỏi thành công. Kết quả: {result.Message}";
+            return RedirectToPage("/Lecturer/Quizzes/Review", new { id = result.QuizId });
         }
         catch (Exception ex)
         {

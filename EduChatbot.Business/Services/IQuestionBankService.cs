@@ -13,4 +13,5 @@ public interface IQuestionBankService
     Task<bool> DeleteOrArchiveQuestionAsync(int id, string lecturerId, bool isAdmin);
     Task<(int SavedCount, int SkippedCount)> SaveToBankFromQuizQuestionsAsync(List<int> quizQuestionIds, string lecturerId);
     Task<CreateQuizFromBankResultDto> CreateQuizFromBankAsync(CreateQuizFromBankDto dto, string lecturerId);
+    Task CleanupSeededDataAsync();
 }
