@@ -92,7 +92,7 @@
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end;">
-                        <button type="submit" class="role-primary-btn" data-i18n="quizzes.lecturer.rev.genMoreBtn">Generate More</button>
+                        <button type="submit" class="role-primary-btn" id="genMoreSubmitBtn" data-i18n="quizzes.lecturer.rev.genMoreBtn">Generate More</button>
                     </div>
                 </form>
             </div>
@@ -206,6 +206,40 @@
             }
         </div>
     </div>
+
+    <!-- Overlay Loader -->
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; color: #fff; text-align: center; padding: 2rem;">
+        <div style="width: 60px; height: 60px; border: 5px solid rgba(255, 255, 255, 0.15); border-radius: 50%; border-top-color: #0ea5e9; animation: spin 1s linear infinite; margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);"></div>
+        
+        <h3 style="font-weight: 700; margin-bottom: 0.5rem; color: #fff; font-size: 1.5rem;" data-i18n="quizzes.lecturer.gen.loadingTitle">Generating quiz...</h3>
+        <p style="color: rgba(255,255,255,0.7); font-size: 0.95rem; max-width: 450px; margin-bottom: 1.5rem;" data-i18n="quizzes.lecturer.gen.loadingDesc">Please wait while the system processes the document and creates quiz questions.</p>
+        
+        <!-- Rotating Status steps -->
+        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.8rem 1.5rem; border-radius: 8px; margin-bottom: 1rem; min-width: 280px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0ea5e9; animation: pulse 1.5s infinite ease-in-out;"></span>
+            <span style="font-weight: 500; font-size: 0.9rem; color: #e2e8f0;" id="rotatingStatus">Analyzing document content...</span>
+        </div>
+        
+        <!-- Elapsed time counter -->
+        <div style="font-size: 0.85rem; color: #94a3b8; font-family: monospace; margin-bottom: 1rem;" id="elapsedTimer">
+            Elapsed time: 0s
+        </div>
+
+        <!-- Long-wait reassurance -->
+        <div style="display: none; color: #fbbf24; font-size: 0.85rem; max-width: 400px; padding: 0.6rem 1rem; border-radius: 6px; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); line-height: 1.4;" id="longWaitMessage" data-i18n="quizzes.generate.longWait">
+            This is taking longer than usual depending on document size or AI traffic, but the system is still processing. Please do not close or reload this page.
+        </div>
+    </div>
+    
+    <style>
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @@keyframes pulse {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+    </style>
 </section>
 
 <!-- Edit Question Modal (Bootstrap) -->
@@ -320,10 +354,74 @@
 
             // Generate More overlay loader
             const genMoreForm = document.getElementById('generateMoreForm');
-            if (genMoreForm) {
-                const overlay = document.getElementById('loadingOverlay');
+            const overlay = document.getElementById('loadingOverlay');
+            const genMoreSubmitBtn = document.getElementById('genMoreSubmitBtn');
+            const rotatingStatus = document.getElementById('rotatingStatus');
+            const elapsedTimer = document.getElementById('elapsedTimer');
+            const longWaitMessage = document.getElementById('longWaitMessage');
+
+            function getStatusTexts() {
+                return [
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status0') : "Analyzing document content...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status1') : "Generating multiple-choice questions...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status2') : "Preparing answer options and correct keys...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status3') : "Structuring quiz draft...",
+                    window.EduI18n ? window.EduI18n.t('quizzes.generate.status4') : "Finalizing quiz details..."
+                ];
+            }
+
+            let isSubmitting = false;
+
+            if (genMoreForm && overlay) {
                 genMoreForm.addEventListener('submit', function (e) {
+                    if (isSubmitting) {
+                        e.preventDefault();
+                        return;
+                    }
+                    isSubmitting = true;
+
+                    // Show Overlay
                     overlay.style.display = 'flex';
+
+                    // Disable submit button and change text
+                    if (genMoreSubmitBtn) {
+                        genMoreSubmitBtn.disabled = true;
+                        genMoreSubmitBtn.innerText = window.EduI18n ? window.EduI18n.t('quizzes.generate.btnGenerating') : "Generating...";
+                    }
+
+                    const statusTexts = getStatusTexts();
+                    if (rotatingStatus) {
+                        rotatingStatus.innerText = statusTexts[0];
+                    }
+
+                    // Start timers
+                    let secondsElapsed = 0;
+                    let statusIndex = 0;
+
+                    // Update elapsed time every 1s
+                    const timerInterval = setInterval(() => {
+                        secondsElapsed++;
+                        if (elapsedTimer) {
+                            const template = window.EduI18n ? window.EduI18n.t('quizzes.generate.elapsedTime') : 'Elapsed time: {0}s';
+                            elapsedTimer.innerText = template.replace('{0}', secondsElapsed);
+                        }
+
+                        // Show long wait message after 15s
+                        if (secondsElapsed >= 15 && longWaitMessage) {
+                            if (window.EduI18n) {
+                                longWaitMessage.innerText = window.EduI18n.t('quizzes.generate.longWait');
+                            }
+                            longWaitMessage.style.display = 'block';
+                        }
+                    }, 1000);
+
+                    // Rotate status texts every 4s
+                    const statusInterval = setInterval(() => {
+                        statusIndex = (statusIndex + 1) % statusTexts.length;
+                        if (rotatingStatus) {
+                            rotatingStatus.innerText = statusTexts[statusIndex];
+                        }
+                    }, 4000);
                 });
             }
 
